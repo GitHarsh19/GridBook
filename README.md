@@ -25,42 +25,19 @@ GridBook is a booking platform for sim racing enthusiasts to find nearby venues,
 
 ## Getting Started
 
-### Prerequisites
+> **Internal project** — contact the team for environment credentials and setup instructions.
 
-- Node.js 18+
-- A [Supabase](https://supabase.com) project (for database)
+### Quick Start
 
-### Setup
+```bash
+git clone https://github.com/GitHarsh19/GridBook.git
+cd GridBook
+npm install
+# Add the .env.local file (get credentials from the team)
+npm run dev
+```
 
-1. **Clone the repo**
-   ```bash
-   git clone https://github.com/GitHarsh19/GridBook.git
-   cd GridBook
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**
-
-   Create a `.env.local` file in the project root:
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
-
-4. **Set up the database**
-
-   Run `supabase/seed.sql` in your Supabase SQL Editor to create tables and seed data.
-
-5. **Start the dev server**
-   ```bash
-   npm run dev
-   ```
-
-6. **Open [http://localhost:3000](http://localhost:3000)**
+Open [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
 
