@@ -1,3 +1,5 @@
+import { supabase } from "./supabase";
+
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
 export interface Rig {
@@ -35,80 +37,112 @@ export const TIME_SLOTS = [
     "9:00 PM – 10:00 PM",
 ];
 
-export const VENUES: Venue[] = [
-    {
-        id: 1,
-        name: "Apex Racing Lounge",
-        location: "HSR Layout",
-        price: 500,
-        availableRigs: 3,
-        totalRigs: 8,
-        description:
-            "Premium sim racing experience with Fanatec DD setups and triple-screen immersion.",
-        rigs: [
-            { id: 1, name: "Rig 1", status: "available", specs: 'Fanatec DD Pro · Triple 27"' },
-            { id: 2, name: "Rig 2", status: "booked", specs: 'Fanatec DD Pro · Triple 27"' },
-            { id: 3, name: "Rig 3", status: "available", specs: 'Fanatec CSL DD · Ultrawide 34"' },
-            { id: 4, name: "Rig 4", status: "available", specs: 'Fanatec CSL DD · Ultrawide 34"' },
-            { id: 5, name: "Rig 5", status: "booked", specs: 'Logitech G Pro · Single 32"' },
-            { id: 6, name: "Rig 6", status: "booked", specs: 'Logitech G Pro · Single 32"' },
-            { id: 7, name: "Rig 7", status: "available", specs: "Thrustmaster T300 · VR Headset" },
-            { id: 8, name: "Rig 8", status: "booked", specs: "Thrustmaster T300 · VR Headset" },
-        ],
-    },
-    {
-        id: 2,
-        name: "Clutch Gaming Arena",
-        location: "Koramangala",
-        price: 600,
-        availableRigs: 5,
-        totalRigs: 6,
-        description:
-            "High-end gaming café with professional-grade sim rigs and VR setups.",
-        rigs: [
-            { id: 1, name: "Rig 1", status: "available", specs: 'Fanatec DD1 · Triple 32"' },
-            { id: 2, name: "Rig 2", status: "available", specs: 'Fanatec DD1 · Triple 32"' },
-            { id: 3, name: "Rig 3", status: "available", specs: 'Fanatec CSL DD · Ultrawide 34"' },
-            { id: 4, name: "Rig 4", status: "booked", specs: 'Logitech G923 · Single 27"' },
-            { id: 5, name: "Rig 5", status: "available", specs: 'Logitech G923 · Single 27"' },
-            { id: 6, name: "Rig 6", status: "available", specs: "Thrustmaster T-GT II · VR" },
-        ],
-    },
-    {
-        id: 3,
-        name: "Pole Position Hub",
-        location: "Indiranagar",
-        price: 450,
-        availableRigs: 2,
-        totalRigs: 6,
-        description:
-            "Neighbourhood sim racing spot with solid mid-range setups and AC gaming.",
-        rigs: [
-            { id: 1, name: "Rig 1", status: "available", specs: 'Logitech G Pro · Triple 24"' },
-            { id: 2, name: "Rig 2", status: "booked", specs: 'Logitech G Pro · Triple 24"' },
-            { id: 3, name: "Rig 3", status: "booked", specs: 'Logitech G923 · Single 27"' },
-            { id: 4, name: "Rig 4", status: "booked", specs: 'Logitech G923 · Single 27"' },
-            { id: 5, name: "Rig 5", status: "available", specs: "Thrustmaster T300 · Ultrawide" },
-            { id: 6, name: "Rig 6", status: "booked", specs: "Thrustmaster T300 · Ultrawide" },
-        ],
-    },
-    {
-        id: 4,
-        name: "DRS Zone Lounge",
-        location: "Whitefield",
-        price: 550,
-        availableRigs: 4,
-        totalRigs: 7,
-        description:
-            "Modern racing lounge with motion rigs and competitive league nights.",
-        rigs: [
-            { id: 1, name: "Rig 1", status: "available", specs: "Fanatec DD Pro · Motion Rig" },
-            { id: 2, name: "Rig 2", status: "available", specs: "Fanatec DD Pro · Motion Rig" },
-            { id: 3, name: "Rig 3", status: "booked", specs: 'Fanatec CSL DD · Triple 27"' },
-            { id: 4, name: "Rig 4", status: "available", specs: 'Fanatec CSL DD · Triple 27"' },
-            { id: 5, name: "Rig 5", status: "booked", specs: 'Logitech G Pro · Single 32"' },
-            { id: 6, name: "Rig 6", status: "available", specs: 'Logitech G Pro · Single 32"' },
-            { id: 7, name: "Rig 7", status: "booked", specs: "Thrustmaster T818 · VR Headset" },
-        ],
-    },
-];
+/* ─── Supabase row types ────────────────────────────────────────────── */
+
+interface DbVenue {
+    id: number;
+    name: string;
+    location: string;
+    price: number;
+    description: string;
+}
+
+interface DbRig {
+    id: number;
+    venue_id: number;
+    name: string;
+    status: "available" | "booked";
+    specs: string;
+}
+
+/* ─── Data-fetching helpers ─────────────────────────────────────────── */
+
+/**
+ * Fetch all venues with computed rig counts.
+ */
+export async function getVenues(): Promise<Venue[]> {
+    const { data: venues, error: vErr } = await supabase
+        .from("venues")
+        .select("*")
+        .order("id");
+
+    if (vErr || !venues) {
+        console.error("Failed to fetch venues:", vErr);
+        return [];
+    }
+
+    const { data: rigs, error: rErr } = await supabase
+        .from("rigs")
+        .select("*")
+        .order("id");
+
+    if (rErr || !rigs) {
+        console.error("Failed to fetch rigs:", rErr);
+        return [];
+    }
+
+    return (venues as DbVenue[]).map((v) => {
+        const venueRigs = (rigs as DbRig[]).filter((r) => r.venue_id === v.id);
+        return {
+            id: v.id,
+            name: v.name,
+            location: v.location,
+            price: v.price,
+            description: v.description,
+            totalRigs: venueRigs.length,
+            availableRigs: venueRigs.filter((r) => r.status === "available").length,
+            rigs: venueRigs.map((r) => ({
+                id: r.id,
+                name: r.name,
+                status: r.status,
+                specs: r.specs,
+            })),
+        };
+    });
+}
+
+/**
+ * Fetch a single venue by ID with its rigs.
+ */
+export async function getVenueById(id: number): Promise<Venue | null> {
+    const { data: venue, error: vErr } = await supabase
+        .from("venues")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+    if (vErr || !venue) {
+        console.error("Failed to fetch venue:", vErr);
+        return null;
+    }
+
+    const { data: rigs, error: rErr } = await supabase
+        .from("rigs")
+        .select("*")
+        .eq("venue_id", id)
+        .order("id");
+
+    if (rErr || !rigs) {
+        console.error("Failed to fetch rigs:", rErr);
+        return null;
+    }
+
+    const v = venue as DbVenue;
+    const venueRigs = rigs as DbRig[];
+
+    return {
+        id: v.id,
+        name: v.name,
+        location: v.location,
+        price: v.price,
+        description: v.description,
+        totalRigs: venueRigs.length,
+        availableRigs: venueRigs.filter((r) => r.status === "available").length,
+        rigs: venueRigs.map((r) => ({
+            id: r.id,
+            name: r.name,
+            status: r.status,
+            specs: r.specs,
+        })),
+    };
+}

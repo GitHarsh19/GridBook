@@ -1,8 +1,12 @@
 import { Navbar } from "@/components/Navbar";
 import { VenueCard } from "@/components/VenueCard";
-import { VENUES } from "@/lib/data";
+import { getVenues } from "@/lib/data";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const venues = await getVenues();
+
   return (
     <div className="min-h-screen bg-zinc-950">
       <Navbar />
@@ -13,13 +17,13 @@ export default function HomePage() {
             Nearby Venues
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {VENUES.length} venues in Bengaluru
+            {venues.length} venues in Bengaluru
           </p>
         </div>
 
         {/* Venue grid */}
         <div className="grid gap-4 sm:grid-cols-2">
-          {VENUES.map((venue) => (
+          {venues.map((venue) => (
             <VenueCard key={venue.id} venue={venue} />
           ))}
         </div>
