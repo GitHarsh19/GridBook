@@ -6,10 +6,13 @@ GridBook is a booking platform for sim racing enthusiasts to find nearby venues,
 
 ## Features
 
+- 🔐 **Role-Based Login** — Separate flows for Customers and Venue Admins
 - 🏎️ **Venue Discovery** — Browse gaming cafés and sim racing lounges with real-time rig availability
 - 🎮 **Rig Selection** — View rig specs (Fanatec DD, Logitech G Pro, VR setups, etc.) and pick your preferred setup
 - 🕐 **Time Slot Booking** — Select multiple 1-hour slots from 10 AM to 10 PM
 - 💰 **Instant Pricing** — See total cost calculated in real-time based on rigs × slots
+- 📊 **Admin Dashboard** — Live rig status, today's bookings, and estimated revenue at a glance
+- 🛡️ **Protected Routes** — Auth-gated pages with role-based access control
 - 📱 **Responsive Design** — Dark-themed UI optimized for both mobile and desktop
 
 ## Tech Stack
@@ -39,22 +42,42 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+## Routes
+
+| Route | Access | Description |
+|-------|--------|-------------|
+| `/` | Public | Login screen with role toggle |
+| `/explore` | Customer | Venue discovery feed |
+| `/venue/[id]` | Customer | Rig selection & booking |
+| `/dashboard` | Admin | Live rig status & metrics |
+
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx                    # Discovery page (/)
-│   └── venue/[id]/
-│       ├── page.tsx                # Venue data fetching
-│       └── BookingClient.tsx       # Booking UI (client component)
+│   ├── page.tsx                    # Login page (/)
+│   ├── layout.tsx                  # Root layout + AuthProvider
+│   ├── explore/
+│   │   ├── page.tsx                # Venue discovery feed
+│   │   └── layout.tsx              # Auth-protected layout
+│   ├── venue/[id]/
+│   │   ├── page.tsx                # Venue data fetching
+│   │   ├── BookingClient.tsx       # Booking UI (client component)
+│   │   └── layout.tsx              # Auth-protected layout
+│   └── dashboard/
+│       ├── page.tsx                # Admin portal
+│       └── layout.tsx              # Admin-only layout
 ├── components/
-│   ├── Navbar.tsx
-│   ├── VenueCard.tsx
-│   ├── TimeSelector.tsx
-│   ├── RigGrid.tsx
-│   └── CheckoutBar.tsx
+│   ├── LoginScreen.tsx             # Auth card with role toggle
+│   ├── Navbar.tsx                  # Top nav with logout
+│   ├── ProtectedRoute.tsx          # Route guard component
+│   ├── VenueCard.tsx               # Venue listing card
+│   ├── TimeSelector.tsx            # Horizontal time slot picker
+│   ├── RigGrid.tsx                 # Rig selection grid
+│   └── CheckoutBar.tsx             # Sticky checkout summary
 └── lib/
+    ├── auth.tsx                    # Auth context (useState-based)
     ├── data.ts                     # Types + Supabase queries
     └── supabase.ts                 # Supabase client
 ```
