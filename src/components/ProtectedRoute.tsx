@@ -7,30 +7,30 @@ import type { ReactNode } from "react";
 
 /**
  * Wraps a page to redirect to login if user is not authenticated.
- * Optionally checks for a specific role.
+ * Always renders children — only redirects after confirming not logged in.
+ * This prevents the disappearing content flash on page refresh.
  */
 export function ProtectedRoute({
-    children,
-    requiredRole,
+  children,
+  requiredRole,
 }: {
-    children: ReactNode;
-    requiredRole?: "customer" | "admin";
+  children: ReactNode;
+  requiredRole?: "customer" | "admin";
 }) {
-    const { isLoggedIn, role } = useAuth();
-    const router = useRouter();
+  const { isLoggedIn, isLoading, role } = useAuth();
+  const router = useRouter();
 
-    useEffect(() => {
-        if (!isLoggedIn) {
-            router.push("/");
-            return;
-        }
-        if (requiredRole && role !== requiredRole) {
-            router.push("/");
-        }
-    }, [isLoggedIn, role, requiredRole, router]);
+  useEffect(() => {
+    // Only redirect AFTER loading is done and user is confirmed NOT logged in
+    if (!isLoading && !isLoggedIn) {
+      router.push("/");
+    }
+    if (!isLoading && isLoggedIn && requiredRole && role !== requiredRole) {
+      router.push("/");
+    }
+  }, [isLoggedIn, isLoading, role, requiredRole, router]);
 
-    if (!isLoggedIn) return null;
-    if (requiredRole && role !== requiredRole) return null;
-
-    return <>{children}</>;
+  // Always render children — show content immediately on page load.
+  // If user is not logged in, the useEffect redirect handles it.
+  return <>{children}</>;
 }

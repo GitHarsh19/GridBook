@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
 import {
     Zap,
     LogOut,
@@ -37,6 +38,12 @@ const RIGS: RigStatus[] = [
 
 export default function DashboardPage() {
     const router = useRouter();
+    const { logout } = useAuth();
+
+    const handleLogout = () => {
+        logout();
+        router.push("/");
+    };
 
     return (
         <div className="min-h-screen bg-zinc-950">
@@ -53,8 +60,8 @@ export default function DashboardPage() {
                         </span>
                     </div>
                     <button
-                        onClick={() => router.push("/")}
-                        className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
+                        onClick={handleLogout}
+                        className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
                     >
                         <LogOut className="h-3.5 w-3.5" />
                         Log Out
@@ -121,7 +128,7 @@ export default function DashboardPage() {
                                             <p className="mb-3 text-sm text-green-400">
                                                 🟢 Available
                                             </p>
-                                            <button className="w-full rounded-md border border-zinc-700 bg-zinc-800 py-2 text-xs font-medium text-zinc-300 transition-colors hover:border-cyan-500/50 hover:text-white">
+                                            <button className="w-full cursor-pointer rounded-md border border-zinc-700 bg-zinc-800 py-2 text-xs font-medium text-zinc-300 transition-colors hover:border-cyan-500/50 hover:text-white">
                                                 Block for Walk-in
                                             </button>
                                         </>
