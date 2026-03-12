@@ -21,7 +21,7 @@ export default async function VenueBookingPage({
                 <main className="mx-auto max-w-5xl px-4 py-16 text-center">
                     <h1 className="text-xl font-bold text-white">Venue not found</h1>
                     <Link
-                        href="/"
+                        href="/explore"
                         className="mt-4 inline-flex items-center gap-1.5 text-sm text-cyan-500 hover:text-cyan-400"
                     >
                         <ArrowLeft className="h-4 w-4" />

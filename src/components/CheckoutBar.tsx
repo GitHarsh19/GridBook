@@ -37,7 +37,7 @@ export function CheckoutBar({
                         Total: ₹{total.toLocaleString("en-IN")}
                     </div>
                 </div>
-                <button className="w-full rounded-lg bg-cyan-500 px-6 py-3.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98] sm:w-auto">
+                <button className="w-full cursor-pointer rounded-lg bg-cyan-500 px-6 py-3.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98] sm:w-auto">
                     Pay via UPI to Lock Slots
                 </button>
             </div>

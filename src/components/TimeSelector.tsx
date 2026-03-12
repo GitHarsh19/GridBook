@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { Clock, X } from "lucide-react";
 import { TIME_SLOTS } from "@/lib/data";
 
@@ -13,8 +12,6 @@ export function TimeSelector({
     onToggle: (slot: string) => void;
     onClear: () => void;
 }) {
-    const scrollRef = useRef<HTMLDivElement>(null);
-
     return (
         <div className="relative">
             <div className="mb-3 flex items-center gap-2 text-sm font-medium text-zinc-400">
@@ -30,10 +27,7 @@ export function TimeSelector({
                     </button>
                 )}
             </div>
-            <div
-                ref={scrollRef}
-                className="hide-scrollbar flex gap-2 overflow-x-auto pb-2 pr-4"
-            >
+            <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-2 pr-4">
                 {TIME_SLOTS.map((slot) => {
                     const isSelected = selectedSlots.includes(slot);
                     return (
@@ -41,8 +35,8 @@ export function TimeSelector({
                             key={slot}
                             onClick={() => onToggle(slot)}
                             className={`shrink-0 cursor-pointer rounded-md border px-4 py-2.5 text-sm font-medium transition-all ${isSelected
-                                    ? "border-cyan-500 bg-cyan-500 text-black"
-                                    : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-600 hover:text-white"
+                                ? "border-cyan-500 bg-cyan-500 text-black"
+                                : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-600 hover:text-white"
                                 }`}
                         >
                             {slot}
