@@ -9,13 +9,26 @@ import { supabase } from "@/lib/supabase";
 
 type Role = "customer" | "admin";
 
-export function LoginScreen() {
+export function LoginScreen({ message }: { message?: string }) {
     const router = useRouter();
     const { isLoggedIn, isLoading, setLoggedIn } = useAuth();
     const [activeRole, setActiveRole] = useState<Role>("customer");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
+    const [messageRendered, setMessageRendered] = useState(!!message);
+    const [messageExpanded, setMessageExpanded] = useState(false);
+
+    useEffect(() => {
+        if (!message) return;
+        // Next frame: expand
+        const expandTimer = setTimeout(() => setMessageExpanded(true), 16);
+        // After 1.2s: contract
+        const contractTimer = setTimeout(() => setMessageExpanded(false), 1200);
+        // After 1.2s + 400ms transition: remove from DOM
+        const removeTimer = setTimeout(() => setMessageRendered(false), 1600);
+        return () => { clearTimeout(expandTimer); clearTimeout(contractTimer); clearTimeout(removeTimer); };
+    }, [message]);
 
     // Auto-redirect if already logged in
     useEffect(() => {
@@ -71,6 +84,13 @@ export function LoginScreen() {
 
                 {/* Auth Card */}
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+                    {/* Message */}
+                    {messageRendered && (
+                        <div className={`overflow-hidden transition-all duration-400 ease-in-out ${messageExpanded ? "max-h-10 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0"}`}>
+                            <p className="text-center text-sm text-red-400">{message}</p>
+                        </div>
+                    )}
+
                     {/* Role Toggle */}
                     <div className="mb-6 flex rounded-md border border-zinc-800 bg-zinc-950 p-1">
                         <button

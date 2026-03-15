@@ -3,13 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { LoginScreen } from "@/components/LoginScreen";
 import type { ReactNode } from "react";
 
-/**
- * Wraps a page to redirect to login if user is not authenticated.
- * Always renders children — only redirects after confirming not logged in.
- * This prevents the disappearing content flash on page refresh.
- */
 export function ProtectedRoute({
   children,
   requiredRole,
@@ -21,16 +17,25 @@ export function ProtectedRoute({
   const router = useRouter();
 
   useEffect(() => {
-    // Only redirect AFTER loading is done and user is confirmed NOT logged in
-    if (!isLoading && !isLoggedIn) {
-      router.push("/");
-    }
     if (!isLoading && isLoggedIn && requiredRole && role !== requiredRole) {
       router.push("/");
     }
   }, [isLoggedIn, isLoading, role, requiredRole, router]);
 
-  // Always render children — show content immediately on page load.
-  // If user is not logged in, the useEffect redirect handles it.
+  // While session is being resolved, show blank dark screen — no flash
+  if (isLoading) {
+    return <div className="min-h-screen bg-zinc-950" />;
+  }
+
+  // Not logged in — show login screen inline with a prompt
+  if (!isLoggedIn) {
+    return <LoginScreen message="Sign in to continue" />;
+  }
+
+  // Logged in but wrong role — redirect handled by useEffect above
+  if (requiredRole && role !== requiredRole) {
+    return <div className="min-h-screen bg-zinc-950" />;
+  }
+
   return <>{children}</>;
 }
