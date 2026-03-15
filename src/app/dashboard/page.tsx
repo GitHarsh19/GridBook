@@ -128,7 +128,7 @@ function WalkInModal({
                     </h3>
                     <button
                         onClick={onClose}
-                        className="text-zinc-500 transition-colors hover:text-white"
+                        className="cursor-pointer text-zinc-500 transition-colors hover:text-white"
                     >
                         <X className="h-5 w-5" />
                     </button>
@@ -148,7 +148,7 @@ function WalkInModal({
                         <button
                             key={hrs}
                             onClick={() => setDuration(hrs)}
-                            className={`flex-1 rounded-md border py-2.5 text-sm font-medium transition-all ${
+                            className={`flex-1 cursor-pointer rounded-md border py-2.5 text-sm font-medium transition-all ${
                                 duration === hrs
                                     ? "border-amber-500 bg-amber-500/10 text-amber-400"
                                     : "border-zinc-700 text-zinc-400 hover:border-zinc-600"
@@ -162,14 +162,14 @@ function WalkInModal({
                 <div className="flex gap-3">
                     <button
                         onClick={onClose}
-                        className="flex-1 rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white"
+                        className="flex-1 cursor-pointer rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={() => onConfirm(duration)}
                         disabled={loading}
-                        className="flex-1 rounded-md bg-amber-500 py-2.5 text-sm font-bold text-black transition-colors hover:bg-amber-400 disabled:opacity-50"
+                        className="flex-1 cursor-pointer rounded-md bg-amber-500 py-2.5 text-sm font-bold text-black transition-colors hover:bg-amber-400 disabled:opacity-50"
                     >
                         {loading ? "Blocking…" : "Block Rig"}
                     </button>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
                                 setSelectedVenueId(Number(e.target.value));
                                 setLoading(true);
                             }}
-                            className="max-w-[180px] truncate rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300 focus:border-cyan-500 focus:outline-none"
+                            className="cursor-pointer max-w-[180px] truncate rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300 focus:border-cyan-500 focus:outline-none"
                         >
                             {venues.map((v) => (
                                 <option key={v.id} value={v.id}>
@@ -399,7 +399,7 @@ export default function DashboardPage() {
                                 sessionStorage.removeItem("gridbook_admin");
                                 setIsAdmin(false);
                             }}
-                            className="flex items-center gap-1.5 rounded-md border border-zinc-800 px-3 py-1.5 text-xs text-zinc-500 transition-colors hover:border-zinc-700 hover:text-white"
+                            className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
                         >
                             <LogOut className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Exit</span>
