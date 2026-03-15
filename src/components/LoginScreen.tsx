@@ -39,31 +39,58 @@ export function LoginScreen({ message }: { message?: string }) {
         }
     }, [isLoggedIn, isLoading, router, redirectTo]);
 
-    const handleLogin = () => {
-        if (activeRole === "customer" && username === "gamer" && password === "password") {
-            setLoggedIn(true, "customer");
-            router.push(redirectTo);
+    const [loading, setLoading] = useState(false);
+
+    const handleLogin = async () => {
+        if (activeRole === "customer") {
+            if (username === "gamer" && password === "password") {
+                setLoggedIn(true, "customer");
+                router.push(redirectTo);
+                return;
+            }
+            setError("Use gamer / password to test");
             return;
         }
 
-        if (activeRole === "admin" && username === "venue" && password === "password") {
-            setLoggedIn(true, "admin");
-            router.push(redirectTo === "/explore" ? "/dashboard" : redirectTo);
+        // Admin: use Supabase email/password auth
+        setLoading(true);
+        setError("");
+        const { data, error: authErr } = await supabase.auth.signInWithPassword({
+            email: username,
+            password,
+        });
+
+        if (authErr || !data.user) {
+            setLoading(false);
+            setError(authErr?.message || "Login failed");
             return;
         }
 
-        setError(
-            activeRole === "customer"
-                ? "Use gamer / password to test"
-                : "Use venue / password to test"
-        );
+        // Check profile role
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", data.user.id)
+            .single();
+
+        if (profile?.role !== "admin") {
+            await supabase.auth.signOut();
+            setLoading(false);
+            setError("This account is not a venue admin");
+            return;
+        }
+
+        // Auth state change will be picked up by AuthProvider
+        setLoading(false);
+        router.push("/dashboard");
     };
 
     const handleGoogleLogin = async () => {
+        const callbackRedirect = activeRole === "admin" ? "/dashboard" : redirectTo;
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
+                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(callbackRedirect)}&role=${activeRole}`,
             },
         });
         if (error) setError(error.message);
@@ -119,14 +146,14 @@ export function LoginScreen({ message }: { message?: string }) {
                     <div className="space-y-4">
                         <div>
                             <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                                Username
+                                {activeRole === "admin" ? "Email" : "Username"}
                             </label>
                             <input
-                                type="text"
+                                type={activeRole === "admin" ? "email" : "text"}
                                 value={username}
                                 onChange={(e) => { setUsername(e.target.value); setError(""); }}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Enter username"
+                                placeholder={activeRole === "admin" ? "Enter email" : "Enter username"}
                                 className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
                             />
                         </div>
@@ -152,19 +179,19 @@ export function LoginScreen({ message }: { message?: string }) {
                         {/* Login Button */}
                         <button
                             onClick={handleLogin}
-                            className="w-full cursor-pointer rounded-md bg-cyan-500 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98]"
+                            disabled={loading}
+                            className="w-full cursor-pointer rounded-md bg-cyan-500 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98] disabled:opacity-60"
                         >
-                            Login
+                            {loading ? "Signing in…" : "Login"}
                         </button>
 
-                        {/* Divider */}
+                        {/* Divider + Google */}
                         <div className="flex items-center gap-3">
                             <div className="h-px flex-1 bg-zinc-800" />
                             <span className="text-xs text-zinc-600">or</span>
                             <div className="h-px flex-1 bg-zinc-800" />
                         </div>
 
-                        {/* Google Sign-In */}
                         <button
                             onClick={handleGoogleLogin}
                             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-zinc-700 bg-zinc-800 py-2.5 text-sm font-medium text-white transition-all hover:border-zinc-600 hover:bg-zinc-700 active:scale-[0.98]"
@@ -195,19 +222,21 @@ export function LoginScreen({ message }: { message?: string }) {
                     <p className="mt-4 text-center text-xs text-zinc-600">
                         {activeRole === "customer"
                             ? "gamer / password"
-                            : "venue / password"}
+                            : "admin / password"}
                     </p>
 
-                    {/* Register Link */}
-                    <p className="mt-3 text-center text-xs text-zinc-500">
-                        Don&apos;t have an account?{" "}
-                        <Link
-                            href="/register"
-                            className="text-cyan-500 transition-colors hover:text-cyan-400"
-                        >
-                            Create account
-                        </Link>
-                    </p>
+                    {/* Register Link (customer only) */}
+                    {activeRole === "customer" && (
+                        <p className="mt-3 text-center text-xs text-zinc-500">
+                            Don&apos;t have an account?{" "}
+                            <Link
+                                href="/register"
+                                className="text-cyan-500 transition-colors hover:text-cyan-400"
+                            >
+                                Create account
+                            </Link>
+                        </p>
+                    )}
                 </div>
             </div>
         </div>

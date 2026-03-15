@@ -1,28 +1,52 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
 function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/explore";
+  const requiredRole = searchParams.get("role"); // "admin" if coming from admin tab
   const { isLoggedIn } = useAuth();
+  const checked = useRef(false);
 
   useEffect(() => {
-    // onAuthStateChange (in AuthProvider) handles the hash exchange.
-    // We only need to redirect once the auth state resolves.
-    if (isLoggedIn) {
-      router.push(redirectTo);
+    if (!isLoggedIn || checked.current) return;
+    checked.current = true;
+
+    // If admin role required, verify profile before redirecting
+    if (requiredRole === "admin") {
+      (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { router.push("/login"); return; }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.role === "admin") {
+          router.push("/dashboard");
+        } else {
+          await supabase.auth.signOut();
+          router.push("/login");
+        }
+      })();
       return;
     }
 
-    // Fallback: if auth never resolves (e.g. user navigated here directly),
-    // redirect after 5s so they don't get stuck.
+    router.push(redirectTo);
+  }, [isLoggedIn, router, redirectTo, requiredRole]);
+
+  useEffect(() => {
+    // Fallback: if auth never resolves, redirect after 5s
     const timeout = setTimeout(() => router.push("/login"), 5000);
     return () => clearTimeout(timeout);
-  }, [isLoggedIn, router, redirectTo]);
+  }, [router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-950">
