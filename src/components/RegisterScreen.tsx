@@ -61,12 +61,12 @@ export function RegisterScreen() {
     <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="mb-8 flex items-center justify-center gap-2">
+        <Link href="/" className="mb-8 flex items-center justify-center gap-2">
           <Zap className="h-6 w-6 text-cyan-500" />
           <span className="text-2xl font-bold tracking-tight text-white">
             Grid<span className="text-cyan-500">Book</span>
           </span>
-        </div>
+        </Link>
 
         {/* Register Card */}
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">

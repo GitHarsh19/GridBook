@@ -20,7 +20,7 @@ export function VenueCard({ venue }: { venue: Venue }) {
     return (
         <button
             onClick={handleClick}
-            className="group block w-full rounded-lg border border-zinc-800 bg-zinc-900 text-left transition-all duration-200 hover:border-zinc-700 hover:bg-zinc-900/80 hover:shadow-lg hover:shadow-cyan-500/5 hover:-translate-y-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+            className="group block w-full cursor-pointer rounded-lg border border-zinc-800 bg-zinc-900 text-left transition-all duration-200 hover:border-zinc-700 hover:bg-zinc-900/80 hover:shadow-lg hover:shadow-cyan-500/5 hover:-translate-y-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
         >
             {/* Image placeholder */}
             <div className="relative flex h-36 items-center justify-center overflow-hidden rounded-t-lg bg-zinc-800/60">

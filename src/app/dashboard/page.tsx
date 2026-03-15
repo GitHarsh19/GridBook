@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import {
@@ -53,7 +54,7 @@ export default function DashboardPage() {
             {/* Admin Navbar */}
             <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-sm">
                 <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-                    <div className="flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-cyan-500" />
                         <span className="text-lg font-bold tracking-tight text-white">
                             Grid<span className="text-cyan-500">Book</span>
@@ -61,7 +62,7 @@ export default function DashboardPage() {
                         <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
                             Admin
                         </span>
-                    </div>
+                    </Link>
                     <button
                         onClick={handleLogout}
                         aria-label="Log out"
