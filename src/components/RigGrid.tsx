@@ -19,6 +19,11 @@ export function RigGrid({
             <div className="mb-3 flex items-center gap-2 text-sm font-medium text-zinc-400">
                 <Monitor className="h-4 w-4" />
                 Select Rigs
+                {selectedRigs.length > 0 && (
+                    <span className="ml-1 rounded-full bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-400">
+                        {selectedRigs.length} selected
+                    </span>
+                )}
             </div>
 
             {/* Legend */}
@@ -41,7 +46,7 @@ export function RigGrid({
                         className="ml-auto flex cursor-pointer items-center gap-1 rounded-md border border-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
                     >
                         <X className="h-3 w-3" />
-                        Clear Selection
+                        Clear
                     </button>
                 )}
             </div>
@@ -57,29 +62,34 @@ export function RigGrid({
                             key={rig.id}
                             disabled={isBooked}
                             onClick={() => onToggle(rig.id)}
-                            className={`relative flex min-h-[90px] flex-col items-center justify-center rounded-lg border p-3 text-center transition-all ${isBooked
+                            aria-pressed={isSelected}
+                            aria-label={`${rig.name} — ${rig.specs}${isBooked ? " (booked)" : ""}`}
+                            className={`relative flex min-h-[90px] flex-col items-center justify-center rounded-lg border p-3 text-center transition-all duration-150 ${
+                                isBooked
                                     ? "cursor-not-allowed border-zinc-800/50 bg-zinc-800/40 text-zinc-600"
                                     : isSelected
-                                        ? "cursor-pointer border-cyan-500 bg-cyan-500 text-black shadow-lg shadow-cyan-500/10"
-                                        : "cursor-pointer border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-cyan-500/50 hover:bg-zinc-800/80"
-                                }`}
+                                        ? "cursor-pointer border-cyan-500 bg-cyan-500 text-black shadow-lg shadow-cyan-500/20 scale-[1.02]"
+                                        : "cursor-pointer border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-cyan-500/50 hover:bg-zinc-800/80 hover:scale-[1.02]"
+                            }`}
                         >
                             <Monitor
-                                className={`mb-1.5 h-5 w-5 ${isBooked
+                                className={`mb-1.5 h-5 w-5 ${
+                                    isBooked
                                         ? "text-zinc-700"
                                         : isSelected
                                             ? "text-black"
                                             : "text-zinc-500"
-                                    }`}
+                                }`}
                             />
                             <span className="text-sm font-semibold">{rig.name}</span>
                             <span
-                                className={`mt-0.5 text-[10px] leading-tight ${isBooked
+                                className={`mt-0.5 text-[10px] leading-tight ${
+                                    isBooked
                                         ? "text-zinc-700"
                                         : isSelected
                                             ? "text-black/70"
                                             : "text-zinc-500"
-                                    }`}
+                                }`}
                             >
                                 {rig.specs}
                             </span>

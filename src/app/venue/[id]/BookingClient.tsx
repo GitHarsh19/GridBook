@@ -36,7 +36,7 @@ export default function BookingClient({ venue }: { venue: Venue }) {
             <main className="mx-auto max-w-5xl px-4 py-6">
                 {/* Back + Header */}
                 <Link
-                    href="/"
+                    href="/explore"
                     className="mb-4 flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-white"
                 >
                     <ArrowLeft className="h-4 w-4" />
@@ -57,8 +57,8 @@ export default function BookingClient({ venue }: { venue: Venue }) {
                         </span>
                         <span
                             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${venue.availableRigs > 0
-                                    ? "bg-emerald-500/10 text-emerald-400"
-                                    : "bg-red-500/10 text-red-400"
+                                ? "bg-emerald-500/10 text-emerald-400"
+                                : "bg-red-500/10 text-red-400"
                                 }`}
                         >
                             <span
