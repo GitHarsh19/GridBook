@@ -8,7 +8,8 @@ import {
     CalendarCheck,
     IndianRupee,
     Monitor,
-    X,
+    CircleDot,
+    Clock,
 } from "lucide-react";
 
 /* ─── Mock Data ─────────────────────────────────────────────────────── */
@@ -45,6 +46,8 @@ export default function DashboardPage() {
         router.push("/");
     };
 
+    const availableCount = RIGS.filter((r) => r.status === "available").length;
+
     return (
         <div className="min-h-screen bg-zinc-950">
             {/* Admin Navbar */}
@@ -54,13 +57,14 @@ export default function DashboardPage() {
                         <Zap className="h-5 w-5 text-cyan-500" />
                         <span className="text-lg font-bold tracking-tight text-white">
                             Grid<span className="text-cyan-500">Book</span>
-                            <span className="ml-2 text-xs font-normal text-zinc-500">
-                                Admin Portal
-                            </span>
+                        </span>
+                        <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
+                            Admin
                         </span>
                     </div>
                     <button
                         onClick={handleLogout}
+                        aria-label="Log out"
                         className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
                     >
                         <LogOut className="h-3.5 w-3.5" />
@@ -90,9 +94,14 @@ export default function DashboardPage() {
 
                 {/* Live Floor Plan */}
                 <div>
-                    <h2 className="mb-4 text-lg font-bold text-white">
-                        Live Rig Status
-                    </h2>
+                    <div className="mb-4 flex items-center justify-between">
+                        <h2 className="text-lg font-bold text-white">
+                            Live Rig Status
+                        </h2>
+                        <span className="text-xs text-zinc-500">
+                            {availableCount}/{RIGS.length} available
+                        </span>
+                    </div>
                     <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                         {RIGS.map((rig) => {
                             const isAvailable = rig.status === "available";
@@ -100,42 +109,48 @@ export default function DashboardPage() {
                             return (
                                 <div
                                     key={rig.id}
-                                    className={`rounded-lg border p-4 ${isAvailable
-                                            ? "border-green-500/50 bg-zinc-900"
+                                    className={`rounded-lg border p-4 transition-colors ${
+                                        isAvailable
+                                            ? "border-emerald-500/30 bg-zinc-900"
                                             : "border-zinc-800/50 bg-zinc-900/60"
-                                        }`}
+                                    }`}
                                 >
                                     <div className="mb-3 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Monitor
-                                                className={`h-5 w-5 ${isAvailable ? "text-green-400" : "text-zinc-600"
-                                                    }`}
+                                                className={`h-5 w-5 ${
+                                                    isAvailable
+                                                        ? "text-emerald-400"
+                                                        : "text-zinc-600"
+                                                }`}
                                             />
                                             <span
-                                                className={`text-sm font-semibold ${isAvailable ? "text-white" : "text-zinc-500"
-                                                    }`}
+                                                className={`text-sm font-semibold ${
+                                                    isAvailable
+                                                        ? "text-white"
+                                                        : "text-zinc-500"
+                                                }`}
                                             >
                                                 {rig.name}
                                             </span>
                                         </div>
-                                        {!isAvailable && (
-                                            <X className="h-3.5 w-3.5 text-zinc-700" />
-                                        )}
                                     </div>
 
                                     {isAvailable ? (
                                         <>
-                                            <p className="mb-3 text-sm text-green-400">
-                                                🟢 Available
-                                            </p>
+                                            <div className="mb-3 flex items-center gap-1.5 text-sm text-emerald-400">
+                                                <CircleDot className="h-3.5 w-3.5" />
+                                                Available
+                                            </div>
                                             <button className="w-full cursor-pointer rounded-md border border-zinc-700 bg-zinc-800 py-2 text-xs font-medium text-zinc-300 transition-colors hover:border-cyan-500/50 hover:text-white">
                                                 Block for Walk-in
                                             </button>
                                         </>
                                     ) : (
-                                        <p className="text-sm text-zinc-600">
-                                            🔴 Booked (Ends at {rig.endsAt})
-                                        </p>
+                                        <div className="flex items-center gap-1.5 text-sm text-zinc-500">
+                                            <Clock className="h-3.5 w-3.5" />
+                                            Booked &middot; Ends at {rig.endsAt}
+                                        </div>
                                     )}
                                 </div>
                             );

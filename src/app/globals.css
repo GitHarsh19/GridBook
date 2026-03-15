@@ -25,3 +25,19 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Slide-in animation for checkout bar */
+.animate-in {
+  animation: slide-in 200ms ease-out;
+}
+.slide-in-from-bottom {
+  --slide-from: 100%;
+}
+@keyframes slide-in {
+  from {
+    transform: translateY(var(--slide-from, 0));
+  }
+  to {
+    transform: translateY(0);
+  }
+}

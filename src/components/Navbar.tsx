@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { MapPin, ChevronDown, Zap, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { logout } = useAuth();
 
   const handleLogout = () => {
@@ -25,21 +26,35 @@ export function Navbar() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Location selector */}
-          <button className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white">
+          <button
+            aria-label="Select location"
+            className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white sm:px-3"
+          >
             <MapPin className="h-3.5 w-3.5 text-cyan-500" />
-            Bengaluru
+            <span className="hidden sm:inline">Bengaluru</span>
             <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
           </button>
+
+          {/* Explore link (when on venue detail) */}
+          {pathname?.startsWith("/venue/") && (
+            <Link
+              href="/explore"
+              className="rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white sm:px-3"
+            >
+              Explore
+            </Link>
+          )}
 
           {/* Logout */}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
+            aria-label="Log out"
+            className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400 sm:px-3"
           >
             <LogOut className="h-3.5 w-3.5" />
-            Logout
+            <span className="hidden sm:inline">Logout</span>
           </button>
         </div>
       </div>
