@@ -43,7 +43,7 @@ export default function DashboardPage() {
 
     const handleLogout = () => {
         logout();
-        router.push("/");
+        router.push("/login");
     };
 
     const availableCount = RIGS.filter((r) => r.status === "available").length;

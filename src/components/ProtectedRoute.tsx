@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { LoginScreen } from "@/components/LoginScreen";
@@ -18,7 +18,7 @@ export function ProtectedRoute({
 
   useEffect(() => {
     if (!isLoading && isLoggedIn && requiredRole && role !== requiredRole) {
-      router.push("/");
+      router.push("/login");
     }
   }, [isLoggedIn, isLoading, role, requiredRole, router]);
 
@@ -36,7 +36,7 @@ export function ProtectedRoute({
   }
 
   if (!isLoggedIn) {
-    return <LoginScreen message="Sign in to continue" />;
+    return <Suspense><LoginScreen message="Sign in to continue" /></Suspense>;
   }
 
   if (requiredRole && role !== requiredRole) {

@@ -40,7 +40,7 @@ export function RegisterScreen() {
 
     // MVP: just show success and redirect to login
     setSuccess(true);
-    setTimeout(() => router.push("/"), 1500);
+    setTimeout(() => router.push("/login"), 1500);
   };
 
   const handleGoogleSignUp = async () => {
@@ -190,7 +190,7 @@ export function RegisterScreen() {
           <p className="mt-4 text-center text-xs text-zinc-500">
             Already have an account?{" "}
             <Link
-              href="/"
+              href="/login"
               className="text-cyan-500 transition-colors hover:text-cyan-400"
             >
               Login

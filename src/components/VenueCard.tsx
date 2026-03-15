@@ -1,11 +1,25 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { MapPin, Monitor } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import type { Venue } from "@/lib/data";
 
 export function VenueCard({ venue }: { venue: Venue }) {
+    const router = useRouter();
+    const { isLoggedIn } = useAuth();
+
+    const handleClick = () => {
+        if (isLoggedIn) {
+            router.push(`/venue/${venue.id}`);
+        } else {
+            router.push(`/login?redirect=${encodeURIComponent(`/venue/${venue.id}`)}`);
+        }
+    };
+
     return (
-        <Link
-            href={`/venue/${venue.id}`}
+        <button
+            onClick={handleClick}
             className="group block w-full rounded-lg border border-zinc-800 bg-zinc-900 text-left transition-all duration-200 hover:border-zinc-700 hover:bg-zinc-900/80 hover:shadow-lg hover:shadow-cyan-500/5 hover:-translate-y-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
         >
             {/* Image placeholder */}
@@ -54,6 +68,6 @@ export function VenueCard({ venue }: { venue: Venue }) {
                     </span>
                 </div>
             </div>
-        </Link>
+        </button>
     );
 }

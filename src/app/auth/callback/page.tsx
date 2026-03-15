@@ -1,39 +1,45 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 
-export default function AuthCallbackPage() {
+function AuthCallbackInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/explore";
   const { isLoggedIn } = useAuth();
 
-  // Once the auth state listener in AuthProvider picks up the session,
-  // redirect to explore
   useEffect(() => {
-    // Also try to detect session directly
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        router.push("/explore");
+        router.push(redirectTo);
       } else {
-        // Give it a moment for the auth state change to fire
         setTimeout(() => {
-          router.push("/explore");
+          router.push(redirectTo);
         }, 1000);
       }
     });
-  }, [router]);
+  }, [router, redirectTo]);
 
   useEffect(() => {
     if (isLoggedIn) {
-      router.push("/explore");
+      router.push(redirectTo);
     }
-  }, [isLoggedIn, router]);
+  }, [isLoggedIn, router, redirectTo]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-950">
       <p className="text-sm text-zinc-400">Logging you in...</p>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense>
+      <AuthCallbackInner />
+    </Suspense>
   );
 }

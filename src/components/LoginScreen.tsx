@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -11,6 +11,8 @@ type Role = "customer" | "admin";
 
 export function LoginScreen({ message }: { message?: string }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get("redirect") || "/explore";
     const { isLoggedIn, isLoading, setLoggedIn } = useAuth();
     const [activeRole, setActiveRole] = useState<Role>("customer");
     const [username, setUsername] = useState("");
@@ -33,20 +35,20 @@ export function LoginScreen({ message }: { message?: string }) {
     // Auto-redirect if already logged in
     useEffect(() => {
         if (!isLoading && isLoggedIn) {
-            router.push("/explore");
+            router.push(redirectTo);
         }
-    }, [isLoggedIn, isLoading, router]);
+    }, [isLoggedIn, isLoading, router, redirectTo]);
 
     const handleLogin = () => {
         if (activeRole === "customer" && username === "gamer" && password === "password") {
             setLoggedIn(true, "customer");
-            router.push("/explore");
+            router.push(redirectTo);
             return;
         }
 
         if (activeRole === "admin" && username === "venue" && password === "password") {
             setLoggedIn(true, "admin");
-            router.push("/dashboard");
+            router.push(redirectTo === "/explore" ? "/dashboard" : redirectTo);
             return;
         }
 
@@ -61,7 +63,7 @@ export function LoginScreen({ message }: { message?: string }) {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
             },
         });
         if (error) setError(error.message);
