@@ -71,8 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
           if (session) {
+            const userRole = await fetchRole(session.user.id);
+            if (!mounted) return;
+            setRole(userRole);
             setIsLoggedIn(true);
-            setRole(await fetchRole(session.user.id));
             clearDemoAuth();
           } else if (event === "INITIAL_SESSION") {
             // No Supabase session — check for persisted demo login

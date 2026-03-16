@@ -14,9 +14,10 @@ import {
     AlertTriangle,
     LogOut,
     Users,
+    Eye,
+    EyeOff,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/lib/auth";
 import {
     type DashboardRig,
     type Booking,
@@ -103,7 +104,7 @@ function WalkInModal({
                         disabled={loading}
                         className="flex-1 cursor-pointer rounded-md bg-amber-500 py-2.5 text-sm font-bold text-black transition-colors hover:bg-amber-400 disabled:opacity-50"
                     >
-                        {loading ? "Blocking…" : "Block Rig"}
+                        {loading ? "Blocking\u2026" : "Block Rig"}
                     </button>
                 </div>
             </div>
@@ -158,11 +159,106 @@ const STATUS_CONFIG: Record<
     },
 };
 
+/* ─── Inline Admin Login ───────────────────────────────────────────── */
+
+function AdminLoginInline({ onSuccess }: { onSuccess: () => void }) {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [messageRendered, setMessageRendered] = useState(true);
+    const [messageExpanded, setMessageExpanded] = useState(false);
+
+    useEffect(() => {
+        const expandTimer = setTimeout(() => setMessageExpanded(true), 16);
+        const contractTimer = setTimeout(() => setMessageExpanded(false), 1200);
+        const removeTimer = setTimeout(() => setMessageRendered(false), 1600);
+        return () => { clearTimeout(expandTimer); clearTimeout(contractTimer); clearTimeout(removeTimer); };
+    }, []);
+
+    const handleLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        if (username === "venue" && password === "password") {
+            localStorage.setItem("gridbook_admin", "true");
+            onSuccess();
+        } else {
+            setError("Invalid credentials. Use venue / password");
+        }
+    };
+
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
+            <div className="w-full max-w-sm">
+                <div className="mb-8 flex items-center justify-center gap-2">
+                    <Zap className="h-6 w-6 text-cyan-500" />
+                    <span className="text-2xl font-bold tracking-tight text-white">
+                        Grid<span className="text-cyan-500">Book</span>
+                    </span>
+                    <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
+                        Admin
+                    </span>
+                </div>
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+                    {messageRendered && (
+                        <div className={`overflow-hidden transition-all duration-400 ease-in-out ${messageExpanded ? "max-h-10 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0"}`}>
+                            <p className="text-center text-sm text-red-400">Sign in to continue</p>
+                        </div>
+                    )}
+                    <h2 className="mb-6 text-center text-sm font-medium text-zinc-400">
+                        Venue Admin Login
+                    </h2>
+                    <form onSubmit={handleLogin} className="space-y-4">
+                        <div>
+                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Username</label>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => { setUsername(e.target.value); setError(""); }}
+                                placeholder="Enter username"
+                                className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Password</label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                                    placeholder="Enter password"
+                                    className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 pr-10 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-500 transition-colors hover:text-zinc-300"
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            </div>
+                        </div>
+                        {error && <p className="text-sm font-medium text-red-400">{error}</p>}
+                        <button
+                            type="submit"
+                            className="w-full cursor-pointer rounded-md bg-cyan-500 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98]"
+                        >
+                            Login
+                        </button>
+                    </form>
+                    <p className="mt-4 text-center text-xs text-zinc-600">venue / password</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 /* ─── Main Dashboard ───────────────────────────────────────────────── */
 
-export default function DashboardPage() {
+export default function AdminDashboardPage() {
     const router = useRouter();
-    const { isLoggedIn, isLoading: authLoading, role, logout } = useAuth();
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [authChecked, setAuthChecked] = useState(false);
     const [venues, setVenues] = useState<VenueOption[]>([]);
     const [selectedVenueId, setSelectedVenueId] = useState<number | null>(null);
     const [rigs, setRigs] = useState<DashboardRig[]>([]);
@@ -172,23 +268,25 @@ export default function DashboardPage() {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Redirect non-admin users to login
+    // Auth guard — check localStorage for admin flag
     useEffect(() => {
-        if (!authLoading && (!isLoggedIn || role !== "admin")) {
-            router.push("/login");
+        const adminFlag = localStorage.getItem("gridbook_admin");
+        if (adminFlag === "true") {
+            setIsAdmin(true);
         }
-    }, [authLoading, isLoggedIn, role, router]);
+        setAuthChecked(true);
+    }, []);
 
     // Load venues
     useEffect(() => {
-        if (authLoading || !isLoggedIn || role !== "admin") return;
+        if (!isAdmin) return;
         getVenuesList().then((data) => {
             if (data.length > 0) {
                 setVenues(data);
                 setSelectedVenueId(data[0].id);
             }
         });
-    }, [authLoading, isLoggedIn, role]);
+    }, [isAdmin]);
 
     // Load rigs + bookings for selected venue
     const loadData = useCallback(async () => {
@@ -201,7 +299,7 @@ export default function DashboardPage() {
             setRigs(rigData);
             setBookings(bookingData);
         } catch {
-            setError("Failed to load data. Retrying…");
+            setError("Failed to load data. Retrying\u2026");
             setTimeout(() => setError(null), 3000);
         } finally {
             setLoading(false);
@@ -217,7 +315,7 @@ export default function DashboardPage() {
         if (!selectedVenueId) return;
 
         const channel = supabase
-            .channel(`dashboard-${selectedVenueId}`)
+            .channel(`admin-dashboard-${selectedVenueId}`)
             .on(
                 "postgres_changes",
                 {
@@ -231,7 +329,7 @@ export default function DashboardPage() {
             .on(
                 "postgres_changes",
                 { event: "*", schema: "public", table: "bookings" },
-                () => loadData(), // No venue filter on bookings — acceptable since loadData filters by venue
+                () => loadData(),
             )
             .subscribe();
 
@@ -281,10 +379,19 @@ export default function DashboardPage() {
         loadData();
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem("gridbook_admin");
+        router.push("/");
+    };
+
     // ── Render ──
 
-    if (authLoading || !isLoggedIn || role !== "admin") {
+    if (!authChecked) {
         return <div className="min-h-screen bg-zinc-950" />;
+    }
+
+    if (!isAdmin) {
+        return <AdminLoginInline onSuccess={() => setIsAdmin(true)} />;
     }
 
     const selectedVenue = venues.find((v) => v.id === selectedVenueId);
@@ -322,14 +429,11 @@ export default function DashboardPage() {
                             ))}
                         </select>
                         <button
-                            onClick={async () => {
-                                await logout();
-                                router.push("/login");
-                            }}
+                            onClick={handleLogout}
                             className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
                         >
                             <LogOut className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Logout</span>
+                            <span className="hidden sm:inline">Log Out</span>
                         </button>
                     </div>
                 </div>
@@ -480,7 +584,7 @@ export default function DashboardPage() {
                                                 <span className="mt-1 max-w-full truncate px-2 text-[10px] text-zinc-500">
                                                     {booking.customer_name}
                                                     {booking.time_slot &&
-                                                        ` · ${booking.time_slot}`}
+                                                        ` \u00b7 ${booking.time_slot}`}
                                                 </span>
                                             )}
 

@@ -23,7 +23,7 @@ export function ProtectedRoute({
   }, [isLoggedIn, isLoading, role, requiredRole, router]);
 
   if (isLoading) {
-    return <>{children}</>;
+    return <div className="min-h-screen bg-zinc-950" />;
   }
 
   if (!isLoggedIn) {

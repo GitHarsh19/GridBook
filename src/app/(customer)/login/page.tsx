@@ -1,61 +1,62 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Zap, Eye, EyeOff } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Zap, Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-export function LoginScreen({ message }: { message?: string }) {
+const loginSchema = z.object({
+    email: z.string().email("Enter a valid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+export default function LoginPage() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const redirectTo = searchParams.get("redirect") || "/explore";
-    const { isLoggedIn, isLoading, setLoggedIn } = useAuth();
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [messageRendered, setMessageRendered] = useState(!!message);
-    const [messageExpanded, setMessageExpanded] = useState(false);
+    const [serverError, setServerError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
-    useEffect(() => {
-        if (!message) return;
-        const expandTimer = setTimeout(() => setMessageExpanded(true), 16);
-        const contractTimer = setTimeout(() => setMessageExpanded(false), 1200);
-        const removeTimer = setTimeout(() => setMessageRendered(false), 1600);
-        return () => { clearTimeout(expandTimer); clearTimeout(contractTimer); clearTimeout(removeTimer); };
-    }, [message]);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+    });
 
-    // Auto-redirect if already logged in
-    useEffect(() => {
-        if (!isLoading && isLoggedIn) {
-            router.push(redirectTo);
-        }
-    }, [isLoggedIn, isLoading, router, redirectTo]);
+    const onSubmit = async (formData: LoginFormData) => {
+        setServerError("");
 
-    const handleLogin = () => {
-        if (username === "gamer" && password === "password") {
-            setLoggedIn(true, "customer");
-            router.push(redirectTo);
+        const { error } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+        });
+
+        if (error) {
+            setServerError(error.message);
             return;
         }
-        setError("Use gamer / password to test");
+
+        router.push("/explore");
     };
 
     const handleGoogleLogin = async () => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}&role=customer`,
+                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent("/explore")}&role=customer`,
             },
         });
-        if (error) setError(error.message);
+        if (error) setServerError(error.message);
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") handleLogin();
-    };
+    const inputClass =
+        "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
@@ -68,34 +69,37 @@ export function LoginScreen({ message }: { message?: string }) {
                     </span>
                 </Link>
 
-                {/* Auth Card */}
+                {/* Card */}
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-                    {/* Message */}
-                    {messageRendered && (
-                        <div className={`overflow-hidden transition-all duration-400 ease-in-out ${messageExpanded ? "max-h-10 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0"}`}>
-                            <p className="text-center text-sm text-red-400">{message}</p>
-                        </div>
-                    )}
-
                     <h2 className="mb-6 text-center text-sm font-medium text-zinc-400">
                         Customer Login
                     </h2>
 
-                    {/* Form */}
-                    <div className="space-y-4">
+                    {/* Server Error */}
+                    {serverError && (
+                        <div className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-500">
+                            {serverError}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        {/* Email */}
                         <div>
                             <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                                Username
+                                Email
                             </label>
                             <input
-                                type="text"
-                                value={username}
-                                onChange={(e) => { setUsername(e.target.value); setError(""); }}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Enter username"
-                                className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
+                                type="email"
+                                placeholder="you@example.com"
+                                className={inputClass}
+                                {...register("email")}
                             />
+                            {errors.email && (
+                                <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
+                            )}
                         </div>
+
+                        {/* Password */}
                         <div>
                             <label className="mb-1.5 block text-xs font-medium text-zinc-400">
                                 Password
@@ -103,11 +107,9 @@ export function LoginScreen({ message }: { message?: string }) {
                             <div className="relative">
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Enter password"
-                                    className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 pr-10 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
+                                    placeholder="Min. 8 characters"
+                                    className={`${inputClass} pr-10`}
+                                    {...register("password")}
                                 />
                                 <button
                                     type="button"
@@ -117,19 +119,19 @@ export function LoginScreen({ message }: { message?: string }) {
                                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                 </button>
                             </div>
+                            {errors.password && (
+                                <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
+                            )}
                         </div>
 
-                        {/* Error */}
-                        {error && (
-                            <p className="text-sm font-medium text-red-400">{error}</p>
-                        )}
-
-                        {/* Login Button */}
+                        {/* Submit */}
                         <button
-                            onClick={handleLogin}
-                            className="w-full cursor-pointer rounded-md bg-cyan-500 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98]"
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-cyan-500 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98] disabled:opacity-60"
                         >
-                            Login
+                            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                            {isSubmitting ? "Signing in\u2026" : "Log In"}
                         </button>
 
                         {/* Divider + Google */}
@@ -140,6 +142,7 @@ export function LoginScreen({ message }: { message?: string }) {
                         </div>
 
                         <button
+                            type="button"
                             onClick={handleGoogleLogin}
                             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-zinc-700 bg-zinc-800 py-2.5 text-sm font-medium text-white transition-all hover:border-zinc-600 hover:bg-zinc-700 active:scale-[0.98]"
                         >
@@ -163,21 +166,16 @@ export function LoginScreen({ message }: { message?: string }) {
                             </svg>
                             Sign in with Google
                         </button>
-                    </div>
+                    </form>
 
-                    {/* Hint */}
-                    <p className="mt-4 text-center text-xs text-zinc-600">
-                        gamer / password
-                    </p>
-
-                    {/* Register Link */}
-                    <p className="mt-3 text-center text-xs text-zinc-500">
+                    {/* Toggle */}
+                    <p className="mt-4 text-center text-xs text-zinc-500">
                         Don&apos;t have an account?{" "}
                         <Link
-                            href="/register"
+                            href="/signup"
                             className="text-cyan-500 transition-colors hover:text-cyan-400"
                         >
-                            Create account
+                            Sign Up
                         </Link>
                     </p>
                 </div>
