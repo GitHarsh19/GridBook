@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, MapPin } from "lucide-react";
 
@@ -13,6 +13,14 @@ import type { Venue } from "@/lib/data";
 export default function BookingClient({ venue }: { venue: Venue }) {
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
     const [selectedRigs, setSelectedRigs] = useState<number[]>([]);
+
+    // Auto-deselect rigs that become unavailable (e.g. booked/blocked by admin)
+    useEffect(() => {
+        const availableIds = new Set(
+            venue.rigs.filter((r) => r.status === "available").map((r) => r.id)
+        );
+        setSelectedRigs((prev) => prev.filter((id) => availableIds.has(id)));
+    }, [venue.rigs]);
 
     const toggleTimeSlot = (slot: string) => {
         setSelectedTimeSlots((prev) =>

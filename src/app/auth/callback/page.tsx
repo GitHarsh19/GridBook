@@ -3,50 +3,68 @@
 import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/explore";
   const requiredRole = searchParams.get("role"); // "admin" if coming from admin tab
-  const { isLoggedIn } = useAuth();
+  const { setLoggedIn } = useAuth();
   const checked = useRef(false);
 
   useEffect(() => {
-    if (!isLoggedIn || checked.current) return;
+    if (checked.current) return;
     checked.current = true;
 
-    // If admin role required, verify profile before redirecting
-    if (requiredRole === "admin") {
-      (async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) { router.push("/login"); return; }
+    (async () => {
+      // Pick the correct client — only IT gets the session
+      const client = requiredRole === "admin" ? supabaseAdmin : supabase;
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-
-        if (profile?.role === "admin") {
-          router.push("/dashboard");
-        } else {
-          await supabase.auth.signOut();
-          router.push("/login");
+      // PKCE flow: ?code=xxx in query string
+      const code = searchParams.get("code");
+      if (code) {
+        const { error } = await client.auth.exchangeCodeForSession(code);
+        if (error) {
+          router.push(requiredRole === "admin" ? "/admin/login" : "/login");
+          return;
         }
-      })();
-      return;
-    }
+      }
 
-    router.push(redirectTo);
-  }, [isLoggedIn, router, redirectTo, requiredRole]);
+      // Implicit flow: #access_token=xxx in URL hash
+      if (!code && typeof window !== "undefined" && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        if (accessToken && refreshToken) {
+          await client.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+        }
+      }
 
-  useEffect(() => {
-    // Fallback: if auth never resolves, redirect after 5s
-    const timeout = setTimeout(() => router.push("/login"), 5000);
-    return () => clearTimeout(timeout);
-  }, [router]);
+      // Verify session was established
+      const { data: { session } } = await client.auth.getSession();
+      if (!session) {
+        router.push(requiredRole === "admin" ? "/admin/login" : "/login");
+        return;
+      }
+
+      if (requiredRole === "admin") {
+        await supabaseAdmin
+          .from("profiles")
+          .update({ role: "admin" })
+          .eq("id", session.user.id);
+
+        setLoggedIn(true, "admin");
+        router.push("/admin/dashboard");
+      } else {
+        setLoggedIn(true, "customer");
+        router.push(redirectTo);
+      }
+    })();
+  }, [router, redirectTo, requiredRole, setLoggedIn, searchParams]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-950">

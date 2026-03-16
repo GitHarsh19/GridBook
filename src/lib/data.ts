@@ -95,8 +95,7 @@ export async function getVenues(): Promise<Venue[]> {
         .order("id");
 
     if (vErr || !venues) {
-        console.error("Failed to fetch venues:", vErr);
-        return [];
+        throw new Error(vErr?.message ?? "Failed to fetch venues");
     }
 
     const { data: rigs, error: rErr } = await supabase
@@ -105,8 +104,7 @@ export async function getVenues(): Promise<Venue[]> {
         .order("id");
 
     if (rErr || !rigs) {
-        console.error("Failed to fetch rigs:", rErr);
-        return [];
+        throw new Error(rErr?.message ?? "Failed to fetch rigs");
     }
 
     return (venues as DbVenue[]).map((v) => {
@@ -140,8 +138,7 @@ export async function getVenueById(id: number): Promise<Venue | null> {
         .single();
 
     if (vErr || !venue) {
-        console.error("Failed to fetch venue:", vErr);
-        return null;
+        throw new Error(vErr?.message ?? "Failed to fetch venue");
     }
 
     const { data: rigs, error: rErr } = await supabase
@@ -151,8 +148,7 @@ export async function getVenueById(id: number): Promise<Venue | null> {
         .order("id");
 
     if (rErr || !rigs) {
-        console.error("Failed to fetch rigs:", rErr);
-        return null;
+        throw new Error(rErr?.message ?? "Failed to fetch rigs");
     }
 
     const v = venue as DbVenue;
@@ -182,7 +178,7 @@ export async function getVenuesList(): Promise<VenueOption[]> {
         .from("venues")
         .select("id, name, location, price")
         .order("id");
-    if (error || !data) return [];
+    if (error || !data) throw new Error(error?.message ?? "Failed to fetch venues list");
     return data as VenueOption[];
 }
 
@@ -192,7 +188,7 @@ export async function getDashboardRigs(venueId: number): Promise<DashboardRig[]>
         .select("id, name, status, specs")
         .eq("venue_id", venueId)
         .order("id");
-    if (error || !data) return [];
+    if (error || !data) throw new Error(error?.message ?? "Failed to fetch rigs");
     return data as DashboardRig[];
 }
 
@@ -247,7 +243,7 @@ export async function blockRigForWalkIn(
     const code = `WLK-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-    await supabase.from("bookings").insert({
+    const { error: insertError } = await supabase.from("bookings").insert({
         rig_id: rigId,
         customer_name: "Walk-In",
         time_slot: timeSlot,
@@ -255,6 +251,12 @@ export async function blockRigForWalkIn(
         verification_code: code,
         source: "walk_in",
     });
+
+    if (insertError) {
+        // Rig was blocked but booking record failed — revert rig status
+        await supabase.from("rigs").update({ status: "available" }).eq("id", rigId);
+        return { success: false, error: "Failed to create booking record." };
+    }
 
     return { success: true };
 }

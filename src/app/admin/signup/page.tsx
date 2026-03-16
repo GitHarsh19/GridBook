@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Zap, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 
 const signUpSchema = z
     .object({
@@ -36,7 +36,7 @@ const signUpSchema = z
 
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
-export default function SignUpPage() {
+export default function AdminSignUpPage() {
     const router = useRouter();
     const [serverError, setServerError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -54,7 +54,7 @@ export default function SignUpPage() {
     const onSubmit = async (formData: SignUpFormData) => {
         setServerError("");
 
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await supabaseAdmin.auth.signUp({
             email: formData.email,
             password: formData.password,
             options: {
@@ -67,27 +67,26 @@ export default function SignUpPage() {
             return;
         }
 
-        // If session exists, user is logged in immediately (email confirmation disabled)
-        if (data.session) {
-            // Update profile name as a safety net in case the DB trigger used a different name
-            await supabase
+        if (data.session && data.user) {
+            // Email confirmation disabled — assign admin role and redirect
+            await supabaseAdmin
                 .from("profiles")
-                .update({ full_name: formData.name })
-                .eq("id", data.user!.id);
+                .update({ role: "admin", full_name: formData.name })
+                .eq("id", data.user.id);
 
-            router.push("/explore");
+            router.push("/admin/dashboard");
         } else {
-            // Email confirmation required — show success message
+            // Email confirmation required
             setSignUpSuccess(true);
         }
     };
 
     const handleGoogleSignUp = async () => {
         setServerError("");
-        const { error } = await supabase.auth.signInWithOAuth({
+        const { error } = await supabaseAdmin.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent("/explore")}&role=customer`,
+                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent("/admin/dashboard")}&role=admin`,
             },
         });
         if (error) setServerError(error.message);
@@ -96,7 +95,6 @@ export default function SignUpPage() {
     const inputClass =
         "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
 
-    // Success state after signup when email confirmation is required
     if (signUpSuccess) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
@@ -106,18 +104,21 @@ export default function SignUpPage() {
                         <span className="text-2xl font-bold tracking-tight text-white">
                             Grid<span className="text-cyan-500">Book</span>
                         </span>
+                        <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
+                            Admin
+                        </span>
                     </Link>
                     <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6 text-center">
                         <CheckCircle2 className="mx-auto mb-4 h-10 w-10 text-green-500" />
                         <h2 className="mb-2 text-lg font-semibold text-white">Check your email</h2>
                         <p className="mb-4 text-sm text-zinc-400">
-                            We&apos;ve sent a confirmation link to your email. Click it to activate your account.
+                            We&apos;ve sent a confirmation link to your email. Click it to activate your account, then log in.
                         </p>
                         <Link
-                            href="/login"
+                            href="/admin/login"
                             className="inline-block rounded-md bg-cyan-500 px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98]"
                         >
-                            Go to Login
+                            Go to Admin Login
                         </Link>
                     </div>
                 </div>
@@ -134,15 +135,17 @@ export default function SignUpPage() {
                     <span className="text-2xl font-bold tracking-tight text-white">
                         Grid<span className="text-cyan-500">Book</span>
                     </span>
+                    <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
+                        Admin
+                    </span>
                 </Link>
 
                 {/* Card */}
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
                     <h2 className="mb-6 text-center text-sm font-medium text-zinc-400">
-                        Create your account
+                        Create Admin Account
                     </h2>
 
-                    {/* Server Error */}
                     {serverError && (
                         <div className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-500">
                             {serverError}
@@ -152,9 +155,7 @@ export default function SignUpPage() {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         {/* Name */}
                         <div>
-                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                                Name
-                            </label>
+                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Name</label>
                             <input
                                 type="text"
                                 placeholder="Your name"
@@ -168,9 +169,7 @@ export default function SignUpPage() {
 
                         {/* Email */}
                         <div>
-                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                                Email
-                            </label>
+                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Email</label>
                             <input
                                 type="email"
                                 placeholder="you@example.com"
@@ -184,9 +183,7 @@ export default function SignUpPage() {
 
                         {/* Password */}
                         <div>
-                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                                Password
-                            </label>
+                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Password</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? "text" : "password"}
@@ -209,9 +206,7 @@ export default function SignUpPage() {
 
                         {/* Confirm Password */}
                         <div>
-                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                                Confirm Password
-                            </label>
+                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Confirm Password</label>
                             <div className="relative">
                                 <input
                                     type={showConfirm ? "text" : "password"}
@@ -255,22 +250,10 @@ export default function SignUpPage() {
                             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-zinc-700 bg-zinc-800 py-2.5 text-sm font-medium text-white transition-all hover:border-zinc-600 hover:bg-zinc-700 active:scale-[0.98]"
                         >
                             <svg className="h-4 w-4" viewBox="0 0 24 24">
-                                <path
-                                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-                                    fill="#4285F4"
-                                />
-                                <path
-                                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                                    fill="#34A853"
-                                />
-                                <path
-                                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                                    fill="#FBBC05"
-                                />
-                                <path
-                                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                                    fill="#EA4335"
-                                />
+                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                             </svg>
                             Sign up with Google
                         </button>
@@ -280,7 +263,7 @@ export default function SignUpPage() {
                     <p className="mt-4 text-center text-xs text-zinc-500">
                         Already have an account?{" "}
                         <Link
-                            href="/login"
+                            href="/admin/login"
                             className="text-cyan-500 transition-colors hover:text-cyan-400"
                         >
                             Log In

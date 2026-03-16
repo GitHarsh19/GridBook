@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { SearchX } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { VenueCard } from "@/components/VenueCard";
-import { getVenues, type Venue } from "@/lib/data";
+import { useRealtimeVenues } from "@/lib/hooks/useRealtimeVenues";
+import { useAuth } from "@/lib/auth";
 
 function VenueCardSkeleton() {
     return (
@@ -23,22 +25,16 @@ function VenueCardSkeleton() {
 }
 
 export default function ExplorePage() {
-    const [venues, setVenues] = useState<Venue[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { isAdmin } = useAuth();
+    const router = useRouter();
+    const { venues, isLoading, error, refetch } = useRealtimeVenues();
 
-    const loadVenues = () => {
-        setIsLoading(true);
-        setError(null);
-        getVenues()
-            .then(setVenues)
-            .catch(() => setError("Failed to load venues. Please try again."))
-            .finally(() => setIsLoading(false));
-    };
-
+    // Redirect admin users away from explore page
     useEffect(() => {
-        loadVenues();
-    }, []);
+        if (isAdmin) {
+            router.replace("/admin/dashboard");
+        }
+    }, [isAdmin, router]);
 
     return (
         <div className="min-h-screen bg-zinc-950">
@@ -59,7 +55,7 @@ export default function ExplorePage() {
                     <div className="mb-6 flex items-center justify-between rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-400">
                         {error}
                         <button
-                            onClick={loadVenues}
+                            onClick={refetch}
                             className="ml-4 shrink-0 rounded-md border border-red-500/30 px-3 py-1 text-xs font-medium transition-colors hover:bg-red-500/10"
                         >
                             Retry

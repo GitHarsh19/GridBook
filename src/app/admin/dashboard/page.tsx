@@ -14,10 +14,9 @@ import {
     AlertTriangle,
     LogOut,
     Users,
-    Eye,
-    EyeOff,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 import {
     type DashboardRig,
     type Booking,
@@ -159,106 +158,11 @@ const STATUS_CONFIG: Record<
     },
 };
 
-/* ─── Inline Admin Login ───────────────────────────────────────────── */
-
-function AdminLoginInline({ onSuccess }: { onSuccess: () => void }) {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [messageRendered, setMessageRendered] = useState(true);
-    const [messageExpanded, setMessageExpanded] = useState(false);
-
-    useEffect(() => {
-        const expandTimer = setTimeout(() => setMessageExpanded(true), 16);
-        const contractTimer = setTimeout(() => setMessageExpanded(false), 1200);
-        const removeTimer = setTimeout(() => setMessageRendered(false), 1600);
-        return () => { clearTimeout(expandTimer); clearTimeout(contractTimer); clearTimeout(removeTimer); };
-    }, []);
-
-    const handleLogin = (e: React.FormEvent) => {
-        e.preventDefault();
-        setError("");
-        if (username === "venue" && password === "password") {
-            localStorage.setItem("gridbook_admin", "true");
-            onSuccess();
-        } else {
-            setError("Invalid credentials. Use venue / password");
-        }
-    };
-
-    return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
-            <div className="w-full max-w-sm">
-                <div className="mb-8 flex items-center justify-center gap-2">
-                    <Zap className="h-6 w-6 text-cyan-500" />
-                    <span className="text-2xl font-bold tracking-tight text-white">
-                        Grid<span className="text-cyan-500">Book</span>
-                    </span>
-                    <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
-                        Admin
-                    </span>
-                </div>
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
-                    {messageRendered && (
-                        <div className={`overflow-hidden transition-all duration-400 ease-in-out ${messageExpanded ? "max-h-10 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0"}`}>
-                            <p className="text-center text-sm text-red-400">Sign in to continue</p>
-                        </div>
-                    )}
-                    <h2 className="mb-6 text-center text-sm font-medium text-zinc-400">
-                        Venue Admin Login
-                    </h2>
-                    <form onSubmit={handleLogin} className="space-y-4">
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Username</label>
-                            <input
-                                type="text"
-                                value={username}
-                                onChange={(e) => { setUsername(e.target.value); setError(""); }}
-                                placeholder="Enter username"
-                                className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Password</label>
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                                    placeholder="Enter password"
-                                    className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 pr-10 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-500 transition-colors hover:text-zinc-300"
-                                >
-                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                            </div>
-                        </div>
-                        {error && <p className="text-sm font-medium text-red-400">{error}</p>}
-                        <button
-                            type="submit"
-                            className="w-full cursor-pointer rounded-md bg-cyan-500 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98]"
-                        >
-                            Login
-                        </button>
-                    </form>
-                    <p className="mt-4 text-center text-xs text-zinc-600">venue / password</p>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 /* ─── Main Dashboard ───────────────────────────────────────────────── */
 
 export default function AdminDashboardPage() {
     const router = useRouter();
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [authChecked, setAuthChecked] = useState(false);
+    const { isAdmin, isLoading: authLoading, logout } = useAuth();
     const [venues, setVenues] = useState<VenueOption[]>([]);
     const [selectedVenueId, setSelectedVenueId] = useState<number | null>(null);
     const [rigs, setRigs] = useState<DashboardRig[]>([]);
@@ -268,25 +172,28 @@ export default function AdminDashboardPage() {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Auth guard — check localStorage for admin flag
+    // Redirect non-admin users to login
     useEffect(() => {
-        const adminFlag = localStorage.getItem("gridbook_admin");
-        if (adminFlag === "true") {
-            setIsAdmin(true);
+        if (!authLoading && !isAdmin) {
+            router.push("/admin/login?message=sign_in");
         }
-        setAuthChecked(true);
-    }, []);
+    }, [authLoading, isAdmin, router]);
 
     // Load venues
     useEffect(() => {
-        if (!isAdmin) return;
-        getVenuesList().then((data) => {
-            if (data.length > 0) {
-                setVenues(data);
-                setSelectedVenueId(data[0].id);
-            }
-        });
-    }, [isAdmin]);
+        if (authLoading || !isAdmin) return;
+        getVenuesList()
+            .then((data) => {
+                if (data.length > 0) {
+                    setVenues(data);
+                    setSelectedVenueId(data[0].id);
+                }
+            })
+            .catch((err) => {
+                console.error("Admin: Failed to load venues:", err);
+                setError("Failed to load venues. Check console for details.");
+            });
+    }, [authLoading, isAdmin]);
 
     // Load rigs + bookings for selected venue
     const loadData = useCallback(async () => {
@@ -343,16 +250,30 @@ export default function AdminDashboardPage() {
 
     // ── Actions ──
 
-    const handleRigClick = (rig: DashboardRig) => {
+    const handleRigClick = async (rig: DashboardRig) => {
         if (rig.status === "available") {
             setWalkInTarget(rig);
         } else if (rig.status === "blocked") {
             if (window.confirm(`Release ${rig.name} back to available?`)) {
-                releaseRig(rig.id).then(() => loadData());
+                try {
+                    await releaseRig(rig.id);
+                } catch (err) {
+                    console.error("Release rig failed:", err);
+                    setError("Failed to release rig.");
+                    setTimeout(() => setError(null), 4000);
+                }
+                loadData();
             }
         } else if (rig.status === "out_of_order") {
             if (window.confirm(`Restore ${rig.name} to available?`)) {
-                toggleOutOfOrder(rig.id).then(() => loadData());
+                try {
+                    await toggleOutOfOrder(rig.id);
+                } catch (err) {
+                    console.error("Toggle OOO failed:", err);
+                    setError("Failed to update rig status.");
+                    setTimeout(() => setError(null), 4000);
+                }
+                loadData();
             }
         }
     };
@@ -360,38 +281,46 @@ export default function AdminDashboardPage() {
     const handleBlockWalkIn = async (duration: number) => {
         if (!walkInTarget) return;
         setActionLoading(true);
-        const result = await blockRigForWalkIn(walkInTarget.id, duration);
-        setActionLoading(false);
-
-        if (!result.success) {
-            setError(
-                result.error ||
-                    "Slot just secured online. Select another rig.",
-            );
+        try {
+            const result = await blockRigForWalkIn(walkInTarget.id, duration);
+            if (!result.success) {
+                setError(
+                    result.error ||
+                        "Slot just secured online. Select another rig.",
+                );
+                setTimeout(() => setError(null), 4000);
+            }
+        } catch (err) {
+            console.error("Block walk-in failed:", err);
+            setError("Failed to block rig. Please try again.");
             setTimeout(() => setError(null), 4000);
+        } finally {
+            setActionLoading(false);
+            setWalkInTarget(null);
+            loadData();
         }
-        setWalkInTarget(null);
-        loadData();
     };
 
     const handleToggleOOO = async (rigId: number) => {
-        await toggleOutOfOrder(rigId);
+        try {
+            await toggleOutOfOrder(rigId);
+        } catch (err) {
+            console.error("Toggle OOO failed:", err);
+            setError("Failed to update rig status.");
+            setTimeout(() => setError(null), 4000);
+        }
         loadData();
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem("gridbook_admin");
+    const handleLogout = async () => {
+        await logout("admin");
         router.push("/");
     };
 
     // ── Render ──
 
-    if (!authChecked) {
+    if (authLoading || !isAdmin) {
         return <div className="min-h-screen bg-zinc-950" />;
-    }
-
-    if (!isAdmin) {
-        return <AdminLoginInline onSuccess={() => setIsAdmin(true)} />;
     }
 
     const selectedVenue = venues.find((v) => v.id === selectedVenueId);
@@ -433,7 +362,7 @@ export default function AdminDashboardPage() {
                             className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
                         >
                             <LogOut className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Log Out</span>
+                            <span className="hidden sm:inline">Logout</span>
                         </button>
                     </div>
                 </div>
