@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, supabaseAdmin } from "./supabase";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -307,4 +307,85 @@ function fmtHour(hour: number): string {
     const period = h < 12 ? "AM" : "PM";
     const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
     return `${display}:00 ${period}`;
+}
+
+/* ─── Admin-only rig management ───────────────────────────────────── */
+
+async function requireAdminSession(): Promise<void> {
+    const { data: { session } } = await supabaseAdmin.auth.getSession();
+    if (!session) throw new Error("Unauthorized: admin session required.");
+}
+
+export async function addRig(
+    venueId: number,
+    name: string,
+    specs: string,
+    status: "available" | "out_of_order",
+): Promise<{ success: boolean; error?: string }> {
+    await requireAdminSession();
+
+    const { data: existing } = await supabase
+        .from("rigs")
+        .select("id")
+        .eq("venue_id", venueId)
+        .ilike("name", name)
+        .limit(1);
+    if (existing && existing.length > 0) {
+        return { success: false, error: "A rig with this name already exists in this venue." };
+    }
+
+    const { error } = await supabase
+        .from("rigs")
+        .insert({ venue_id: venueId, name, specs, status });
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+}
+
+export async function updateRig(
+    rigId: number,
+    name: string,
+    specs: string,
+): Promise<{ success: boolean; error?: string }> {
+    await requireAdminSession();
+
+    const { data: rig } = await supabase
+        .from("rigs")
+        .select("venue_id")
+        .eq("id", rigId)
+        .single();
+    if (!rig) return { success: false, error: "Rig not found." };
+
+    const { data: existing } = await supabase
+        .from("rigs")
+        .select("id")
+        .eq("venue_id", rig.venue_id)
+        .ilike("name", name)
+        .neq("id", rigId)
+        .limit(1);
+    if (existing && existing.length > 0) {
+        return { success: false, error: "A rig with this name already exists in this venue." };
+    }
+
+    const { error } = await supabase
+        .from("rigs")
+        .update({ name, specs })
+        .eq("id", rigId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+}
+
+export async function deleteRig(
+    rigId: number,
+): Promise<{ success: boolean; error?: string }> {
+    await requireAdminSession();
+
+    const { error } = await supabase
+        .from("rigs")
+        .delete()
+        .eq("id", rigId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
 }

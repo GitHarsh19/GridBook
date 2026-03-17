@@ -42,9 +42,11 @@ do $$ begin
   end if;
 end $$;
 
--- Rigs: public read + dashboard can update status
+-- Rigs: public read + dashboard can manage
 create policy "Public read rigs" on rigs for select using (true);
 create policy "Allow update rigs" on rigs for update using (true) with check (true);
+create policy "Allow insert rigs" on rigs for insert with check (true);
+create policy "Allow delete rigs" on rigs for delete using (true);
 
 -- Bookings: full access for MVP
 create policy "Allow read bookings" on bookings for select using (true);
