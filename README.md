@@ -13,6 +13,9 @@ GridBook is a booking platform for sim racing enthusiasts to find nearby venues,
 - **Time Slot Booking** — Select multiple 1-hour slots from 10 AM to 10 PM
 - **Instant Pricing** — Total cost calculated in real-time based on rigs x slots
 - **Auth** — Demo login, Google OAuth, and Supabase email/password
+- **Protected Routes** — Auth-gated pages with role-based access control
+- **Session Persistence** — Sessions survive page refresh via Supabase Auth
+- **Responsive Design** — Dark-themed UI optimized for both mobile and desktop
 
 ### Venue Admin Dashboard
 - **Live Rig Grid** — Real-time status of all rigs (available, booked, blocked, out of order)
@@ -65,17 +68,38 @@ Run the SQL files in the Supabase SQL Editor in this order:
 2. `supabase/profiles.sql` — Profiles table with role management and auto-create trigger
 3. `supabase/migration_dashboard.sql` — Bookings table, RLS policies, expanded rig statuses
 
+## Routes
+
+| Route | Access | Description |
+|-------|--------|-------------|
+| `/` | Public | Landing page with role-based sign in |
+| `/login` | Public | Customer login |
+| `/admin/login` | Public | Admin login |
+| `/admin/signup` | Public | Admin registration |
+| `/auth/callback` | Public | OAuth callback handler |
+| `/explore` | Customer | Venue discovery feed |
+| `/venue/[id]` | Customer | Rig selection & booking |
+| `/admin/dashboard` | Admin | Live rig status, bookings & metrics |
+
 ## Project Structure
 
 ```
 src/
 ├── app/
 │   ├── page.tsx                    # Landing page (/)
-│   ├── explore/page.tsx            # Venue discovery (/explore)
-│   ├── login/page.tsx              # Login page (/login)
-│   ├── register/page.tsx           # Registration page (/register)
-│   ├── auth/callback/page.tsx      # OAuth callback handler
-│   ├── dashboard/page.tsx          # Venue admin dashboard (/dashboard)
+│   ├── layout.tsx                  # Root layout + AuthProvider
+│   ├── explore/
+│   │   ├── page.tsx                # Venue discovery feed
+│   │   └── layout.tsx              # Auth-protected layout
+│   ├── (customer)/
+│   │   ├── login/page.tsx          # Customer login
+│   │   └── signup/page.tsx         # Customer registration
+│   ├── admin/
+│   │   ├── login/page.tsx          # Admin login
+│   │   ├── signup/page.tsx         # Admin registration
+│   │   └── dashboard/page.tsx      # Admin dashboard
+│   ├── auth/callback/
+│   │   └── page.tsx                # OAuth callback handler
 │   └── venue/[id]/
 │       ├── page.tsx                # Venue detail page
 │       ├── layout.tsx              # Auth-gated layout
@@ -90,9 +114,14 @@ src/
 │   ├── RigGrid.tsx                 # Rig selection grid
 │   └── CheckoutBar.tsx             # Booking checkout summary
 └── lib/
+    ├── auth.tsx                    # Auth context + Supabase session bridge
     ├── data.ts                     # Types + Supabase queries
-    ├── auth.tsx                    # Auth context provider
-    └── supabase.ts                 # Supabase client
+    ├── hooks/useRealtimeVenues.ts  # Real-time venue subscriptions
+    └── supabase.ts                 # Supabase client (customer + admin)
+supabase/
+├── seed.sql                        # Venues + rigs seed data
+├── profiles.sql                    # User profiles table + trigger
+└── migration_dashboard.sql         # Bookings, RLS, expanded rig statuses
 ```
 
 ## License
