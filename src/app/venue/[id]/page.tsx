@@ -4,7 +4,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useRealtimeVenue } from "@/lib/hooks/useRealtimeVenues";
 import BookingClient from "./BookingClient";
 
@@ -84,9 +83,5 @@ function VenueBookingContent() {
 }
 
 export default function VenueBookingPage() {
-    return (
-        <ProtectedRoute requiredRole="customer">
-            <VenueBookingContent />
-        </ProtectedRoute>
-    );
+    return <VenueBookingContent />;
 }

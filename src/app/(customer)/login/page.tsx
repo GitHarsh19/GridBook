@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -16,10 +16,24 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function CustomerLoginForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get("redirect") || "/explore";
+    const showMessage = searchParams.get("message") === "sign_in";
+
     const [serverError, setServerError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [messageRendered, setMessageRendered] = useState(showMessage);
+    const [messageExpanded, setMessageExpanded] = useState(false);
+
+    useEffect(() => {
+        if (!showMessage) return;
+        const expandTimer = setTimeout(() => setMessageExpanded(true), 16);
+        const contractTimer = setTimeout(() => setMessageExpanded(false), 1200);
+        const removeTimer = setTimeout(() => setMessageRendered(false), 1600);
+        return () => { clearTimeout(expandTimer); clearTimeout(contractTimer); clearTimeout(removeTimer); };
+    }, [showMessage]);
 
     const {
         register,
@@ -42,14 +56,14 @@ export default function LoginPage() {
             return;
         }
 
-        router.push("/explore");
+        router.push(redirectTo);
     };
 
     const handleGoogleLogin = async () => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent("/explore")}&role=customer`,
+                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}&role=customer`,
             },
         });
         if (error) setServerError(error.message);
@@ -71,6 +85,13 @@ export default function LoginPage() {
 
                 {/* Card */}
                 <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+                    {/* Sign-in message */}
+                    {messageRendered && (
+                        <div className={`overflow-hidden transition-all duration-400 ease-in-out ${messageExpanded ? "max-h-10 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0"}`}>
+                            <p className="text-center text-sm text-red-400">Sign in to continue</p>
+                        </div>
+                    )}
+
                     <h2 className="mb-6 text-center text-sm font-medium text-zinc-400">
                         Customer Login
                     </h2>
@@ -181,5 +202,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense>
+            <CustomerLoginForm />
+        </Suspense>
     );
 }

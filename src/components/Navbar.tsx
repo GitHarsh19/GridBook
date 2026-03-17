@@ -12,8 +12,13 @@ export function Navbar() {
 
   const handleLogout = () => {
     logout("customer");
-    router.push("/login");
+    router.push("/explore");
   };
+
+  const loginHref =
+    pathname && pathname !== "/"
+      ? `/login?redirect=${encodeURIComponent(pathname)}`
+      : "/login";
 
   return (
     <nav className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-sm">
@@ -59,7 +64,7 @@ export function Navbar() {
             </button>
           ) : (
             <Link
-              href="/login"
+              href={loginHref}
               className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white sm:px-3"
             >
               <LogIn className="h-3.5 w-3.5" />

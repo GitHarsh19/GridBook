@@ -24,20 +24,6 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-async function fetchRole(userId: string): Promise<Role> {
-  try {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .single();
-    if (error) return "customer";
-    return data?.role === "admin" ? "admin" : "customer";
-  } catch {
-    return "customer";
-  }
-}
-
 /* ─── Separate storage for admin vs customer demo auth ─────────────── */
 
 const ADMIN_AUTH_KEY = "gridbook_admin_auth";

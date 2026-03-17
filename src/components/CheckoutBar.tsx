@@ -1,4 +1,7 @@
-import { ShoppingCart } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { ShoppingCart, Check, Loader2 } from "lucide-react";
 import type { Rig } from "@/lib/data";
 
 export function CheckoutBar({
@@ -12,6 +15,8 @@ export function CheckoutBar({
     rigs: Rig[];
     price: number;
 }) {
+    const [payState, setPayState] = useState<"idle" | "loading" | "done">("idle");
+
     if (selectedRigs.length === 0) return null;
 
     const selectedNames = selectedRigs
@@ -21,6 +26,15 @@ export function CheckoutBar({
     const slotCount = Math.max(selectedSlots.length, 1);
     const total = selectedRigs.length * price * slotCount;
     const hasSlots = selectedSlots.length > 0;
+
+    const handlePay = () => {
+        if (payState !== "idle") return;
+        setPayState("loading");
+        setTimeout(() => {
+            setPayState("done");
+            setTimeout(() => setPayState("idle"), 2000);
+        }, 1500);
+    };
 
     return (
         <div
@@ -48,15 +62,32 @@ export function CheckoutBar({
                     </div>
                 </div>
                 <button
-                    disabled={!hasSlots}
+                    disabled={!hasSlots || payState !== "idle"}
+                    onClick={handlePay}
                     className={`flex w-full items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-bold transition-all sm:w-auto ${
-                        hasSlots
-                            ? "cursor-pointer bg-cyan-500 text-black hover:bg-cyan-400 active:scale-[0.98]"
-                            : "cursor-not-allowed bg-zinc-800 text-zinc-500"
+                        payState === "done"
+                            ? "bg-emerald-500 text-black"
+                            : hasSlots && payState === "idle"
+                                ? "cursor-pointer bg-cyan-500 text-black hover:bg-cyan-400 active:scale-[0.98]"
+                                : "cursor-not-allowed bg-zinc-800 text-zinc-500"
                     }`}
                 >
-                    <ShoppingCart className="h-4 w-4" />
-                    {hasSlots ? "Pay via UPI to Lock Slots" : "Select time slots first"}
+                    {payState === "loading" ? (
+                        <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Processing…
+                        </>
+                    ) : payState === "done" ? (
+                        <>
+                            <Check className="h-4 w-4" />
+                            Booking Confirmed!
+                        </>
+                    ) : (
+                        <>
+                            <ShoppingCart className="h-4 w-4" />
+                            {hasSlots ? "Pay via UPI to Lock Slots" : "Select time slots first"}
+                        </>
+                    )}
                 </button>
             </div>
         </div>
