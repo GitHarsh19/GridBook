@@ -14,5 +14,5 @@ export default function VenuePage() {
     router.push("/explore");
   }, [router]);
 
-  return null;
+  return <div className="min-h-screen bg-zinc-950" />;
 }

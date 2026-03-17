@@ -1,7 +1,27 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Zap, ArrowRight, Shield } from "lucide-react";
+import { Zap, ArrowRight, ChevronDown, User, KeyRound } from "lucide-react";
 
 export default function LandingPage() {
+  const router = useRouter();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isDropdownOpen]);
+
   return (
     <div className="flex min-h-screen flex-col bg-zinc-950">
       {/* Navbar */}
@@ -13,13 +33,43 @@ export default function LandingPage() {
               Grid<span className="text-cyan-500">Book</span>
             </span>
           </div>
-          <Link
-            href="/login"
-            className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white"
-          >
-            <Shield className="h-3.5 w-3.5" />
-            Login / Admin
-          </Link>
+
+          {/* Sign In Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white"
+            >
+              Sign In
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 overflow-hidden rounded-md border border-zinc-800 bg-zinc-900 shadow-lg shadow-black/30">
+                <button
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    router.push("/explore");
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-left text-sm text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+                >
+                  <User className="h-4 w-4 text-cyan-500" />
+                  I&apos;m a Customer
+                </button>
+                <div className="mx-3 h-px bg-zinc-800" />
+                <button
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    router.push("/admin/login");
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-left text-sm text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+                >
+                  <KeyRound className="h-4 w-4 text-amber-500" />
+                  Venue Admin Login
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 

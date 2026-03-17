@@ -7,16 +7,19 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 type Role = "customer" | "admin";
 
 interface AuthState {
+  /** Customer is logged in (Supabase or demo) */
   isLoggedIn: boolean;
+  /** Admin is logged in (independent from customer) */
+  isAdmin: boolean;
   isLoading: boolean;
   role: Role;
   setLoggedIn: (loggedIn: boolean, role?: Role) => void;
-  logout: () => void;
+  logout: (role?: Role) => void;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -35,89 +38,139 @@ async function fetchRole(userId: string): Promise<Role> {
   }
 }
 
-const DEMO_AUTH_KEY = "gridbook_demo_auth";
+/* ─── Separate storage for admin vs customer demo auth ─────────────── */
 
-function saveDemoAuth(role: Role) {
-  localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify({ role }));
+const ADMIN_AUTH_KEY = "gridbook_admin_auth";
+const CUSTOMER_DEMO_KEY = "gridbook_demo_auth";
+
+function saveAdminAuth() {
+  localStorage.setItem(ADMIN_AUTH_KEY, "true");
+}
+function loadAdminAuth(): boolean {
+  return localStorage.getItem(ADMIN_AUTH_KEY) === "true";
+}
+function clearAdminAuth() {
+  localStorage.removeItem(ADMIN_AUTH_KEY);
 }
 
-function loadDemoAuth(): Role | null {
-  try {
-    const raw = localStorage.getItem(DEMO_AUTH_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed.role === "admin" ? "admin" : "customer";
-  } catch {
-    localStorage.removeItem(DEMO_AUTH_KEY);
-    return null;
-  }
+function saveCustomerDemo() {
+  localStorage.setItem(CUSTOMER_DEMO_KEY, "true");
+}
+function loadCustomerDemo(): boolean {
+  return localStorage.getItem(CUSTOMER_DEMO_KEY) === "true";
+}
+function clearCustomerDemo() {
+  localStorage.removeItem(CUSTOMER_DEMO_KEY);
 }
 
-function clearDemoAuth() {
-  localStorage.removeItem(DEMO_AUTH_KEY);
-}
+/* ─── Provider ─────────────────────────────────────────────────────── */
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // customer
+  const [isAdmin, setIsAdmin] = useState(false);        // admin (independent)
   const [isLoading, setIsLoading] = useState(true);
   const [role, setRole] = useState<Role>("customer");
 
   useEffect(() => {
     let mounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    // Restore admin session from localStorage or supabaseAdmin session
+    if (loadAdminAuth()) {
+      setIsAdmin(true);
+    }
+
+    // Listen to CUSTOMER auth state (supabase client)
+    const { data: { subscription: customerSub } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
 
         if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
           if (session) {
+            setRole("customer");
             setIsLoggedIn(true);
-            setRole(await fetchRole(session.user.id));
-            clearDemoAuth();
+            clearCustomerDemo();
           } else if (event === "INITIAL_SESSION") {
-            // No Supabase session — check for persisted demo login
-            const demoRole = loadDemoAuth();
-            if (demoRole) {
+            if (loadCustomerDemo()) {
               setIsLoggedIn(true);
-              setRole(demoRole);
+              setRole("customer");
             }
           }
           setIsLoading(false);
         } else if (event === "SIGNED_OUT") {
           setIsLoggedIn(false);
           setRole("customer");
-          clearDemoAuth();
           setIsLoading(false);
+        }
+      }
+    );
+
+    // Listen to ADMIN auth state (supabaseAdmin client)
+    const { data: { subscription: adminSub } } = supabaseAdmin.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+          if (session) {
+            setIsAdmin(true);
+            saveAdminAuth();
+          }
+        } else if (event === "SIGNED_OUT") {
+          setIsAdmin(false);
+          clearAdminAuth();
         }
       }
     );
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      customerSub.unsubscribe();
+      adminSub.unsubscribe();
     };
   }, []);
 
   const setLoggedIn = (loggedIn: boolean, newRole?: Role) => {
-    setIsLoggedIn(loggedIn);
-    if (newRole) setRole(newRole);
-    // Persist demo login so it survives page refresh
-    if (loggedIn && newRole) {
-      saveDemoAuth(newRole);
-    } else if (!loggedIn) {
-      clearDemoAuth();
+    if (newRole === "admin") {
+      setIsAdmin(loggedIn);
+      if (loggedIn) saveAdminAuth();
+      else clearAdminAuth();
+    } else {
+      setIsLoggedIn(loggedIn);
+      if (loggedIn) {
+        setRole("customer");
+        saveCustomerDemo();
+      } else {
+        setRole("customer");
+        clearCustomerDemo();
+      }
     }
   };
 
-  const logout = async () => {
-    await supabase.auth.signOut();
-    setIsLoggedIn(false);
-    setRole("customer");
-    clearDemoAuth();
+  const logout = async (logoutRole?: Role) => {
+    if (logoutRole === "admin") {
+      clearAdminAuth();
+      setIsAdmin(false);
+      await supabaseAdmin.auth.signOut();
+    } else if (logoutRole === "customer") {
+      clearCustomerDemo();
+      await supabase.auth.signOut();
+      setIsLoggedIn(false);
+      setRole("customer");
+    } else {
+      // Logout all
+      clearAdminAuth();
+      clearCustomerDemo();
+      await supabaseAdmin.auth.signOut();
+      await supabase.auth.signOut();
+      setIsLoggedIn(false);
+      setIsAdmin(false);
+      setRole("customer");
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, isLoading, role, setLoggedIn, logout }}>
+    <AuthContext.Provider
+      value={{ isLoggedIn, isAdmin, isLoading, role, setLoggedIn, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -17,9 +17,27 @@ create table if not exists rigs (
   id        bigint generated always as identity primary key,
   venue_id  bigint not null references venues(id) on delete cascade,
   name      text   not null,
-  status    text   not null default 'available' check (status in ('available', 'booked')),
+  status    text   not null default 'available'
+              check (status in ('available', 'booked', 'blocked', 'out_of_order')),
   specs     text   not null default ''
 );
+
+-- 3. Bookings table
+create table if not exists bookings (
+  id                bigint generated always as identity primary key,
+  rig_id            bigint       not null references rigs(id) on delete cascade,
+  customer_name     text         not null default 'Online User',
+  time_slot         text         not null,
+  booking_date      date         not null default current_date,
+  verification_code text         not null,
+  source            text         not null default 'app'
+                      check (source in ('app', 'walk_in')),
+  created_at        timestamptz  not null default now()
+);
+
+-- Enable real-time (run only once)
+alter publication supabase_realtime add table rigs;
+alter publication supabase_realtime add table bookings;
 
 -- ============================================================
 -- Seed data

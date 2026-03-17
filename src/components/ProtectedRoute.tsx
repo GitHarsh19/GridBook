@@ -1,9 +1,8 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { LoginScreen } from "@/components/LoginScreen";
 import type { ReactNode } from "react";
 
 export function ProtectedRoute({
@@ -13,24 +12,24 @@ export function ProtectedRoute({
   children: ReactNode;
   requiredRole?: "customer" | "admin";
 }) {
-  const { isLoggedIn, isLoading, role } = useAuth();
+  const { isLoggedIn, isAdmin, isLoading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  const hasAccess =
+    requiredRole === "admin" ? isAdmin : isLoggedIn;
 
   useEffect(() => {
-    if (!isLoading && isLoggedIn && requiredRole && role !== requiredRole) {
-      router.push("/login");
+    if (isLoading || hasAccess) return;
+
+    if (requiredRole === "admin") {
+      router.push("/admin/login?message=sign_in");
+    } else {
+      router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
     }
-  }, [isLoggedIn, isLoading, role, requiredRole, router]);
+  }, [isLoading, hasAccess, requiredRole, router, pathname]);
 
-  if (isLoading) {
-    return <>{children}</>;
-  }
-
-  if (!isLoggedIn) {
-    return <Suspense><LoginScreen message="Sign in to continue" /></Suspense>;
-  }
-
-  if (requiredRole && role !== requiredRole) {
+  if (isLoading || !hasAccess) {
     return <div className="min-h-screen bg-zinc-950" />;
   }
 

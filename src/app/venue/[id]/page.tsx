@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
-import { getVenueById, type Venue } from "@/lib/data";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useRealtimeVenue } from "@/lib/hooks/useRealtimeVenues";
 import BookingClient from "./BookingClient";
 
 function VenueBookingSkeleton() {
@@ -44,16 +44,11 @@ function VenueBookingSkeleton() {
     );
 }
 
-export default function VenueBookingPage() {
+function VenueBookingContent() {
     const { id } = useParams<{ id: string }>();
-    const [venue, setVenue] = useState<Venue | null | undefined>(undefined);
-    const [error, setError] = useState(false);
-
-    useEffect(() => {
-        getVenueById(Number(id))
-            .then(setVenue)
-            .catch(() => setError(true));
-    }, [id]);
+    const numId = Number(id);
+    const { venue, error: loadError } = useRealtimeVenue(!id || isNaN(numId) ? 0 : numId);
+    const error = !!loadError;
 
     if (venue === undefined && !error) {
         return <VenueBookingSkeleton />;
@@ -86,4 +81,12 @@ export default function VenueBookingPage() {
     }
 
     return <BookingClient venue={venue} />;
+}
+
+export default function VenueBookingPage() {
+    return (
+        <ProtectedRoute requiredRole="customer">
+            <VenueBookingContent />
+        </ProtectedRoute>
+    );
 }

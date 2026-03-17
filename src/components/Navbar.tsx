@@ -11,7 +11,7 @@ export function Navbar() {
   const { isLoggedIn, logout } = useAuth();
 
   const handleLogout = () => {
-    logout();
+    logout("customer");
     router.push("/login");
   };
 
