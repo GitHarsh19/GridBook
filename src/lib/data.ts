@@ -17,6 +17,7 @@ export interface Venue {
     availableRigs: number;
     totalRigs: number;
     description: string;
+    imageUrl: string | null;
     rigs: Rig[];
 }
 
@@ -46,6 +47,9 @@ export interface VenueOption {
     name: string;
     location: string;
     price: number;
+    description: string;
+    imageUrl: string | null;
+    ownerId: string | null;
 }
 
 /* ─── Constants ─────────────────────────────────────────────────────── */
@@ -73,6 +77,8 @@ interface DbVenue {
     location: string;
     price: number;
     description: string;
+    owner_id: string | null;
+    image_url: string | null;
 }
 
 interface DbRig {
@@ -115,6 +121,7 @@ export async function getVenues(): Promise<Venue[]> {
             location: v.location,
             price: v.price,
             description: v.description,
+            imageUrl: v.image_url ?? null,
             totalRigs: venueRigs.length,
             availableRigs: venueRigs.filter((r) => r.status === "available").length,
             rigs: venueRigs.map((r) => ({
@@ -160,6 +167,7 @@ export async function getVenueById(id: number): Promise<Venue | null> {
         location: v.location,
         price: v.price,
         description: v.description,
+        imageUrl: v.image_url ?? null,
         totalRigs: venueRigs.length,
         availableRigs: venueRigs.filter((r) => r.status === "available").length,
         rigs: venueRigs.map((r) => ({
@@ -211,12 +219,23 @@ export async function getBookedRigIdsForSlots(
 /* ─── Dashboard data functions ─────────────────────────────────────── */
 
 export async function getVenuesList(): Promise<VenueOption[]> {
-    const { data, error } = await supabase
+    const adminId = await requireAdminSession();
+
+    const { data, error } = await supabaseAdmin
         .from("venues")
-        .select("id, name, location, price")
+        .select("id, name, location, price, description, image_url, owner_id")
+        .eq("owner_id", adminId)
         .order("id");
     if (error || !data) throw new Error(error?.message ?? "Failed to fetch venues list");
-    return data as VenueOption[];
+    return (data as DbVenue[]).map((v) => ({
+        id: v.id,
+        name: v.name,
+        location: v.location,
+        price: v.price,
+        description: v.description ?? "",
+        imageUrl: v.image_url ?? null,
+        ownerId: v.owner_id ?? null,
+    }));
 }
 
 export async function getDashboardRigs(venueId: number): Promise<DashboardRig[]> {
@@ -399,7 +418,7 @@ function fmtHour(hour: number): string {
  * Verify the current supabaseAdmin session belongs to an admin user.
  * Checks the profiles table for role === 'admin', not just session existence.
  */
-async function requireAdminSession(): Promise<void> {
+async function requireAdminSession(): Promise<string> {
     const { data: { session } } = await supabaseAdmin.auth.getSession();
     if (!session) throw new Error("Unauthorized: admin session required.");
 
@@ -412,6 +431,8 @@ async function requireAdminSession(): Promise<void> {
     if (!profile || profile.role !== "admin") {
         throw new Error("Forbidden: user is not an admin.");
     }
+
+    return session.user.id;
 }
 
 export async function addRig(
@@ -479,10 +500,129 @@ export async function deleteRig(
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
 
+    // Delete associated bookings first (in case cascade isn't configured)
+    await supabaseAdmin
+        .from("bookings")
+        .delete()
+        .eq("rig_id", rigId);
+
     const { error } = await supabaseAdmin
         .from("rigs")
         .delete()
         .eq("id", rigId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+}
+
+/* ─── Admin-only venue management ──────────────────────────────── */
+
+export async function addVenue(
+    name: string,
+    location: string,
+    price: number,
+    description: string,
+    imageUrl?: string,
+): Promise<{ success: boolean; error?: string; venueId?: number }> {
+    const adminId = await requireAdminSession();
+
+    if (!name.trim()) return { success: false, error: "Venue name is required." };
+    if (price <= 0) return { success: false, error: "Price must be greater than 0." };
+
+    const { data: existing } = await supabaseAdmin
+        .from("venues")
+        .select("id")
+        .ilike("name", name.trim())
+        .eq("owner_id", adminId)
+        .limit(1);
+    if (existing && existing.length > 0) {
+        return { success: false, error: "You already have a venue with this name." };
+    }
+
+    const { data, error } = await supabaseAdmin
+        .from("venues")
+        .insert({
+            name: name.trim(),
+            location: location.trim(),
+            price,
+            description: description.trim(),
+            image_url: imageUrl?.trim() || null,
+            owner_id: adminId,
+        })
+        .select("id")
+        .single();
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, venueId: data.id };
+}
+
+export async function updateVenue(
+    venueId: number,
+    name: string,
+    location: string,
+    price: number,
+    description: string,
+    imageUrl?: string | null,
+): Promise<{ success: boolean; error?: string }> {
+    const adminId = await requireAdminSession();
+
+    if (!name.trim()) return { success: false, error: "Venue name is required." };
+    if (price <= 0) return { success: false, error: "Price must be greater than 0." };
+
+    // Verify ownership
+    const { data: venue } = await supabaseAdmin
+        .from("venues")
+        .select("owner_id")
+        .eq("id", venueId)
+        .single();
+    if (!venue) return { success: false, error: "Venue not found." };
+    if (venue.owner_id !== adminId) return { success: false, error: "You do not own this venue." };
+
+    // Check duplicate name
+    const { data: existing } = await supabaseAdmin
+        .from("venues")
+        .select("id")
+        .ilike("name", name.trim())
+        .eq("owner_id", adminId)
+        .neq("id", venueId)
+        .limit(1);
+    if (existing && existing.length > 0) {
+        return { success: false, error: "You already have a venue with this name." };
+    }
+
+    const { error } = await supabaseAdmin
+        .from("venues")
+        .update({
+            name: name.trim(),
+            location: location.trim(),
+            price,
+            description: description.trim(),
+            image_url: imageUrl?.trim() || null,
+        })
+        .eq("id", venueId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+}
+
+export async function deleteVenue(
+    venueId: number,
+): Promise<{ success: boolean; error?: string }> {
+    const adminId = await requireAdminSession();
+
+    // Verify ownership
+    const { data: venue } = await supabaseAdmin
+        .from("venues")
+        .select("owner_id")
+        .eq("id", venueId)
+        .single();
+    if (!venue) return { success: false, error: "Venue not found." };
+    if (venue.owner_id !== adminId) return { success: false, error: "You do not own this venue." };
+
+    const { error } = await supabaseAdmin
+        .from("venues")
+        .delete()
+        .eq("id", venueId);
 
     if (error) return { success: false, error: error.message };
     return { success: true };

@@ -52,6 +52,11 @@ export function useRealtimeVenues() {
                 { event: "*", schema: "public", table: "rigs" },
                 () => loadVenues(),
             )
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "venues" },
+                () => loadVenues(),
+            )
             .subscribe((status) => {
                 if (status === "SUBSCRIBED") {
                     realtimeConnected.current = true;

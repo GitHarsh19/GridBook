@@ -22,9 +22,17 @@ export function VenueCard({ venue }: { venue: Venue }) {
             onClick={handleClick}
             className="group block w-full cursor-pointer rounded-lg border border-zinc-800 bg-zinc-900 text-left transition-all duration-200 hover:border-zinc-700 hover:bg-zinc-900/80 hover:shadow-lg hover:shadow-cyan-500/5 hover:-translate-y-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
         >
-            {/* Image placeholder */}
+            {/* Venue image or placeholder */}
             <div className="relative flex h-36 items-center justify-center overflow-hidden rounded-t-lg bg-zinc-800/60">
-                <Monitor className="h-10 w-10 text-zinc-600 transition-colors duration-200 group-hover:text-zinc-500" />
+                {venue.imageUrl ? (
+                    <img
+                        src={venue.imageUrl}
+                        alt={venue.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                ) : (
+                    <Monitor className="h-10 w-10 text-zinc-600 transition-colors duration-200 group-hover:text-zinc-500" />
+                )}
                 {/* Price badge */}
                 <div className="absolute bottom-2 right-2 rounded-md bg-zinc-950/80 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
                     ₹{venue.price}<span className="text-zinc-400">/hr</span>

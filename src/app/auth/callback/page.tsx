@@ -52,10 +52,19 @@ function AuthCallbackInner() {
       }
 
       if (requiredRole === "admin") {
-        await supabaseAdmin
+        // Verify user is already an admin — do NOT auto-promote
+        const { data: profile } = await supabaseAdmin
           .from("profiles")
-          .update({ role: "admin" })
-          .eq("id", session.user.id);
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        if (!profile || profile.role !== "admin") {
+          // Not an admin — sign out the admin client and redirect
+          await supabaseAdmin.auth.signOut();
+          router.push("/admin/login?message=not_admin");
+          return;
+        }
 
         setLoggedIn(true, "admin");
         router.push("/admin/dashboard");

@@ -82,7 +82,15 @@ export default function BookingClient({ venue }: { venue: Venue }) {
                     Back to venues
                 </Link>
 
-                <div className="mb-6 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                <div className="mb-6 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+                    {venue.imageUrl && (
+                        <img
+                            src={venue.imageUrl}
+                            alt={venue.name}
+                            className="h-48 w-full object-cover"
+                        />
+                    )}
+                    <div className="p-4">
                     <h2 className="text-lg font-bold text-white">{venue.name}</h2>
                     <div className="mt-1 flex items-center gap-1.5 text-sm text-zinc-400">
                         <MapPin className="h-3 w-3" />
@@ -106,6 +114,7 @@ export default function BookingClient({ venue }: { venue: Venue }) {
                             />
                             {venue.availableRigs} of {venue.totalRigs} Available
                         </span>
+                    </div>
                     </div>
                 </div>
 

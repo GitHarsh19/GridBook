@@ -16,6 +16,10 @@ import {
     Users,
     Plus,
     Settings,
+    MapPin,
+    Pencil,
+    ImageIcon,
+    Building2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +38,9 @@ import {
     addRig,
     updateRig,
     deleteRig,
+    addVenue,
+    updateVenue,
+    deleteVenue,
 } from "@/lib/data";
 
 /* ─── Walk-In Modal ────────────────────────────────────────────────── */
@@ -347,6 +354,338 @@ function EditRigModal({
     );
 }
 
+/* ─── Add Venue Modal ─────────────────────────────────────────────── */
+
+function AddVenueModal({
+    onConfirm,
+    onClose,
+    loading,
+}: {
+    onConfirm: (name: string, location: string, price: number, description: string, imageUrl: string) => void;
+    onClose: () => void;
+    loading: boolean;
+}) {
+    const [name, setName] = useState("");
+    const [location, setLocation] = useState("");
+    const [price, setPrice] = useState("");
+    const [description, setDescription] = useState("");
+    const [imageUrl, setImageUrl] = useState("");
+
+    const inputClass =
+        "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-6"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="mb-5 flex items-center justify-between">
+                    <h3 className="flex items-center gap-2 text-lg font-bold text-white">
+                        <Building2 className="h-5 w-5 text-cyan-500" />
+                        Add Venue
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="cursor-pointer text-zinc-500 transition-colors hover:text-white"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                            Venue Name
+                        </label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="e.g. Apex Racing Lounge"
+                            className={inputClass}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                            Location
+                        </label>
+                        <input
+                            type="text"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            placeholder="e.g. Koramangala, Bengaluru"
+                            className={inputClass}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                            Price per hour (₹)
+                        </label>
+                        <input
+                            type="number"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
+                            placeholder="e.g. 500"
+                            min={1}
+                            className={inputClass}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                            Description
+                        </label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Short description of your venue"
+                            rows={2}
+                            className={inputClass + " resize-none"}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+                            <ImageIcon className="h-3 w-3" />
+                            Image URL
+                            <span className="text-zinc-600">(optional)</span>
+                        </label>
+                        <input
+                            type="url"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://example.com/venue.jpg"
+                            className={inputClass}
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-6 flex gap-3">
+                    <button
+                        onClick={onClose}
+                        className="flex-1 cursor-pointer rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() =>
+                            onConfirm(
+                                name.trim(),
+                                location.trim(),
+                                Number(price) || 0,
+                                description.trim(),
+                                imageUrl.trim(),
+                            )
+                        }
+                        disabled={loading || !name.trim() || !location.trim() || !price}
+                        className="flex-1 cursor-pointer rounded-md bg-cyan-600 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
+                    >
+                        {loading ? "Adding\u2026" : "Add Venue"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ─── Edit Venue Modal ────────────────────────────────────────────── */
+
+function EditVenueModal({
+    venue,
+    onSave,
+    onDelete,
+    onClose,
+    loading,
+}: {
+    venue: VenueOption;
+    onSave: (name: string, location: string, price: number, description: string, imageUrl: string) => void;
+    onDelete: () => void;
+    onClose: () => void;
+    loading: boolean;
+}) {
+    const [name, setName] = useState(venue.name);
+    const [location, setLocation] = useState(venue.location);
+    const [price, setPrice] = useState(String(venue.price));
+    const [description, setDescription] = useState(venue.description);
+    const [imageUrl, setImageUrl] = useState(venue.imageUrl ?? "");
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+    const inputClass =
+        "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
+
+    if (confirmingDelete) {
+        return (
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+                onClick={onClose}
+            >
+                <div
+                    className="w-full max-w-sm rounded-lg border border-zinc-800 bg-zinc-900 p-6"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="mb-4 flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                        <h3 className="text-lg font-bold text-white">Delete Venue</h3>
+                    </div>
+                    <p className="mb-2 text-sm text-zinc-400">
+                        Are you sure you want to delete{" "}
+                        <span className="font-medium text-white">{venue.name}</span>?
+                    </p>
+                    <p className="mb-6 text-xs text-red-400/80">
+                        This will permanently delete all rigs and bookings associated with this venue.
+                    </p>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setConfirmingDelete(false)}
+                            className="flex-1 cursor-pointer rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={onDelete}
+                            disabled={loading}
+                            className="flex-1 cursor-pointer rounded-md border border-red-800 bg-red-900/50 py-2.5 text-sm font-bold text-red-500 transition-colors hover:bg-red-900 disabled:opacity-50"
+                        >
+                            {loading ? "Deleting\u2026" : "Yes, Delete"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-6"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="mb-5 flex items-center justify-between">
+                    <h3 className="flex items-center gap-2 text-lg font-bold text-white">
+                        <Building2 className="h-5 w-5 text-cyan-500" />
+                        Edit Venue
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="cursor-pointer text-zinc-500 transition-colors hover:text-white"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                {venue.imageUrl && (
+                    <div className="mb-4 overflow-hidden rounded-md">
+                        <img
+                            src={venue.imageUrl}
+                            alt={venue.name}
+                            className="h-32 w-full object-cover"
+                        />
+                    </div>
+                )}
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                            Venue Name
+                        </label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className={inputClass}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                            Location
+                        </label>
+                        <input
+                            type="text"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            className={inputClass}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                            Price per hour (₹)
+                        </label>
+                        <input
+                            type="number"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
+                            min={1}
+                            className={inputClass}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                            Description
+                        </label>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            rows={2}
+                            className={inputClass + " resize-none"}
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+                            <ImageIcon className="h-3 w-3" />
+                            Image URL
+                            <span className="text-zinc-600">(optional)</span>
+                        </label>
+                        <input
+                            type="url"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            placeholder="https://example.com/venue.jpg"
+                            className={inputClass}
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-between">
+                    <button
+                        onClick={() => setConfirmingDelete(true)}
+                        className="cursor-pointer rounded-md border border-red-800 bg-red-900/50 px-4 py-2.5 text-sm font-bold text-red-500 transition-colors hover:bg-red-900"
+                    >
+                        Delete Venue
+                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={onClose}
+                            className="cursor-pointer rounded-md border border-zinc-700 px-4 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() =>
+                                onSave(
+                                    name.trim(),
+                                    location.trim(),
+                                    Number(price) || 0,
+                                    description.trim(),
+                                    imageUrl.trim(),
+                                )
+                            }
+                            disabled={loading || !name.trim() || !location.trim() || !price}
+                            className="cursor-pointer rounded-md bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
+                        >
+                            {loading ? "Saving\u2026" : "Save"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 /* ─── Status config ────────────────────────────────────────────────── */
 
 const STATUS_CONFIG: Record<
@@ -407,23 +746,32 @@ export default function AdminDashboardPage() {
     const [walkInTarget, setWalkInTarget] = useState<DashboardRig | null>(null);
     const [showAddRig, setShowAddRig] = useState(false);
     const [editTarget, setEditTarget] = useState<DashboardRig | null>(null);
+    const [showAddVenue, setShowAddVenue] = useState(false);
+    const [editVenueTarget, setEditVenueTarget] = useState<VenueOption | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Load venues
-    useEffect(() => {
-        getVenuesList()
-            .then((data) => {
-                if (data.length > 0) {
-                    setVenues(data);
-                    setSelectedVenueId(data[0].id);
-                }
-            })
-            .catch((err) => {
-                console.error("Admin: Failed to load venues:", err);
-                setError("Failed to load venues. Check console for details.");
-            });
+    const loadVenues = useCallback(async () => {
+        try {
+            const data = await getVenuesList();
+            setVenues(data);
+            return data;
+        } catch (err) {
+            console.error("Admin: Failed to load venues:", err);
+            setError("Failed to load venues.");
+            setTimeout(() => setError(null), 4000);
+            return [];
+        }
     }, []);
+
+    // Load venues (owned by this admin)
+    useEffect(() => {
+        loadVenues().then((data) => {
+            if (data.length > 0) {
+                setSelectedVenueId(data[0].id);
+            }
+        });
+    }, [loadVenues]);
 
     // Load rigs + bookings for selected venue, auto-releasing expired walk-ins first
     const loadData = useCallback(async () => {
@@ -606,6 +954,74 @@ export default function AdminDashboardPage() {
         }
     };
 
+    const handleAddVenue = async (name: string, location: string, price: number, description: string, imageUrl: string) => {
+        setActionLoading(true);
+        try {
+            const result = await addVenue(name, location, price, description, imageUrl || undefined);
+            if (!result.success) {
+                setError(result.error || "Failed to add venue.");
+                setTimeout(() => setError(null), 4000);
+            } else {
+                const updated = await loadVenues();
+                if (result.venueId) setSelectedVenueId(result.venueId);
+                else if (updated.length > 0) setSelectedVenueId(updated[updated.length - 1].id);
+            }
+        } catch {
+            setError("Unauthorized or failed to add venue.");
+            setTimeout(() => setError(null), 4000);
+        } finally {
+            setActionLoading(false);
+            setShowAddVenue(false);
+        }
+    };
+
+    const handleEditVenue = async (name: string, location: string, price: number, description: string, imageUrl: string) => {
+        if (!editVenueTarget) return;
+        setActionLoading(true);
+        try {
+            const result = await updateVenue(editVenueTarget.id, name, location, price, description, imageUrl || null);
+            if (!result.success) {
+                setError(result.error || "Failed to update venue.");
+                setTimeout(() => setError(null), 4000);
+            } else {
+                await loadVenues();
+            }
+        } catch {
+            setError("Unauthorized or failed to update venue.");
+            setTimeout(() => setError(null), 4000);
+        } finally {
+            setActionLoading(false);
+            setEditVenueTarget(null);
+        }
+    };
+
+    const handleDeleteVenue = async () => {
+        if (!editVenueTarget) return;
+        setActionLoading(true);
+        try {
+            const result = await deleteVenue(editVenueTarget.id);
+            if (!result.success) {
+                setError(result.error || "Failed to delete venue.");
+                setTimeout(() => setError(null), 4000);
+            } else {
+                const updated = await loadVenues();
+                if (updated.length > 0) {
+                    setSelectedVenueId(updated[0].id);
+                } else {
+                    setSelectedVenueId(null);
+                    setRigs([]);
+                    setBookings([]);
+                }
+            }
+        } catch {
+            setError("Unauthorized or failed to delete venue.");
+            setTimeout(() => setError(null), 4000);
+        } finally {
+            setActionLoading(false);
+            setEditVenueTarget(null);
+        }
+    };
+
     // ── Render ──
 
     const selectedVenue = venues.find((v) => v.id === selectedVenueId);
@@ -627,21 +1043,40 @@ export default function AdminDashboardPage() {
                         </span>
                     </Link>
 
-                    <div className="flex items-center gap-3">
-                        <select
-                            value={selectedVenueId ?? ""}
-                            onChange={(e) => {
-                                setSelectedVenueId(Number(e.target.value));
-                                setLoading(true);
-                            }}
-                            className="cursor-pointer max-w-[180px] truncate rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300 focus:border-cyan-500 focus:outline-none"
+                    <div className="flex items-center gap-2">
+                        {venues.length > 0 && (
+                            <>
+                                <select
+                                    value={selectedVenueId ?? ""}
+                                    onChange={(e) => {
+                                        setSelectedVenueId(Number(e.target.value));
+                                        setLoading(true);
+                                    }}
+                                    className="cursor-pointer max-w-[160px] truncate rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300 focus:border-cyan-500 focus:outline-none"
+                                >
+                                    {venues.map((v) => (
+                                        <option key={v.id} value={v.id}>
+                                            {v.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={() => selectedVenue && setEditVenueTarget(selectedVenue)}
+                                    title="Edit venue"
+                                    className="cursor-pointer rounded-md border border-zinc-700 bg-zinc-800 p-1.5 text-zinc-400 transition-colors hover:border-cyan-500/50 hover:text-cyan-400"
+                                >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                            </>
+                        )}
+                        <button
+                            onClick={() => setShowAddVenue(true)}
+                            title="Add venue"
+                            className="flex cursor-pointer items-center gap-1 rounded-md bg-cyan-600 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-cyan-500"
                         >
-                            {venues.map((v) => (
-                                <option key={v.id} value={v.id}>
-                                    {v.name}
-                                </option>
-                            ))}
-                        </select>
+                            <Plus className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Venue</span>
+                        </button>
                         <button
                             onClick={handleLogout}
                             className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
@@ -662,8 +1097,26 @@ export default function AdminDashboardPage() {
                     </div>
                 )}
 
+                {/* ── No venues empty state ── */}
+                {!loading && venues.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <Building2 className="mb-4 h-12 w-12 text-zinc-700" />
+                        <h2 className="text-lg font-bold text-white">No Venues Yet</h2>
+                        <p className="mt-1 mb-6 text-sm text-zinc-500">
+                            Create your first venue to start managing rigs and bookings.
+                        </p>
+                        <button
+                            onClick={() => setShowAddVenue(true)}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg bg-cyan-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-cyan-500"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Create Your First Venue
+                        </button>
+                    </div>
+                )}
+
                 {/* ── Metrics ribbon ── */}
-                <div className="mb-6 grid grid-cols-2 gap-3">
+                {selectedVenueId && (<><div className="mb-6 grid grid-cols-2 gap-3">
                     <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
                         <div className="flex items-center gap-2 text-xs text-zinc-500">
                             <CalendarCheck className="h-3.5 w-3.5" />
@@ -973,6 +1426,7 @@ export default function AdminDashboardPage() {
                         </div>
                     )}
                 </div>
+                </>)}
             </main>
 
             {/* ── Walk-In Modal ── */}
@@ -1001,6 +1455,26 @@ export default function AdminDashboardPage() {
                     onSave={handleEditRig}
                     onDelete={handleDeleteRig}
                     onClose={() => setEditTarget(null)}
+                    loading={actionLoading}
+                />
+            )}
+
+            {/* ── Add Venue Modal ── */}
+            {showAddVenue && (
+                <AddVenueModal
+                    onConfirm={handleAddVenue}
+                    onClose={() => setShowAddVenue(false)}
+                    loading={actionLoading}
+                />
+            )}
+
+            {/* ── Edit Venue Modal ── */}
+            {editVenueTarget && (
+                <EditVenueModal
+                    venue={editVenueTarget}
+                    onSave={handleEditVenue}
+                    onDelete={handleDeleteVenue}
+                    onClose={() => setEditVenueTarget(null)}
                     loading={actionLoading}
                 />
             )}
