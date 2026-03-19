@@ -180,11 +180,12 @@ export async function getVenueById(id: number): Promise<Venue | null> {
 export async function getBookedRigIdsForSlots(
     venueId: number,
     slots: string[],
+    bookingDate?: string,
 ): Promise<Set<number>> {
     if (slots.length === 0) return new Set();
 
     const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const today = bookingDate ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
     // Get rig IDs for this venue
     const { data: rigRows } = await supabase

@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function ProtectedRoute({
@@ -34,7 +33,12 @@ export function ProtectedRoute({
   if (isLoading || isLoggingOut) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-        <Loader2 className="h-6 w-6 animate-spin text-cyan-500" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-14 w-14 rounded-full border-4 border-cyan-500/30 border-t-cyan-500 animate-spin" />
+          {isLoggingOut && (
+            <p className="text-sm text-zinc-400">Signing out…</p>
+          )}
+        </div>
       </div>
     );
   }

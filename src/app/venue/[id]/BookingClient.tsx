@@ -5,28 +5,43 @@ import Link from "next/link";
 import { ArrowLeft, MapPin } from "lucide-react";
 
 import { Navbar } from "@/components/Navbar";
+import { DateSelector } from "@/components/DateSelector";
 import { TimeSelector } from "@/components/TimeSelector";
 import { RigGrid } from "@/components/RigGrid";
 import { CheckoutBar } from "@/components/CheckoutBar";
 import { type Venue, getBookedRigIdsForSlots } from "@/lib/data";
 
+function getTodayStr(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
 export default function BookingClient({ venue }: { venue: Venue }) {
+    const [selectedDate, setSelectedDate] = useState<string>(getTodayStr);
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
     const [selectedRigs, setSelectedRigs] = useState<number[]>([]);
     const [bookedRigIds, setBookedRigIds] = useState<Set<number>>(new Set());
 
-    // Fetch per-slot booked rig IDs whenever selected time slots change
+    // Reset time & rig selections when the date changes
+    const handleDateChange = (date: string) => {
+        setSelectedDate(date);
+        setSelectedTimeSlots([]);
+        setSelectedRigs([]);
+        setBookedRigIds(new Set());
+    };
+
+    // Fetch per-slot booked rig IDs whenever selected time slots or date change
     useEffect(() => {
         if (selectedTimeSlots.length === 0) {
             setBookedRigIds(new Set());
             return;
         }
         let cancelled = false;
-        getBookedRigIdsForSlots(venue.id, selectedTimeSlots).then((ids) => {
+        getBookedRigIdsForSlots(venue.id, selectedTimeSlots, selectedDate).then((ids) => {
             if (!cancelled) setBookedRigIds(ids);
         });
         return () => { cancelled = true; };
-    }, [venue.id, selectedTimeSlots]);
+    }, [venue.id, selectedTimeSlots, selectedDate]);
 
     // Auto-deselect rigs that become unavailable (e.g. booked/blocked by admin or per-slot)
     useEffect(() => {
@@ -94,6 +109,14 @@ export default function BookingClient({ venue }: { venue: Venue }) {
                     </div>
                 </div>
 
+                {/* Date selector */}
+                <div className="mb-6">
+                    <DateSelector
+                        selectedDate={selectedDate}
+                        onSelect={handleDateChange}
+                    />
+                </div>
+
                 {/* Time selector */}
                 <div className="mb-6">
                     <TimeSelector
@@ -119,6 +142,7 @@ export default function BookingClient({ venue }: { venue: Venue }) {
                 selectedSlots={selectedTimeSlots}
                 rigs={venue.rigs}
                 price={venue.price}
+                bookingDate={selectedDate}
             />
         </div>
     );

@@ -4,16 +4,30 @@ import { useState } from "react";
 import { ShoppingCart, Check, Loader2 } from "lucide-react";
 import type { Rig } from "@/lib/data";
 
+function formatBookingDate(dateStr: string): string {
+    const d = new Date(dateStr + "T00:00:00");
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    if (dateStr === today) return "Today";
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+    if (dateStr === tomorrowStr) return "Tomorrow";
+    return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+}
+
 export function CheckoutBar({
     selectedRigs,
     selectedSlots,
     rigs,
     price,
+    bookingDate,
 }: {
     selectedRigs: number[];
     selectedSlots: string[];
     rigs: Rig[];
     price: number;
+    bookingDate: string;
 }) {
     const [payState, setPayState] = useState<"idle" | "loading" | "done">("idle");
 
@@ -49,6 +63,7 @@ export function CheckoutBar({
                         {hasSlots && (
                             <span className="text-zinc-500">
                                 {" "}&middot; {slotCount} {slotCount === 1 ? "slot" : "slots"}
+                                {" "}&middot; {formatBookingDate(bookingDate)}
                             </span>
                         )}
                     </div>

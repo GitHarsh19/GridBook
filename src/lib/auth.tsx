@@ -155,7 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false);
       setRole("customer");
     }
-    setIsLoggingOut(false);
+    // Delay reset so the caller can navigate away before ProtectedRoute
+    // sees !isAdmin && !isLoggingOut and redirects to the login page.
+    setTimeout(() => setIsLoggingOut(false), 2000);
   };
 
   return (

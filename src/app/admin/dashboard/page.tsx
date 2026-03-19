@@ -544,9 +544,9 @@ export default function AdminDashboardPage() {
         loadData();
     };
 
-    const handleLogout = async () => {
-        await logout("admin");
+    const handleLogout = () => {
         router.push("/");
+        logout("admin"); // fire-and-forget: isLoggingOut=true prevents redirect flash
     };
 
     const handleAddRig = async (name: string, specs: string, status: "available" | "out_of_order") => {
