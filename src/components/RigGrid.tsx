@@ -8,11 +8,14 @@ export function RigGrid({
     selectedRigs,
     onToggle,
     onClear,
+    bookedRigIds,
 }: {
     rigs: Rig[];
     selectedRigs: number[];
     onToggle: (id: number) => void;
     onClear: () => void;
+    /** Rig IDs booked for the currently selected time slots (overrides flat status) */
+    bookedRigIds?: Set<number>;
 }) {
     return (
         <div>
@@ -55,7 +58,11 @@ export function RigGrid({
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                 {rigs.map((rig) => {
                     const isSelected = selectedRigs.includes(rig.id);
-                    const isBooked = rig.status === "booked";
+                    // When time slots are selected, use per-slot booking data;
+                    // otherwise fall back to the flat rig status
+                    const isBooked = bookedRigIds
+                        ? bookedRigIds.has(rig.id) || rig.status === "booked"
+                        : rig.status === "booked";
 
                     return (
                         <button

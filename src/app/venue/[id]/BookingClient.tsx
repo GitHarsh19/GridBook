@@ -8,19 +8,35 @@ import { Navbar } from "@/components/Navbar";
 import { TimeSelector } from "@/components/TimeSelector";
 import { RigGrid } from "@/components/RigGrid";
 import { CheckoutBar } from "@/components/CheckoutBar";
-import type { Venue } from "@/lib/data";
+import { type Venue, getBookedRigIdsForSlots } from "@/lib/data";
 
 export default function BookingClient({ venue }: { venue: Venue }) {
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
     const [selectedRigs, setSelectedRigs] = useState<number[]>([]);
+    const [bookedRigIds, setBookedRigIds] = useState<Set<number>>(new Set());
 
-    // Auto-deselect rigs that become unavailable (e.g. booked/blocked by admin)
+    // Fetch per-slot booked rig IDs whenever selected time slots change
+    useEffect(() => {
+        if (selectedTimeSlots.length === 0) {
+            setBookedRigIds(new Set());
+            return;
+        }
+        let cancelled = false;
+        getBookedRigIdsForSlots(venue.id, selectedTimeSlots).then((ids) => {
+            if (!cancelled) setBookedRigIds(ids);
+        });
+        return () => { cancelled = true; };
+    }, [venue.id, selectedTimeSlots]);
+
+    // Auto-deselect rigs that become unavailable (e.g. booked/blocked by admin or per-slot)
     useEffect(() => {
         const availableIds = new Set(
             venue.rigs.filter((r) => r.status === "available").map((r) => r.id)
         );
-        setSelectedRigs((prev) => prev.filter((id) => availableIds.has(id)));
-    }, [venue.rigs]);
+        setSelectedRigs((prev) =>
+            prev.filter((id) => availableIds.has(id) && !bookedRigIds.has(id))
+        );
+    }, [venue.rigs, bookedRigIds]);
 
     const toggleTimeSlot = (slot: string) => {
         setSelectedTimeSlots((prev) =>
@@ -93,6 +109,7 @@ export default function BookingClient({ venue }: { venue: Venue }) {
                     selectedRigs={selectedRigs}
                     onToggle={toggleRig}
                     onClear={() => setSelectedRigs([])}
+                    bookedRigIds={selectedTimeSlots.length > 0 ? bookedRigIds : undefined}
                 />
             </main>
 

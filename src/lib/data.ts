@@ -171,6 +171,42 @@ export async function getVenueById(id: number): Promise<Venue | null> {
     };
 }
 
+/* ─── Customer booking helpers ─────────────────────────────────────── */
+
+/**
+ * Fetch rig IDs that are booked for any of the given time slots today.
+ * Used on the booking page so the RigGrid can show per-slot availability.
+ */
+export async function getBookedRigIdsForSlots(
+    venueId: number,
+    slots: string[],
+): Promise<Set<number>> {
+    if (slots.length === 0) return new Set();
+
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+    // Get rig IDs for this venue
+    const { data: rigRows } = await supabase
+        .from("rigs")
+        .select("id")
+        .eq("venue_id", venueId);
+    if (!rigRows || rigRows.length === 0) return new Set();
+
+    const rigIds = rigRows.map((r) => r.id);
+
+    // Get bookings that overlap with any of the selected slots
+    const { data: bookings } = await supabase
+        .from("bookings")
+        .select("rig_id, time_slot")
+        .eq("booking_date", today)
+        .in("rig_id", rigIds)
+        .in("time_slot", slots);
+
+    if (!bookings) return new Set();
+    return new Set(bookings.map((b) => b.rig_id));
+}
+
 /* ─── Dashboard data functions ─────────────────────────────────────── */
 
 export async function getVenuesList(): Promise<VenueOption[]> {
@@ -218,14 +254,16 @@ export async function getTodaysBookings(venueId: number): Promise<Booking[]> {
 }
 
 /**
- * Block an available rig for a walk-in customer.
+ * Block an available rig for a walk-in customer (admin only).
  * Uses optimistic concurrency — only succeeds if the rig is still available.
  */
 export async function blockRigForWalkIn(
     rigId: number,
     durationHours: number,
 ): Promise<{ success: boolean; error?: string }> {
-    const { data, error } = await supabase
+    await requireAdminSession();
+
+    const { data, error } = await supabaseAdmin
         .from("rigs")
         .update({ status: "blocked" })
         .eq("id", rigId)
@@ -243,18 +281,21 @@ export async function blockRigForWalkIn(
     const code = `WLK-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-    const { error: insertError } = await supabase.from("bookings").insert({
+    const blockedUntil = new Date(now.getTime() + durationHours * 60 * 60 * 1000).toISOString();
+
+    const { error: insertError } = await supabaseAdmin.from("bookings").insert({
         rig_id: rigId,
         customer_name: "Walk-In",
         time_slot: timeSlot,
         booking_date: today,
         verification_code: code,
         source: "walk_in",
+        blocked_until: blockedUntil,
     });
 
     if (insertError) {
         // Rig was blocked but booking record failed — revert rig status
-        await supabase.from("rigs").update({ status: "available" }).eq("id", rigId);
+        await supabaseAdmin.from("rigs").update({ status: "available" }).eq("id", rigId);
         return { success: false, error: "Failed to create booking record." };
     }
 
@@ -262,7 +303,9 @@ export async function blockRigForWalkIn(
 }
 
 export async function releaseRig(rigId: number): Promise<{ success: boolean }> {
-    const { error } = await supabase
+    await requireAdminSession();
+
+    const { error } = await supabaseAdmin
         .from("rigs")
         .update({ status: "available" })
         .eq("id", rigId)
@@ -271,7 +314,7 @@ export async function releaseRig(rigId: number): Promise<{ success: boolean }> {
 
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    await supabase
+    await supabaseAdmin
         .from("bookings")
         .delete()
         .eq("rig_id", rigId)
@@ -281,8 +324,48 @@ export async function releaseRig(rigId: number): Promise<{ success: boolean }> {
     return { success: true };
 }
 
+/**
+ * Release all walk-in blocked rigs whose blocked_until has passed (admin only).
+ * Called on admin dashboard load and each polling cycle.
+ */
+export async function releaseExpiredWalkIns(): Promise<number> {
+    await requireAdminSession();
+
+    const now = new Date().toISOString();
+
+    // Find expired walk-in bookings
+    const { data: expired } = await supabaseAdmin
+        .from("bookings")
+        .select("id, rig_id")
+        .eq("source", "walk_in")
+        .not("blocked_until", "is", null)
+        .lte("blocked_until", now);
+
+    if (!expired || expired.length === 0) return 0;
+
+    const rigIds = expired.map((b) => b.rig_id);
+    const bookingIds = expired.map((b) => b.id);
+
+    // Set those rigs back to available (only if still blocked)
+    await supabaseAdmin
+        .from("rigs")
+        .update({ status: "available" })
+        .in("id", rigIds)
+        .eq("status", "blocked");
+
+    // Delete the expired walk-in booking records
+    await supabaseAdmin
+        .from("bookings")
+        .delete()
+        .in("id", bookingIds);
+
+    return expired.length;
+}
+
 export async function toggleOutOfOrder(rigId: number): Promise<{ success: boolean }> {
-    const { data: rig } = await supabase
+    await requireAdminSession();
+
+    const { data: rig } = await supabaseAdmin
         .from("rigs")
         .select("status")
         .eq("id", rigId)
@@ -294,7 +377,7 @@ export async function toggleOutOfOrder(rigId: number): Promise<{ success: boolea
     }
 
     const newStatus = rig.status === "out_of_order" ? "available" : "out_of_order";
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
         .from("rigs")
         .update({ status: newStatus })
         .eq("id", rigId);
@@ -311,9 +394,23 @@ function fmtHour(hour: number): string {
 
 /* ─── Admin-only rig management ───────────────────────────────────── */
 
+/**
+ * Verify the current supabaseAdmin session belongs to an admin user.
+ * Checks the profiles table for role === 'admin', not just session existence.
+ */
 async function requireAdminSession(): Promise<void> {
     const { data: { session } } = await supabaseAdmin.auth.getSession();
     if (!session) throw new Error("Unauthorized: admin session required.");
+
+    const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+    if (!profile || profile.role !== "admin") {
+        throw new Error("Forbidden: user is not an admin.");
+    }
 }
 
 export async function addRig(
@@ -324,7 +421,7 @@ export async function addRig(
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
 
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
         .from("rigs")
         .select("id")
         .eq("venue_id", venueId)
@@ -334,7 +431,7 @@ export async function addRig(
         return { success: false, error: "A rig with this name already exists in this venue." };
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
         .from("rigs")
         .insert({ venue_id: venueId, name, specs, status });
 
@@ -349,14 +446,14 @@ export async function updateRig(
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
 
-    const { data: rig } = await supabase
+    const { data: rig } = await supabaseAdmin
         .from("rigs")
         .select("venue_id")
         .eq("id", rigId)
         .single();
     if (!rig) return { success: false, error: "Rig not found." };
 
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
         .from("rigs")
         .select("id")
         .eq("venue_id", rig.venue_id)
@@ -367,7 +464,7 @@ export async function updateRig(
         return { success: false, error: "A rig with this name already exists in this venue." };
     }
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
         .from("rigs")
         .update({ name, specs })
         .eq("id", rigId);
@@ -381,7 +478,7 @@ export async function deleteRig(
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
         .from("rigs")
         .delete()
         .eq("id", rigId);

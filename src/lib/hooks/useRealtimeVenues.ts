@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { getVenues, getVenueById, type Venue } from "@/lib/data";
 
@@ -8,12 +8,15 @@ const POLL_INTERVAL = 45_000;
 
 /**
  * Real-time venue list for the explore page.
- * Subscribes to all rig changes + 45s polling fallback.
+ * Subscribes to all rig changes; polling fallback activates only when
+ * the real-time channel is not connected.
  */
 export function useRealtimeVenues() {
     const [venues, setVenues] = useState<Venue[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const realtimeConnected = useRef(false);
 
     const loadVenues = useCallback(async () => {
         try {
@@ -27,6 +30,18 @@ export function useRealtimeVenues() {
         }
     }, []);
 
+    const startPolling = useCallback(() => {
+        if (intervalRef.current) return; // already polling
+        intervalRef.current = setInterval(loadVenues, POLL_INTERVAL);
+    }, [loadVenues]);
+
+    const stopPolling = useCallback(() => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+    }, []);
+
     useEffect(() => {
         loadVenues();
 
@@ -37,27 +52,39 @@ export function useRealtimeVenues() {
                 { event: "*", schema: "public", table: "rigs" },
                 () => loadVenues(),
             )
-            .subscribe();
+            .subscribe((status) => {
+                if (status === "SUBSCRIBED") {
+                    realtimeConnected.current = true;
+                    stopPolling();
+                } else {
+                    realtimeConnected.current = false;
+                    startPolling();
+                }
+            });
 
-        const interval = setInterval(loadVenues, POLL_INTERVAL);
+        // Start polling initially until real-time connects
+        startPolling();
 
         return () => {
             supabase.removeChannel(channel);
-            clearInterval(interval);
+            stopPolling();
         };
-    }, [loadVenues]);
+    }, [loadVenues, startPolling, stopPolling]);
 
     return { venues, isLoading, error, refetch: loadVenues };
 }
 
 /**
  * Real-time single venue for the booking page.
- * Subscribes to rig changes scoped by venue_id + 45s polling fallback.
+ * Subscribes to rig changes scoped by venue_id; polling fallback activates
+ * only when the real-time channel is not connected.
  */
 export function useRealtimeVenue(id: number) {
     const [venue, setVenue] = useState<Venue | null | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const realtimeConnected = useRef(false);
 
     const loadVenue = useCallback(async () => {
         if (!id || isNaN(id)) {
@@ -76,6 +103,18 @@ export function useRealtimeVenue(id: number) {
         }
     }, [id]);
 
+    const startPolling = useCallback(() => {
+        if (intervalRef.current) return;
+        intervalRef.current = setInterval(loadVenue, POLL_INTERVAL);
+    }, [loadVenue]);
+
+    const stopPolling = useCallback(() => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+    }, []);
+
     useEffect(() => {
         loadVenue();
 
@@ -91,15 +130,24 @@ export function useRealtimeVenue(id: number) {
                 },
                 () => loadVenue(),
             )
-            .subscribe();
+            .subscribe((status) => {
+                if (status === "SUBSCRIBED") {
+                    realtimeConnected.current = true;
+                    stopPolling();
+                } else {
+                    realtimeConnected.current = false;
+                    startPolling();
+                }
+            });
 
-        const interval = setInterval(loadVenue, POLL_INTERVAL);
+        // Start polling initially until real-time connects
+        startPolling();
 
         return () => {
             supabase.removeChannel(channel);
-            clearInterval(interval);
+            stopPolling();
         };
-    }, [id, loadVenue]);
+    }, [id, loadVenue, startPolling, stopPolling]);
 
     return { venue, isLoading, error };
 }

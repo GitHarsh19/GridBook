@@ -17,6 +17,8 @@ interface AuthState {
   /** Admin is logged in (independent from customer) */
   isAdmin: boolean;
   isLoading: boolean;
+  /** True while a logout is in progress (prevents redirect flash) */
+  isLoggingOut: boolean;
   role: Role;
   setLoggedIn: (loggedIn: boolean, role?: Role) => void;
   logout: (role?: Role) => void;
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false); // customer
   const [isAdmin, setIsAdmin] = useState(false);        // admin (independent)
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [role, setRole] = useState<Role>("customer");
 
   useEffect(() => {
@@ -132,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async (logoutRole?: Role) => {
+    setIsLoggingOut(true);
     if (logoutRole === "admin") {
       clearAdminAuth();
       setIsAdmin(false);
@@ -151,11 +155,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false);
       setRole("customer");
     }
+    setIsLoggingOut(false);
   };
 
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, isAdmin, isLoading, role, setLoggedIn, logout }}
+      value={{ isLoggedIn, isAdmin, isLoading, isLoggingOut, role, setLoggedIn, logout }}
     >
       {children}
     </AuthContext.Provider>

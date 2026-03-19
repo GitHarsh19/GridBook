@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Zap, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { useRateLimit } from "@/lib/hooks/useRateLimit";
 
 function AdminLoginForm() {
     const router = useRouter();
@@ -20,6 +21,7 @@ function AdminLoginForm() {
     const [loading, setLoading] = useState(false);
     const [messageRendered, setMessageRendered] = useState(showMessage);
     const [messageExpanded, setMessageExpanded] = useState(false);
+    const { blocked, cooldownSeconds, recordAttempt } = useRateLimit();
 
     useEffect(() => {
         if (!showMessage) return;
@@ -42,8 +44,10 @@ function AdminLoginForm() {
 
     const handleSupabaseLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (blocked) return;
         setError("");
         setLoading(true);
+        recordAttempt();
 
         const { data, error: authError } = await supabaseAdmin.auth.signInWithPassword({
             email,
@@ -159,11 +163,13 @@ function AdminLoginForm() {
                         {/* Submit */}
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || blocked}
                             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-cyan-500 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98] disabled:opacity-60"
                         >
                             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                            {loading ? "Signing in\u2026" : "Login"}
+                            {blocked
+                                ? `Too many attempts — retry in ${cooldownSeconds}s`
+                                : loading ? "Signing in\u2026" : "Login"}
                         </button>
 
                         {/* Divider + Google */}

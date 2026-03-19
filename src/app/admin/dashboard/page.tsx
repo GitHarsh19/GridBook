@@ -29,6 +29,7 @@ import {
     getTodaysBookings,
     blockRigForWalkIn,
     releaseRig,
+    releaseExpiredWalkIns,
     toggleOutOfOrder,
     addRig,
     updateRig,
@@ -397,7 +398,7 @@ const STATUS_CONFIG: Record<
 
 export default function AdminDashboardPage() {
     const router = useRouter();
-    const { isAdmin, isLoading: authLoading, logout } = useAuth();
+    const { logout } = useAuth();
     const [venues, setVenues] = useState<VenueOption[]>([]);
     const [selectedVenueId, setSelectedVenueId] = useState<number | null>(null);
     const [rigs, setRigs] = useState<DashboardRig[]>([]);
@@ -409,16 +410,8 @@ export default function AdminDashboardPage() {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Redirect non-admin users to login
-    useEffect(() => {
-        if (!authLoading && !isAdmin) {
-            router.push("/admin/login?message=sign_in");
-        }
-    }, [authLoading, isAdmin, router]);
-
     // Load venues
     useEffect(() => {
-        if (authLoading || !isAdmin) return;
         getVenuesList()
             .then((data) => {
                 if (data.length > 0) {
@@ -430,12 +423,14 @@ export default function AdminDashboardPage() {
                 console.error("Admin: Failed to load venues:", err);
                 setError("Failed to load venues. Check console for details.");
             });
-    }, [authLoading, isAdmin]);
+    }, []);
 
-    // Load rigs + bookings for selected venue
+    // Load rigs + bookings for selected venue, auto-releasing expired walk-ins first
     const loadData = useCallback(async () => {
         if (!selectedVenueId) return;
         try {
+            // Release any walk-in blocks whose duration has expired
+            await releaseExpiredWalkIns();
             const [rigData, bookingData] = await Promise.all([
                 getDashboardRigs(selectedVenueId),
                 getTodaysBookings(selectedVenueId),
@@ -612,10 +607,6 @@ export default function AdminDashboardPage() {
     };
 
     // ── Render ──
-
-    if (authLoading || !isAdmin) {
-        return <div className="min-h-screen bg-zinc-950" />;
-    }
 
     const selectedVenue = venues.find((v) => v.id === selectedVenueId);
     const appBookings = bookings.filter((b) => b.source === "app");

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Zap, Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useRateLimit } from "@/lib/hooks/useRateLimit";
 
 const loginSchema = z.object({
     email: z.string().email("Enter a valid email address"),
@@ -26,6 +27,7 @@ function CustomerLoginForm() {
     const [showPassword, setShowPassword] = useState(false);
     const [messageRendered, setMessageRendered] = useState(showMessage);
     const [messageExpanded, setMessageExpanded] = useState(false);
+    const { blocked, cooldownSeconds, recordAttempt } = useRateLimit();
 
     useEffect(() => {
         if (!showMessage) return;
@@ -44,7 +46,9 @@ function CustomerLoginForm() {
     });
 
     const onSubmit = async (formData: LoginFormData) => {
+        if (blocked) return;
         setServerError("");
+        recordAttempt();
 
         const { error } = await supabase.auth.signInWithPassword({
             email: formData.email,
@@ -148,11 +152,13 @@ function CustomerLoginForm() {
                         {/* Submit */}
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || blocked}
                             className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-cyan-500 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98] disabled:opacity-60"
                         >
                             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                            {isSubmitting ? "Signing in\u2026" : "Log In"}
+                            {blocked
+                                ? `Too many attempts — retry in ${cooldownSeconds}s`
+                                : isSubmitting ? "Signing in\u2026" : "Log In"}
                         </button>
 
                         {/* Divider + Google */}
