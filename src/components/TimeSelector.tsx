@@ -3,14 +3,31 @@
 import { Clock, X } from "lucide-react";
 import { TIME_SLOTS } from "@/lib/data";
 
+/**
+ * Parse the start hour from a time slot string like "2:00 PM – 3:00 PM".
+ * Returns the hour in 24h format (0–23).
+ */
+function parseSlotStartHour(slot: string): number {
+    const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
+    if (!match) return -1;
+    let hour = parseInt(match[1], 10);
+    const period = match[2].toUpperCase();
+    if (period === "PM" && hour !== 12) hour += 12;
+    if (period === "AM" && hour === 12) hour = 0;
+    return hour;
+}
+
 export function TimeSelector({
     selectedSlots,
     onToggle,
     onClear,
+    disabledSlots,
 }: {
     selectedSlots: string[];
     onToggle: (slot: string) => void;
     onClear: () => void;
+    /** Set of slot strings that should be disabled (e.g. past time slots) */
+    disabledSlots?: Set<string>;
 }) {
     return (
         <div className="relative">
@@ -39,15 +56,19 @@ export function TimeSelector({
                 <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-2 pr-8">
                     {TIME_SLOTS.map((slot) => {
                         const isSelected = selectedSlots.includes(slot);
+                        const isPast = disabledSlots?.has(slot) ?? false;
                         return (
                             <button
                                 key={slot}
-                                onClick={() => onToggle(slot)}
+                                onClick={() => !isPast && onToggle(slot)}
+                                disabled={isPast}
                                 aria-pressed={isSelected}
-                                className={`shrink-0 cursor-pointer rounded-md border px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
-                                    isSelected
-                                        ? "border-cyan-500 bg-cyan-500 text-black shadow-md shadow-cyan-500/20"
-                                        : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-600 hover:text-white"
+                                className={`shrink-0 rounded-md border px-4 py-2.5 text-sm font-medium transition-all duration-150 ${
+                                    isPast
+                                        ? "cursor-not-allowed border-zinc-800/50 bg-zinc-900/30 text-zinc-700 line-through"
+                                        : isSelected
+                                            ? "cursor-pointer border-cyan-500 bg-cyan-500 text-black shadow-md shadow-cyan-500/20"
+                                            : "cursor-pointer border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-600 hover:text-white"
                                 }`}
                             >
                                 {slot}
@@ -59,3 +80,5 @@ export function TimeSelector({
         </div>
     );
 }
+
+export { parseSlotStartHour };

@@ -1,26 +1,44 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, MapPin } from "lucide-react";
 
 import { Navbar } from "@/components/Navbar";
 import { DateSelector } from "@/components/DateSelector";
-import { TimeSelector } from "@/components/TimeSelector";
+import { TimeSelector, parseSlotStartHour } from "@/components/TimeSelector";
 import { RigGrid } from "@/components/RigGrid";
 import { CheckoutBar } from "@/components/CheckoutBar";
-import { type Venue, getBookedRigIdsForSlots } from "@/lib/data";
+import { type Venue, TIME_SLOTS, getBookedRigIdsForSlots, getVenueById } from "@/lib/data";
 
 function getTodayStr(): string {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-export default function BookingClient({ venue }: { venue: Venue }) {
+export default function BookingClient({ venue: initialVenue }: { venue: Venue }) {
+    const [venue, setVenue] = useState<Venue>(initialVenue);
     const [selectedDate, setSelectedDate] = useState<string>(getTodayStr);
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
     const [selectedRigs, setSelectedRigs] = useState<number[]>([]);
     const [bookedRigIds, setBookedRigIds] = useState<Set<number>>(new Set());
+
+    // Compute which time slots are in the past (only matters for today)
+    const disabledSlots = useMemo(() => {
+        const now = new Date();
+        const todayStr = getTodayStr();
+        if (selectedDate !== todayStr) return new Set<string>();
+
+        const currentHour = now.getHours();
+        const past = new Set<string>();
+        for (const slot of TIME_SLOTS) {
+            const startHour = parseSlotStartHour(slot);
+            if (startHour <= currentHour) {
+                past.add(slot);
+            }
+        }
+        return past;
+    }, [selectedDate]);
 
     // Reset time & rig selections when the date changes
     const handleDateChange = (date: string) => {
@@ -29,6 +47,15 @@ export default function BookingClient({ venue }: { venue: Venue }) {
         setSelectedRigs([]);
         setBookedRigIds(new Set());
     };
+
+    // Auto-deselect any time slots that have become past
+    useEffect(() => {
+        if (disabledSlots.size === 0) return;
+        setSelectedTimeSlots((prev) => {
+            const filtered = prev.filter((s) => !disabledSlots.has(s));
+            return filtered.length !== prev.length ? filtered : prev;
+        });
+    }, [disabledSlots]);
 
     // Fetch per-slot booked rig IDs whenever selected time slots or date change
     useEffect(() => {
@@ -65,6 +92,19 @@ export default function BookingClient({ venue }: { venue: Venue }) {
                 ? prev.filter((id) => id !== rigId)
                 : [...prev, rigId]
         );
+    };
+
+    // After a successful booking, clear selections and refresh availability
+    const handleBookingComplete = async () => {
+        setSelectedRigs([]);
+        setSelectedTimeSlots([]);
+        // Refresh venue data and booked rig IDs
+        try {
+            const updated = await getVenueById(venue.id);
+            if (updated) setVenue(updated);
+        } catch {
+            // Silently fail — data will refresh on next interaction
+        }
     };
 
     return (
@@ -132,6 +172,7 @@ export default function BookingClient({ venue }: { venue: Venue }) {
                         selectedSlots={selectedTimeSlots}
                         onToggle={toggleTimeSlot}
                         onClear={() => setSelectedTimeSlots([])}
+                        disabledSlots={disabledSlots}
                     />
                 </div>
 
@@ -147,11 +188,13 @@ export default function BookingClient({ venue }: { venue: Venue }) {
 
             {/* Checkout bar */}
             <CheckoutBar
+                venueId={venue.id}
                 selectedRigs={selectedRigs}
                 selectedSlots={selectedTimeSlots}
                 rigs={venue.rigs}
                 price={venue.price}
                 bookingDate={selectedDate}
+                onBookingComplete={handleBookingComplete}
             />
         </div>
     );

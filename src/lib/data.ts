@@ -38,6 +38,7 @@ export interface Booking {
     rig_name: string;
     customer_name: string;
     time_slot: string;
+    booking_date: string;
     verification_code: string;
     source: "app" | "walk_in";
 }
@@ -216,6 +217,127 @@ export async function getBookedRigIdsForSlots(
     return new Set(bookings.map((b) => b.rig_id));
 }
 
+/**
+ * Create booking records for a customer (app booking).
+ * Inserts one record per rig × time-slot combination.
+ * Uses optimistic concurrency to prevent double-booking.
+ */
+export async function createAppBooking(
+    venueId: number,
+    rigIds: number[],
+    slots: string[],
+    bookingDate: string,
+    customerName: string,
+): Promise<{ success: boolean; error?: string; verificationCode?: string }> {
+    if (rigIds.length === 0 || slots.length === 0) {
+        return { success: false, error: "No rigs or slots selected." };
+    }
+
+    // Validate booking date is not in the past
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    if (bookingDate < today) {
+        return { success: false, error: "Cannot book for a past date." };
+    }
+
+    // Validate booking date is within 7-day window
+    const maxDate = new Date(now);
+    maxDate.setDate(maxDate.getDate() + 7);
+    const maxDateStr = `${maxDate.getFullYear()}-${String(maxDate.getMonth() + 1).padStart(2, "0")}-${String(maxDate.getDate()).padStart(2, "0")}`;
+    if (bookingDate > maxDateStr) {
+        return { success: false, error: "Cannot book more than 7 days in advance." };
+    }
+
+    // Validate time slots are not in the past (for today's bookings)
+    if (bookingDate === today) {
+        const currentHour = now.getHours();
+        for (const slot of slots) {
+            const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
+            if (!match) {
+                return { success: false, error: "Invalid time slot format." };
+            }
+            let slotHour = parseInt(match[1], 10);
+            const period = match[2].toUpperCase();
+            if (period === "PM" && slotHour !== 12) slotHour += 12;
+            if (period === "AM" && slotHour === 12) slotHour = 0;
+            if (slotHour <= currentHour) {
+                return { success: false, error: "Cannot book a time slot that has already passed." };
+            }
+        }
+    }
+
+    // Validate all slots are recognized
+    for (const slot of slots) {
+        if (!TIME_SLOTS.includes(slot)) {
+            return { success: false, error: "Invalid time slot selected." };
+        }
+    }
+
+    // Validate rigs belong to this venue
+    const { data: venueRigs } = await supabase
+        .from("rigs")
+        .select("id")
+        .eq("venue_id", venueId);
+    if (!venueRigs) {
+        return { success: false, error: "Failed to verify rigs." };
+    }
+    const venueRigIds = new Set(venueRigs.map((r) => r.id));
+    for (const rigId of rigIds) {
+        if (!venueRigIds.has(rigId)) {
+            return { success: false, error: "Selected rig does not belong to this venue." };
+        }
+    }
+
+    // Check for existing bookings that would conflict
+    const { data: conflicts } = await supabase
+        .from("bookings")
+        .select("rig_id, time_slot")
+        .eq("booking_date", bookingDate)
+        .in("rig_id", rigIds)
+        .in("time_slot", slots);
+
+    if (conflicts && conflicts.length > 0) {
+        return { success: false, error: "Some slots were just booked. Please refresh and try again." };
+    }
+
+    // Also check rig status (out_of_order / blocked)
+    const { data: rigRows } = await supabase
+        .from("rigs")
+        .select("id, status")
+        .in("id", rigIds);
+
+    if (!rigRows) {
+        return { success: false, error: "Failed to verify rig availability." };
+    }
+
+    const unavailable = rigRows.filter((r) => r.status !== "available");
+    if (unavailable.length > 0) {
+        return { success: false, error: "Some rigs are no longer available. Please refresh and try again." };
+    }
+
+    const code = `APP-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+    // Build booking rows: one per rig × slot
+    const rows = rigIds.flatMap((rigId) =>
+        slots.map((slot) => ({
+            rig_id: rigId,
+            customer_name: customerName,
+            time_slot: slot,
+            booking_date: bookingDate,
+            verification_code: code,
+            source: "app" as const,
+        })),
+    );
+
+    const { error: insertError } = await supabase.from("bookings").insert(rows);
+
+    if (insertError) {
+        return { success: false, error: "Booking failed. Please try again." };
+    }
+
+    return { success: true, verificationCode: code };
+}
+
 /* ─── Dashboard data functions ─────────────────────────────────────── */
 
 export async function getVenuesList(): Promise<VenueOption[]> {
@@ -259,11 +381,13 @@ export async function getTodaysBookings(venueId: number): Promise<Booking[]> {
         .eq("venue_id", venueId);
     if (!rigRows || rigRows.length === 0) return [];
 
+    // Fetch today's bookings + future app bookings (customers can book up to 7 days ahead)
     const { data: rows, error } = await supabase
         .from("bookings")
-        .select("id, rig_id, customer_name, time_slot, verification_code, source")
-        .eq("booking_date", today)
+        .select("id, rig_id, customer_name, time_slot, booking_date, verification_code, source")
+        .gte("booking_date", today)
         .in("rig_id", rigRows.map((r) => r.id))
+        .order("booking_date")
         .order("time_slot");
     if (error || !rows) return [];
 
@@ -275,48 +399,106 @@ export async function getTodaysBookings(venueId: number): Promise<Booking[]> {
 
 /**
  * Block an available rig for a walk-in customer (admin only).
- * Uses optimistic concurrency — only succeeds if the rig is still available.
+ * Accepts specific time slots and date. Checks for conflicts with existing bookings.
+ * Only changes rig DB status to "blocked" if booking includes the current live slot today.
  */
 export async function blockRigForWalkIn(
     rigId: number,
-    durationHours: number,
+    slots: string[],
+    bookingDate: string,
+    customerName?: string,
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
 
-    const { data, error } = await supabaseAdmin
-        .from("rigs")
-        .update({ status: "blocked" })
-        .eq("id", rigId)
-        .eq("status", "available")
-        .select();
-
-    if (error || !data || data.length === 0) {
-        return { success: false, error: "Slot just secured online. Select another rig." };
+    if (slots.length === 0) {
+        return { success: false, error: "No time slots selected." };
     }
 
-    const now = new Date();
-    const startHour = now.getHours();
-    const endHour = startHour + durationHours;
-    const timeSlot = `${fmtHour(startHour)} – ${fmtHour(endHour)}`;
+    // Validate slots
+    for (const slot of slots) {
+        if (!TIME_SLOTS.includes(slot)) {
+            return { success: false, error: "Invalid time slot." };
+        }
+    }
+
+    // Check rig is available or already blocked (not out_of_order or booked)
+    const { data: rig } = await supabaseAdmin
+        .from("rigs")
+        .select("status")
+        .eq("id", rigId)
+        .single();
+    if (!rig) return { success: false, error: "Rig not found." };
+    if (rig.status === "out_of_order") {
+        return { success: false, error: "Rig is out of order." };
+    }
+
+    // Check for conflicting bookings on the selected date + slots
+    const { data: conflicts } = await supabaseAdmin
+        .from("bookings")
+        .select("rig_id, time_slot")
+        .eq("rig_id", rigId)
+        .eq("booking_date", bookingDate)
+        .in("time_slot", slots);
+
+    if (conflicts && conflicts.length > 0) {
+        return { success: false, error: "Some slots are already booked. Please refresh." };
+    }
+
     const code = `WLK-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const name = customerName?.trim() || "Walk-In";
 
-    const blockedUntil = new Date(now.getTime() + durationHours * 60 * 60 * 1000).toISOString();
-
-    const { error: insertError } = await supabaseAdmin.from("bookings").insert({
-        rig_id: rigId,
-        customer_name: "Walk-In",
-        time_slot: timeSlot,
-        booking_date: today,
-        verification_code: code,
-        source: "walk_in",
-        blocked_until: blockedUntil,
+    // Compute blocked_until from the last slot's end hour
+    const lastSlotEndHours = slots.map((slot) => {
+        const match = slot.match(/–\s*(\d{1,2}):00\s*(AM|PM)/i);
+        if (!match) return 0;
+        let h = parseInt(match[1], 10);
+        const p = match[2].toUpperCase();
+        if (p === "PM" && h !== 12) h += 12;
+        if (p === "AM" && h === 12) h = 0;
+        return h;
     });
+    const maxEndHour = Math.max(...lastSlotEndHours);
+    const blockedDate = new Date(bookingDate + "T00:00:00");
+    blockedDate.setHours(maxEndHour, 0, 0, 0);
+    const blockedUntil = blockedDate.toISOString();
 
+    // Insert booking records for each slot
+    const rows = slots.map((slot) => ({
+        rig_id: rigId,
+        customer_name: name,
+        time_slot: slot,
+        booking_date: bookingDate,
+        verification_code: code,
+        source: "walk_in" as const,
+        blocked_until: blockedUntil,
+    }));
+
+    const { error: insertError } = await supabaseAdmin.from("bookings").insert(rows);
     if (insertError) {
-        // Rig was blocked but booking record failed — revert rig status
-        await supabaseAdmin.from("rigs").update({ status: "available" }).eq("id", rigId);
-        return { success: false, error: "Failed to create booking record." };
+        return { success: false, error: "Failed to create booking records." };
+    }
+
+    // Only update rig status to "blocked" if booking covers the current live hour today
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    if (bookingDate === today) {
+        const currentHour = now.getHours();
+        const coversNow = slots.some((slot) => {
+            const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
+            if (!match) return false;
+            let h = parseInt(match[1], 10);
+            const p = match[2].toUpperCase();
+            if (p === "PM" && h !== 12) h += 12;
+            if (p === "AM" && h === 12) h = 0;
+            return currentHour >= h && currentHour < h + 1;
+        });
+        if (coversNow && rig.status === "available") {
+            await supabaseAdmin
+                .from("rigs")
+                .update({ status: "blocked" })
+                .eq("id", rigId)
+                .eq("status", "available");
+        }
     }
 
     return { success: true };
