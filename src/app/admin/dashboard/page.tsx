@@ -1034,7 +1034,6 @@ export default function AdminDashboardPage() {
     const handleRigClick = async (rig: DashboardRig) => {
         const effective = getEffectiveStatus(rig);
         if (effective === "booked") {
-            // App-booked rig — no action, admin can see details in the schedule
             return;
         } else if (effective === "available") {
             setWalkInTarget(rig);
@@ -1099,7 +1098,7 @@ export default function AdminDashboardPage() {
 
     const handleLogout = () => {
         router.push("/");
-        logout("admin"); // fire-and-forget: isLoggingOut=true prevents redirect flash
+        logout("admin");
     };
 
     const handleAddRig = async (name: string, specs: string, status: "available" | "out_of_order") => {

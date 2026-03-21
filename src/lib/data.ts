@@ -527,41 +527,18 @@ export async function releaseRig(rigId: number): Promise<{ success: boolean }> {
 }
 
 /**
- * Release all walk-in blocked rigs whose blocked_until has passed (admin only).
- * Called on admin dashboard load and each polling cycle.
+ * Release all walk-in blocked rigs whose blocked_until has passed.
+ * Uses a Postgres security-definer function so it works from any context
+ * (admin or customer) without needing admin RLS permissions.
+ * Run supabase/migration_auto_release_fn.sql first.
  */
 export async function releaseExpiredWalkIns(): Promise<number> {
-    await requireAdminSession();
-
-    const now = new Date().toISOString();
-
-    // Find expired walk-in bookings
-    const { data: expired } = await supabaseAdmin
-        .from("bookings")
-        .select("id, rig_id")
-        .eq("source", "walk_in")
-        .not("blocked_until", "is", null)
-        .lte("blocked_until", now);
-
-    if (!expired || expired.length === 0) return 0;
-
-    const rigIds = expired.map((b) => b.rig_id);
-    const bookingIds = expired.map((b) => b.id);
-
-    // Set those rigs back to available (only if still blocked)
-    await supabaseAdmin
-        .from("rigs")
-        .update({ status: "available" })
-        .in("id", rigIds)
-        .eq("status", "blocked");
-
-    // Delete the expired walk-in booking records
-    await supabaseAdmin
-        .from("bookings")
-        .delete()
-        .in("id", bookingIds);
-
-    return expired.length;
+    const { data, error } = await supabase.rpc("release_expired_walkins");
+    if (error) {
+        console.warn("releaseExpiredWalkIns RPC failed:", error.message);
+        return 0;
+    }
+    return (data as number) ?? 0;
 }
 
 export async function toggleOutOfOrder(rigId: number): Promise<{ success: boolean }> {

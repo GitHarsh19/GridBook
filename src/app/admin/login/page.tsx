@@ -80,8 +80,61 @@ function AdminLoginForm() {
         if (oauthError) setError(oauthError.message);
     };
 
-    const handleDemoLogin = () => {
-        setLoggedIn(true, "admin");
+    const [demoLoading, setDemoLoading] = useState(false);
+
+    const handleDemoLogin = async () => {
+        const demoEmail = process.env.NEXT_PUBLIC_DEMO_ADMIN_EMAIL;
+        const demoPassword = process.env.NEXT_PUBLIC_DEMO_ADMIN_PASSWORD;
+
+        if (!demoEmail || !demoPassword) {
+            setError("Demo account not configured. Please sign up instead.");
+            return;
+        }
+
+        setDemoLoading(true);
+        setError("");
+
+        // Try signing in first
+        let { data, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+            email: demoEmail,
+            password: demoPassword,
+        });
+
+        // If user doesn't exist, auto-create then sign in
+        if (authError) {
+            const { error: signUpError } = await supabaseAdmin.auth.signUp({
+                email: demoEmail,
+                password: demoPassword,
+                options: { data: { full_name: "Demo Admin" } },
+            });
+
+            if (signUpError) {
+                setDemoLoading(false);
+                setError("Demo setup failed: " + signUpError.message);
+                return;
+            }
+
+            // Sign in with the newly created account
+            const result = await supabaseAdmin.auth.signInWithPassword({
+                email: demoEmail,
+                password: demoPassword,
+            });
+            data = result.data;
+            authError = result.error;
+
+            if (authError) {
+                setDemoLoading(false);
+                setError("Demo login failed: " + authError.message);
+                return;
+            }
+        }
+
+        if (data?.user) {
+            await assignAdminRole(data.user.id);
+            setLoggedIn(true, "admin");
+        }
+
+        setDemoLoading(false);
         router.push("/admin/dashboard");
     };
 
@@ -217,9 +270,11 @@ function AdminLoginForm() {
                     <button
                         type="button"
                         onClick={handleDemoLogin}
-                        className="mt-3 w-full cursor-pointer rounded-md border border-zinc-800 py-2 text-xs text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-400"
+                        disabled={demoLoading}
+                        className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-zinc-800 py-2 text-xs text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-400 disabled:opacity-50"
                     >
-                        Skip with demo account
+                        {demoLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                        {demoLoading ? "Signing into demo\u2026" : "Try demo account"}
                     </button>
                 </div>
             </div>

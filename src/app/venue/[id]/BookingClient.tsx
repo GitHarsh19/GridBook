@@ -9,7 +9,7 @@ import { DateSelector } from "@/components/DateSelector";
 import { TimeSelector, parseSlotStartHour } from "@/components/TimeSelector";
 import { RigGrid } from "@/components/RigGrid";
 import { CheckoutBar } from "@/components/CheckoutBar";
-import { type Venue, TIME_SLOTS, getBookedRigIdsForSlots, getVenueById } from "@/lib/data";
+import { type Venue, TIME_SLOTS, getBookedRigIdsForSlots, getVenueById, releaseExpiredWalkIns } from "@/lib/data";
 
 function getTodayStr(): string {
     const now = new Date();
@@ -39,6 +39,13 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
         }
         return past;
     }, [selectedDate]);
+
+    // Release expired walk-in blocks on mount (and every 30s)
+    useEffect(() => {
+        releaseExpiredWalkIns().catch(() => {});
+        const interval = setInterval(() => releaseExpiredWalkIns().catch(() => {}), 30_000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Reset time & rig selections when the date changes
     const handleDateChange = (date: string) => {
