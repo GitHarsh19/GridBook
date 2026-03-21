@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { getVenues, getVenueById, type Venue } from "@/lib/data";
 
-const POLL_INTERVAL = 45_000;
+const POLL_INTERVAL = 10_000;
 
 /**
  * Real-time venue list for the explore page.

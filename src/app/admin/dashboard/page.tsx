@@ -17,9 +17,7 @@ import {
     Users,
     Plus,
     Settings,
-    MapPin,
     Pencil,
-    ImageIcon,
     Building2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -44,887 +42,15 @@ import {
     updateVenue,
     deleteVenue,
 } from "@/lib/data";
-
-/* ─── Walk-In Modal ────────────────────────────────────────────────── */
-
-function getUpcomingDates(count: number): string[] {
-    const dates: string[] = [];
-    const now = new Date();
-    for (let i = 0; i < count; i++) {
-        const d = new Date(now);
-        d.setDate(now.getDate() + i);
-        dates.push(
-            `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-        );
-    }
-    return dates;
-}
-
-function parseSlotStartHour(slot: string): number {
-    const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
-    if (!match) return -1;
-    let h = parseInt(match[1], 10);
-    const p = match[2].toUpperCase();
-    if (p === "PM" && h !== 12) h += 12;
-    if (p === "AM" && h === 12) h = 0;
-    return h;
-}
-
-function WalkInModal({
-    rig,
-    initialDate,
-    existingBookings,
-    onConfirm,
-    onClose,
-    loading,
-}: {
-    rig: DashboardRig;
-    initialDate: string;
-    /** All bookings across all dates for this rig (to show conflicts) */
-    existingBookings: Booking[];
-    onConfirm: (slots: string[], date: string, customerName: string) => void;
-    onClose: () => void;
-    loading: boolean;
-}) {
-    const [selectedDate, setSelectedDate] = useState(initialDate);
-    const [selectedSlots, setSelectedSlots] = useState<string[]>([]);
-    const [customerName, setCustomerName] = useState("");
-    const dates = getUpcomingDates(7);
-
-    // Bookings for this rig on the selected date
-    const rigDateBookings = existingBookings.filter(
-        (b) => b.rig_id === rig.id && b.booking_date === selectedDate,
-    );
-    const bookedSlotMap = new Map<string, Booking>();
-    for (const b of rigDateBookings) {
-        bookedSlotMap.set(b.time_slot, b);
-    }
-
-    const now = new Date();
-    const todayStr = dates[0];
-    const currentHour = now.getHours();
-
-    const toggleSlot = (slot: string) => {
-        setSelectedSlots((prev) =>
-            prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot],
-        );
-    };
-
-    const handleDateChange = (d: string) => {
-        setSelectedDate(d);
-        setSelectedSlots([]);
-    };
-
-    const formatDateLabel = (dateStr: string, i: number) => {
-        if (i === 0) return "Today";
-        if (i === 1) return "Tmrw";
-        const d = new Date(dateStr + "T00:00:00");
-        return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" });
-    };
-
-    // Count total available slots for this date
-    const availableCount = TIME_SLOTS.filter((slot) => {
-        if (bookedSlotMap.has(slot)) return false;
-        if (selectedDate === todayStr && parseSlotStartHour(slot) <= currentHour) return false;
-        return true;
-    }).length;
-
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
-            onClick={onClose}
-        >
-            <div
-                className="w-full max-w-lg rounded-lg border border-zinc-800 bg-zinc-900 p-6"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-white">
-                        Book Walk-In
-                    </h3>
-                    <button
-                        onClick={onClose}
-                        className="cursor-pointer text-zinc-500 transition-colors hover:text-white"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
-                {/* Rig info */}
-                <div className="mb-5 flex items-center gap-3 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5">
-                    <Monitor className="h-5 w-5 text-amber-400" />
-                    <div>
-                        <p className="text-sm font-medium text-white">{rig.name}</p>
-                        <p className="text-[10px] text-zinc-600">{rig.specs}</p>
-                    </div>
-                </div>
-
-                {/* Customer name */}
-                <div className="mb-4">
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">
-                        Customer Name <span className="text-zinc-700">(optional)</span>
-                    </label>
-                    <input
-                        type="text"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="Walk-In"
-                        className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-amber-500/50"
-                    />
-                </div>
-
-                {/* Date picker */}
-                <div className="mb-4">
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                        <CalendarDays className="h-3 w-3" />
-                        Date
-                    </label>
-                    <div className="hide-scrollbar flex gap-1.5 overflow-x-auto pb-1">
-                        {dates.map((dateStr, i) => {
-                            const isSelected = selectedDate === dateStr;
-                            const dateBookingCount = existingBookings.filter(
-                                (b) => b.rig_id === rig.id && b.booking_date === dateStr,
-                            ).length;
-                            return (
-                                <button
-                                    key={dateStr}
-                                    onClick={() => handleDateChange(dateStr)}
-                                    className={`relative shrink-0 cursor-pointer rounded-md border px-3 py-1.5 text-xs font-medium transition-all ${
-                                        isSelected
-                                            ? "border-amber-500 bg-amber-500/10 text-amber-400"
-                                            : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
-                                    }`}
-                                >
-                                    {formatDateLabel(dateStr, i)}
-                                    {dateBookingCount > 0 && (
-                                        <span className={`ml-1.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[8px] font-bold ${
-                                            isSelected ? "bg-amber-500/20 text-amber-300" : "bg-red-500/15 text-red-400"
-                                        }`}>
-                                            {dateBookingCount}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Time slots grid */}
-                <div className="mb-5">
-                    <div className="mb-1.5 flex items-center justify-between">
-                        <label className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                            <Clock className="h-3 w-3" />
-                            Time Slots
-                            {selectedSlots.length > 0 && (
-                                <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-400">
-                                    {selectedSlots.length} selected
-                                </span>
-                            )}
-                        </label>
-                        <span className="text-[10px] text-zinc-600">
-                            {availableCount} available
-                        </span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
-                        {TIME_SLOTS.map((slot) => {
-                            const booking = bookedSlotMap.get(slot);
-                            const isBooked = !!booking;
-                            const isPast = selectedDate === todayStr && parseSlotStartHour(slot) <= currentHour;
-                            const isDisabled = isBooked || isPast;
-                            const isSelected = selectedSlots.includes(slot);
-
-                            // Short label
-                            const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)\s*–\s*(\d{1,2}):00\s*(AM|PM)/i);
-                            const shortLabel = match
-                                ? `${match[1]}${match[2].toLowerCase()} – ${match[3]}${match[4].toLowerCase()}`
-                                : slot;
-
-                            return (
-                                <button
-                                    key={slot}
-                                    disabled={isDisabled}
-                                    onClick={() => toggleSlot(slot)}
-                                    title={
-                                        isBooked
-                                            ? `${booking.customer_name} (${booking.source === "app" ? "App" : "Walk-In"}) ${booking.verification_code}`
-                                            : isPast
-                                                ? "Past"
-                                                : "Available"
-                                    }
-                                    className={`relative rounded-md border px-2 py-2 text-[11px] font-medium transition-all ${
-                                        isDisabled
-                                            ? isBooked
-                                                ? booking.source === "app"
-                                                    ? "cursor-not-allowed border-red-500/20 bg-red-500/5 text-red-400/60"
-                                                    : "cursor-not-allowed border-amber-500/20 bg-amber-500/5 text-amber-400/60"
-                                                : "cursor-not-allowed border-zinc-800/50 bg-zinc-900/30 text-zinc-700"
-                                            : isSelected
-                                                ? "cursor-pointer border-amber-500 bg-amber-500/15 text-amber-400"
-                                                : "cursor-pointer border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-amber-500/40 hover:text-white"
-                                    }`}
-                                >
-                                    {shortLabel}
-                                    {isBooked && (
-                                        <span className="block mt-0.5 text-[8px] truncate opacity-70">
-                                            {booking.source === "app" ? "App" : "WLK"}: {booking.customer_name}
-                                        </span>
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                    {/* Legend */}
-                    <div className="mt-2 flex flex-wrap gap-3 text-[9px] text-zinc-600">
-                        <div className="flex items-center gap-1">
-                            <span className="inline-block h-2 w-2 rounded-sm border border-zinc-700 bg-zinc-800" />
-                            Available
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="inline-block h-2 w-2 rounded-sm border border-amber-500 bg-amber-500/15" />
-                            Selected
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="inline-block h-2 w-2 rounded-sm border border-red-500/20 bg-red-500/5" />
-                            App Booked
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="inline-block h-2 w-2 rounded-sm border border-amber-500/20 bg-amber-500/5" />
-                            Walk-In
-                        </div>
-                    </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                    <button
-                        onClick={onClose}
-                        className="flex-1 cursor-pointer rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={() => onConfirm(selectedSlots, selectedDate, customerName)}
-                        disabled={loading || selectedSlots.length === 0}
-                        className="flex-1 cursor-pointer rounded-md bg-amber-500 py-2.5 text-sm font-bold text-black transition-colors hover:bg-amber-400 disabled:opacity-50"
-                    >
-                        {loading
-                            ? "Booking\u2026"
-                            : `Book ${selectedSlots.length || ""} Slot${selectedSlots.length !== 1 ? "s" : ""}`}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Add Rig Modal ───────────────────────────────────────────────── */
-
-function AddRigModal({
-    onConfirm,
-    onClose,
-    loading,
-}: {
-    onConfirm: (name: string, specs: string, status: "available" | "out_of_order") => void;
-    onClose: () => void;
-    loading: boolean;
-}) {
-    const [name, setName] = useState("");
-    const [specs, setSpecs] = useState("");
-    const [status, setStatus] = useState<"available" | "out_of_order">("available");
-
-    const inputClass =
-        "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
-
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
-            onClick={onClose}
-        >
-            <div
-                className="w-full max-w-sm rounded-lg border border-zinc-800 bg-zinc-900 p-6"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="mb-5 flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-white">Add Rig</h3>
-                    <button
-                        onClick={onClose}
-                        className="cursor-pointer text-zinc-500 transition-colors hover:text-white"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
-                <div className="space-y-4">
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Rig Name
-                        </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g. Rig 7"
-                            className={inputClass}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Specs
-                        </label>
-                        <input
-                            type="text"
-                            value={specs}
-                            onChange={(e) => setSpecs(e.target.value)}
-                            placeholder='e.g. Fanatec DD Pro · Triple 27"'
-                            className={inputClass}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Status
-                        </label>
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value as "available" | "out_of_order")}
-                            className="w-full cursor-pointer rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
-                        >
-                            <option value="available">Available</option>
-                            <option value="out_of_order">Out of Order</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="mt-6 flex gap-3">
-                    <button
-                        onClick={onClose}
-                        className="flex-1 cursor-pointer rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={() => onConfirm(name.trim(), specs.trim(), status)}
-                        disabled={loading || !name.trim()}
-                        className="flex-1 cursor-pointer rounded-md bg-cyan-600 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
-                    >
-                        {loading ? "Adding\u2026" : "Add Rig"}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Edit Rig Modal ──────────────────────────────────────────────── */
-
-function EditRigModal({
-    rig,
-    onSave,
-    onDelete,
-    onClose,
-    loading,
-}: {
-    rig: DashboardRig;
-    onSave: (name: string, specs: string) => void;
-    onDelete: () => void;
-    onClose: () => void;
-    loading: boolean;
-}) {
-    const [name, setName] = useState(rig.name);
-    const [specs, setSpecs] = useState(rig.specs);
-    const [confirmingDelete, setConfirmingDelete] = useState(false);
-
-    const inputClass =
-        "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
-
-    if (confirmingDelete) {
-        return (
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
-                onClick={onClose}
-            >
-                <div
-                    className="w-full max-w-sm rounded-lg border border-zinc-800 bg-zinc-900 p-6"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="mb-4 flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-500" />
-                        <h3 className="text-lg font-bold text-white">Delete Rig</h3>
-                    </div>
-                    <p className="mb-6 text-sm text-zinc-400">
-                        Are you sure? This will remove{" "}
-                        <span className="font-medium text-white">{rig.name}</span>{" "}
-                        from the app entirely.
-                    </p>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => setConfirmingDelete(false)}
-                            className="flex-1 cursor-pointer rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={onDelete}
-                            disabled={loading}
-                            className="flex-1 cursor-pointer rounded-md border border-red-800 bg-red-900/50 py-2.5 text-sm font-bold text-red-500 transition-colors hover:bg-red-900 disabled:opacity-50"
-                        >
-                            {loading ? "Deleting\u2026" : "Yes, Delete"}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
-            onClick={onClose}
-        >
-            <div
-                className="w-full max-w-sm rounded-lg border border-zinc-800 bg-zinc-900 p-6"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="mb-5 flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-white">Edit Rig</h3>
-                    <button
-                        onClick={onClose}
-                        className="cursor-pointer text-zinc-500 transition-colors hover:text-white"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
-                <div className="space-y-4">
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Rig Name
-                        </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className={inputClass}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Specs
-                        </label>
-                        <input
-                            type="text"
-                            value={specs}
-                            onChange={(e) => setSpecs(e.target.value)}
-                            className={inputClass}
-                        />
-                    </div>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between">
-                    <button
-                        onClick={() => setConfirmingDelete(true)}
-                        className="cursor-pointer rounded-md border border-red-800 bg-red-900/50 px-4 py-2.5 text-sm font-bold text-red-500 transition-colors hover:bg-red-900"
-                    >
-                        Delete Rig
-                    </button>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={onClose}
-                            className="cursor-pointer rounded-md border border-zinc-700 px-4 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={() => onSave(name.trim(), specs.trim())}
-                            disabled={loading || !name.trim()}
-                            className="cursor-pointer rounded-md bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
-                        >
-                            {loading ? "Saving\u2026" : "Save"}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Add Venue Modal ─────────────────────────────────────────────── */
-
-function AddVenueModal({
-    onConfirm,
-    onClose,
-    loading,
-}: {
-    onConfirm: (name: string, location: string, price: number, description: string, imageUrl: string) => void;
-    onClose: () => void;
-    loading: boolean;
-}) {
-    const [name, setName] = useState("");
-    const [location, setLocation] = useState("");
-    const [price, setPrice] = useState("");
-    const [description, setDescription] = useState("");
-    const [imageUrl, setImageUrl] = useState("");
-
-    const inputClass =
-        "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
-
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
-            onClick={onClose}
-        >
-            <div
-                className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-6"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="mb-5 flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-lg font-bold text-white">
-                        <Building2 className="h-5 w-5 text-cyan-500" />
-                        Add Venue
-                    </h3>
-                    <button
-                        onClick={onClose}
-                        className="cursor-pointer text-zinc-500 transition-colors hover:text-white"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
-                <div className="space-y-4">
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Venue Name
-                        </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g. Apex Racing Lounge"
-                            className={inputClass}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Location
-                        </label>
-                        <input
-                            type="text"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            placeholder="e.g. Koramangala, Bengaluru"
-                            className={inputClass}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Price per hour (₹)
-                        </label>
-                        <input
-                            type="number"
-                            value={price}
-                            onChange={(e) => setPrice(e.target.value)}
-                            placeholder="e.g. 500"
-                            min={1}
-                            className={inputClass}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Description
-                        </label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Short description of your venue"
-                            rows={2}
-                            className={inputClass + " resize-none"}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400">
-                            <ImageIcon className="h-3 w-3" />
-                            Image URL
-                            <span className="text-zinc-600">(optional)</span>
-                        </label>
-                        <input
-                            type="url"
-                            value={imageUrl}
-                            onChange={(e) => setImageUrl(e.target.value)}
-                            placeholder="https://example.com/venue.jpg"
-                            className={inputClass}
-                        />
-                    </div>
-                </div>
-
-                <div className="mt-6 flex gap-3">
-                    <button
-                        onClick={onClose}
-                        className="flex-1 cursor-pointer rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={() =>
-                            onConfirm(
-                                name.trim(),
-                                location.trim(),
-                                Number(price) || 0,
-                                description.trim(),
-                                imageUrl.trim(),
-                            )
-                        }
-                        disabled={loading || !name.trim() || !location.trim() || !price}
-                        className="flex-1 cursor-pointer rounded-md bg-cyan-600 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
-                    >
-                        {loading ? "Adding\u2026" : "Add Venue"}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Edit Venue Modal ────────────────────────────────────────────── */
-
-function EditVenueModal({
-    venue,
-    onSave,
-    onDelete,
-    onClose,
-    loading,
-}: {
-    venue: VenueOption;
-    onSave: (name: string, location: string, price: number, description: string, imageUrl: string) => void;
-    onDelete: () => void;
-    onClose: () => void;
-    loading: boolean;
-}) {
-    const [name, setName] = useState(venue.name);
-    const [location, setLocation] = useState(venue.location);
-    const [price, setPrice] = useState(String(venue.price));
-    const [description, setDescription] = useState(venue.description);
-    const [imageUrl, setImageUrl] = useState(venue.imageUrl ?? "");
-    const [confirmingDelete, setConfirmingDelete] = useState(false);
-
-    const inputClass =
-        "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
-
-    if (confirmingDelete) {
-        return (
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
-                onClick={onClose}
-            >
-                <div
-                    className="w-full max-w-sm rounded-lg border border-zinc-800 bg-zinc-900 p-6"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="mb-4 flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-500" />
-                        <h3 className="text-lg font-bold text-white">Delete Venue</h3>
-                    </div>
-                    <p className="mb-2 text-sm text-zinc-400">
-                        Are you sure you want to delete{" "}
-                        <span className="font-medium text-white">{venue.name}</span>?
-                    </p>
-                    <p className="mb-6 text-xs text-red-400/80">
-                        This will permanently delete all rigs and bookings associated with this venue.
-                    </p>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={() => setConfirmingDelete(false)}
-                            className="flex-1 cursor-pointer rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={onDelete}
-                            disabled={loading}
-                            className="flex-1 cursor-pointer rounded-md border border-red-800 bg-red-900/50 py-2.5 text-sm font-bold text-red-500 transition-colors hover:bg-red-900 disabled:opacity-50"
-                        >
-                            {loading ? "Deleting\u2026" : "Yes, Delete"}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
-            onClick={onClose}
-        >
-            <div
-                className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-6"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="mb-5 flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-lg font-bold text-white">
-                        <Building2 className="h-5 w-5 text-cyan-500" />
-                        Edit Venue
-                    </h3>
-                    <button
-                        onClick={onClose}
-                        className="cursor-pointer text-zinc-500 transition-colors hover:text-white"
-                    >
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
-                {venue.imageUrl && (
-                    <div className="mb-4 overflow-hidden rounded-md">
-                        <img
-                            src={venue.imageUrl}
-                            alt={venue.name}
-                            className="h-32 w-full object-cover"
-                        />
-                    </div>
-                )}
-
-                <div className="space-y-4">
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Venue Name
-                        </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className={inputClass}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Location
-                        </label>
-                        <input
-                            type="text"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            className={inputClass}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Price per hour (₹)
-                        </label>
-                        <input
-                            type="number"
-                            value={price}
-                            onChange={(e) => setPrice(e.target.value)}
-                            min={1}
-                            className={inputClass}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                            Description
-                        </label>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            rows={2}
-                            className={inputClass + " resize-none"}
-                        />
-                    </div>
-                    <div>
-                        <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400">
-                            <ImageIcon className="h-3 w-3" />
-                            Image URL
-                            <span className="text-zinc-600">(optional)</span>
-                        </label>
-                        <input
-                            type="url"
-                            value={imageUrl}
-                            onChange={(e) => setImageUrl(e.target.value)}
-                            placeholder="https://example.com/venue.jpg"
-                            className={inputClass}
-                        />
-                    </div>
-                </div>
-
-                <div className="mt-6 flex items-center justify-between">
-                    <button
-                        onClick={() => setConfirmingDelete(true)}
-                        className="cursor-pointer rounded-md border border-red-800 bg-red-900/50 px-4 py-2.5 text-sm font-bold text-red-500 transition-colors hover:bg-red-900"
-                    >
-                        Delete Venue
-                    </button>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={onClose}
-                            className="cursor-pointer rounded-md border border-zinc-700 px-4 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={() =>
-                                onSave(
-                                    name.trim(),
-                                    location.trim(),
-                                    Number(price) || 0,
-                                    description.trim(),
-                                    imageUrl.trim(),
-                                )
-                            }
-                            disabled={loading || !name.trim() || !location.trim() || !price}
-                            className="cursor-pointer rounded-md bg-cyan-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
-                        >
-                            {loading ? "Saving\u2026" : "Save"}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/* ─── Status config ────────────────────────────────────────────────── */
-
-const STATUS_CONFIG: Record<
-    RigStatus,
-    {
-        border: string;
-        bg: string;
-        dot: string;
-        label: string;
-        labelColor: string;
-        clickable: boolean;
-    }
-> = {
-    available: {
-        border: "border-emerald-500/50 hover:border-emerald-400",
-        bg: "bg-zinc-900",
-        dot: "bg-emerald-400",
-        label: "Available",
-        labelColor: "text-emerald-400",
-        clickable: true,
-    },
-    booked: {
-        border: "border-red-500/50",
-        bg: "bg-zinc-900",
-        dot: "bg-red-400",
-        label: "App Booked",
-        labelColor: "text-red-400",
-        clickable: false,
-    },
-    blocked: {
-        border: "border-amber-500/50 hover:border-amber-400",
-        bg: "bg-amber-500/5",
-        dot: "bg-amber-400",
-        label: "Walk-In",
-        labelColor: "text-amber-400",
-        clickable: true,
-    },
-    out_of_order: {
-        border: "border-zinc-800 hover:border-zinc-700",
-        bg: "bg-zinc-900/50",
-        dot: "bg-zinc-600",
-        label: "Out of Order",
-        labelColor: "text-zinc-600",
-        clickable: true,
-    },
-};
+import { getTodayStr, getUpcomingDates, parseSlotStartHour, shortSlotLabel } from "@/lib/utils";
+import {
+    WalkInModal,
+    AddRigModal,
+    EditRigModal,
+    AddVenueModal,
+    EditVenueModal,
+    STATUS_CONFIG,
+} from "@/components/admin";
 
 /* ─── Main Dashboard ───────────────────────────────────────────────── */
 
@@ -945,11 +71,7 @@ export default function AdminDashboardPage() {
     const [error, setError] = useState<string | null>(null);
 
     // Admin date/time slot selector state
-    const initDate = (() => {
-        const n = new Date();
-        return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
-    })();
-    const [adminDate, setAdminDate] = useState<string>(initDate);
+    const [adminDate, setAdminDate] = useState<string>(getTodayStr);
     const [adminSlot, setAdminSlot] = useState<string | null>(null);
 
     const loadVenues = useCallback(async () => {
@@ -978,7 +100,6 @@ export default function AdminDashboardPage() {
     const loadData = useCallback(async () => {
         if (!selectedVenueId) return;
         try {
-            // Release any walk-in blocks whose duration has expired
             await releaseExpiredWalkIns();
             const [rigData, bookingData] = await Promise.all([
                 getDashboardRigs(selectedVenueId),
@@ -1226,11 +347,11 @@ export default function AdminDashboardPage() {
         }
     };
 
-    // ── Render ──
+    // ── Render helpers ──
 
     const selectedVenue = venues.find((v) => v.id === selectedVenueId);
     const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const todayStr = getTodayStr();
     const venuePrice = selectedVenue?.price ?? 500;
 
     // Bookings filtered for the admin-selected date
@@ -1249,15 +370,10 @@ export default function AdminDashboardPage() {
         dateBookings
             .filter((b) => {
                 if (adminSlot) return b.time_slot === adminSlot;
-                // No slot selected + viewing today → use current time
                 if (adminDate !== todayStr) return false;
                 const currentHour = now.getHours();
-                const match = b.time_slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
-                if (!match) return false;
-                let slotStart = parseInt(match[1], 10);
-                const period = match[2].toUpperCase();
-                if (period === "PM" && slotStart !== 12) slotStart += 12;
-                if (period === "AM" && slotStart === 12) slotStart = 0;
+                const slotStart = parseSlotStartHour(b.time_slot);
+                if (slotStart < 0) return false;
                 return currentHour >= slotStart && currentHour < slotStart + 1;
             })
             .map((b) => b.rig_id),
@@ -1266,50 +382,20 @@ export default function AdminDashboardPage() {
     // Compute effective rig status: overlay bookings onto DB status
     const getEffectiveStatus = (rig: DashboardRig): RigStatus => {
         if (rig.status === "out_of_order") return "out_of_order";
-        // For walk-in blocks, only show on today
         if (rig.status === "blocked" && adminDate === todayStr) return "blocked";
         if (activelyBookedRigIds.has(rig.id)) return "booked";
         if (rig.status === "blocked" && adminDate !== todayStr) return "available";
         return rig.status;
     };
 
-    // Helper: generate upcoming dates for the admin date picker
-    const adminDates = (() => {
-        const dates: string[] = [];
-        const base = new Date();
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(base);
-            d.setDate(base.getDate() + i);
-            dates.push(
-                `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-            );
-        }
-        return dates;
-    })();
+    // Upcoming dates for the admin date picker
+    const adminDates = getUpcomingDates(7);
 
     const formatAdminDate = (dateStr: string, i: number) => {
         if (i === 0) return { day: "Today", date: new Date(dateStr + "T00:00:00").getDate() };
         if (i === 1) return { day: "Tmrw", date: new Date(dateStr + "T00:00:00").getDate() };
         const d = new Date(dateStr + "T00:00:00");
         return { day: d.toLocaleDateString("en-IN", { weekday: "short" }), date: d.getDate() };
-    };
-
-    // Helper: parse slot start hour for timeline
-    const parseSlotHour = (slot: string): number => {
-        const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
-        if (!match) return -1;
-        let h = parseInt(match[1], 10);
-        const p = match[2].toUpperCase();
-        if (p === "PM" && h !== 12) h += 12;
-        if (p === "AM" && h === 12) h = 0;
-        return h;
-    };
-
-    // Short time label for timeline cells
-    const shortSlotLabel = (slot: string): string => {
-        const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
-        if (!match) return slot;
-        return `${match[1]}${match[2].toLowerCase()}`;
     };
 
     return (
@@ -1486,10 +572,9 @@ export default function AdminDashboardPage() {
                         <div className="hide-scrollbar flex gap-1.5 overflow-x-auto pb-1">
                             {TIME_SLOTS.map((slot) => {
                                 const isSelected = adminSlot === slot;
-                                const slotHour = parseSlotHour(slot);
+                                const slotHour = parseSlotStartHour(slot);
                                 const isPast = adminDate === todayStr && slotHour <= now.getHours();
                                 const isCurrent = adminDate === todayStr && slotHour === now.getHours();
-                                // Count bookings for this slot on this date
                                 const slotBookingCount = dateBookings.filter((b) => b.time_slot === slot).length;
                                 return (
                                     <button
@@ -1583,7 +668,6 @@ export default function AdminDashboardPage() {
                             {rigs.map((rig) => {
                                 const effectiveStatus = getEffectiveStatus(rig);
                                 const cfg = STATUS_CONFIG[effectiveStatus];
-                                // Find booking for this rig matching the selected slot
                                 const booking = adminSlot
                                     ? dateBookings.find((b) => b.rig_id === rig.id && b.time_slot === adminSlot)
                                     : dateBookings.find((b) => b.rig_id === rig.id);
@@ -1717,7 +801,7 @@ export default function AdminDashboardPage() {
                                         Rig
                                     </th>
                                     {TIME_SLOTS.map((slot) => {
-                                        const h = parseSlotHour(slot);
+                                        const h = parseSlotStartHour(slot);
                                         const isCurrent = adminDate === todayStr && h === now.getHours();
                                         return (
                                             <th
@@ -1750,7 +834,7 @@ export default function AdminDashboardPage() {
                                                     ? dateBookings.find((b) => b.rig_id === rig.id && b.time_slot === slot)
                                                     : null;
                                                 const isOOO = rig.status === "out_of_order";
-                                                const h = parseSlotHour(slot);
+                                                const h = parseSlotStartHour(slot);
                                                 const isPast = adminDate === todayStr && h < now.getHours();
                                                 const isCurrent = adminDate === todayStr && h === now.getHours();
 
@@ -1968,7 +1052,7 @@ export default function AdminDashboardPage() {
                 </>)}
             </main>
 
-            {/* ── Walk-In Modal ── */}
+            {/* ── Modals ── */}
             {walkInTarget && (
                 <WalkInModal
                     rig={walkInTarget}
@@ -1980,7 +1064,6 @@ export default function AdminDashboardPage() {
                 />
             )}
 
-            {/* ── Add Rig Modal ── */}
             {showAddRig && (
                 <AddRigModal
                     onConfirm={handleAddRig}
@@ -1989,7 +1072,6 @@ export default function AdminDashboardPage() {
                 />
             )}
 
-            {/* ── Edit Rig Modal ── */}
             {editTarget && (
                 <EditRigModal
                     rig={editTarget}
@@ -2000,7 +1082,6 @@ export default function AdminDashboardPage() {
                 />
             )}
 
-            {/* ── Add Venue Modal ── */}
             {showAddVenue && (
                 <AddVenueModal
                     onConfirm={handleAddVenue}
@@ -2009,7 +1090,6 @@ export default function AdminDashboardPage() {
                 />
             )}
 
-            {/* ── Edit Venue Modal ── */}
             {editVenueTarget && (
                 <EditVenueModal
                     venue={editVenueTarget}

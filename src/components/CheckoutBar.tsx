@@ -1,22 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, Check, Loader2, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { ShoppingCart, Check, Loader2, AlertCircle, CalendarCheck } from "lucide-react";
 import type { Rig } from "@/lib/data";
 import { createAppBooking } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
-
-function formatBookingDate(dateStr: string): string {
-    const d = new Date(dateStr + "T00:00:00");
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    if (dateStr === today) return "Today";
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
-    if (dateStr === tomorrowStr) return "Tomorrow";
-    return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-}
+import { formatBookingDate } from "@/lib/utils";
 
 export function CheckoutBar({
     venueId,
@@ -81,6 +71,7 @@ export function CheckoutBar({
                 selectedSlots,
                 bookingDate,
                 customerName,
+                session.user.id,
             );
 
             if (!result.success) {
@@ -92,10 +83,11 @@ export function CheckoutBar({
 
             setVerificationCode(result.verificationCode ?? "");
             setPayState("done");
+            // Increased timeout to 5s so users have time to see code + click link
             setTimeout(() => {
                 onBookingComplete(result.verificationCode ?? "");
                 setPayState("idle");
-            }, 3000);
+            }, 5000);
         } catch {
             setErrorMsg("Something went wrong. Please try again.");
             setPayState("error");
@@ -129,8 +121,17 @@ export function CheckoutBar({
                         )}
                     </div>
                     {payState === "done" && verificationCode && (
-                        <div className="mt-1 text-xs text-emerald-400">
-                            Verification Code: <span className="font-mono font-bold">{verificationCode}</span>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-emerald-400">
+                            <span>
+                                Code: <span className="font-mono font-bold">{verificationCode}</span>
+                            </span>
+                            <Link
+                                href="/bookings"
+                                className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-400 transition-colors hover:bg-emerald-500/10"
+                            >
+                                <CalendarCheck className="h-3 w-3" />
+                                View Bookings
+                            </Link>
                         </div>
                     )}
                     {payState === "error" && errorMsg && (

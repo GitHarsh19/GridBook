@@ -1,4 +1,5 @@
 import { supabase, supabaseAdmin } from "./supabase";
+import { getTodayStr, toDateStr } from "./utils";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -90,12 +91,40 @@ interface DbRig {
     specs: string;
 }
 
+interface DbVenueWithCounts extends DbVenue {
+    total_rigs: number;
+    available_rigs: number;
+}
+
 /* ─── Data-fetching helpers ─────────────────────────────────────────── */
 
 /**
- * Fetch all venues with computed rig counts.
+ * Fetch all venues with aggregate rig counts.
+ * Uses the venue_with_counts Postgres view for efficient server-side counting.
+ * Falls back to client-side counting if the view doesn't exist yet.
  */
 export async function getVenues(): Promise<Venue[]> {
+    // Try the aggregate view first (faster, single query)
+    const { data: viewData, error: viewErr } = await supabase
+        .from("venue_with_counts")
+        .select("*")
+        .order("id");
+
+    if (!viewErr && viewData) {
+        return viewData.map((v: DbVenueWithCounts) => ({
+            id: v.id,
+            name: v.name,
+            location: v.location,
+            price: v.price,
+            description: v.description,
+            imageUrl: v.image_url ?? null,
+            totalRigs: v.total_rigs,
+            availableRigs: v.available_rigs,
+            rigs: [], // Explore page doesn't need individual rigs
+        }));
+    }
+
+    // Fallback: client-side counting (if migration not yet applied)
     const { data: venues, error: vErr } = await supabase
         .from("venues")
         .select("*")
@@ -193,8 +222,7 @@ export async function getBookedRigIdsForSlots(
 ): Promise<Set<number>> {
     if (slots.length === 0) return new Set();
 
-    const now = new Date();
-    const today = bookingDate ?? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const today = bookingDate ?? getTodayStr();
 
     // Get rig IDs for this venue
     const { data: rigRows } = await supabase
@@ -228,6 +256,7 @@ export async function createAppBooking(
     slots: string[],
     bookingDate: string,
     customerName: string,
+    userId?: string,
 ): Promise<{ success: boolean; error?: string; verificationCode?: string }> {
     if (rigIds.length === 0 || slots.length === 0) {
         return { success: false, error: "No rigs or slots selected." };
@@ -235,7 +264,7 @@ export async function createAppBooking(
 
     // Validate booking date is not in the past
     const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const today = getTodayStr();
     if (bookingDate < today) {
         return { success: false, error: "Cannot book for a past date." };
     }
@@ -243,7 +272,7 @@ export async function createAppBooking(
     // Validate booking date is within 7-day window
     const maxDate = new Date(now);
     maxDate.setDate(maxDate.getDate() + 7);
-    const maxDateStr = `${maxDate.getFullYear()}-${String(maxDate.getMonth() + 1).padStart(2, "0")}-${String(maxDate.getDate()).padStart(2, "0")}`;
+    const maxDateStr = toDateStr(maxDate);
     if (bookingDate > maxDateStr) {
         return { success: false, error: "Cannot book more than 7 days in advance." };
     }
@@ -326,6 +355,7 @@ export async function createAppBooking(
             booking_date: bookingDate,
             verification_code: code,
             source: "app" as const,
+            ...(userId ? { user_id: userId } : {}),
         })),
     );
 
@@ -372,8 +402,7 @@ export async function getDashboardRigs(venueId: number): Promise<DashboardRig[]>
 
 export async function getTodaysBookings(venueId: number): Promise<Booking[]> {
     // Use local date (matches what the venue sees on their wall clock)
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const today = getTodayStr();
 
     const { data: rigRows } = await supabase
         .from("rigs")
@@ -480,7 +509,7 @@ export async function blockRigForWalkIn(
 
     // Only update rig status to "blocked" if booking covers the current live hour today
     const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const today = getTodayStr();
     if (bookingDate === today) {
         const currentHour = now.getHours();
         const coversNow = slots.some((slot) => {
@@ -514,14 +543,12 @@ export async function releaseRig(rigId: number): Promise<{ success: boolean }> {
         .eq("status", "blocked");
     if (error) return { success: false };
 
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     await supabaseAdmin
         .from("bookings")
         .delete()
         .eq("rig_id", rigId)
         .eq("source", "walk_in")
-        .eq("booking_date", today);
+        .eq("booking_date", getTodayStr());
 
     return { success: true };
 }
@@ -564,12 +591,6 @@ export async function toggleOutOfOrder(rigId: number): Promise<{ success: boolea
     return { success: true };
 }
 
-function fmtHour(hour: number): string {
-    const h = ((hour % 24) + 24) % 24;
-    const period = h < 12 ? "AM" : "PM";
-    const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    return `${display}:00 ${period}`;
-}
 
 /* ─── Admin-only rig management ───────────────────────────────────── */
 
@@ -784,5 +805,105 @@ export async function deleteVenue(
         .eq("id", venueId);
 
     if (error) return { success: false, error: error.message };
+    return { success: true };
+}
+
+/* ─── Customer booking history ─────────────────────────────────────── */
+
+export interface CustomerBooking {
+    id: number;
+    rig_id: number;
+    rig_name: string;
+    venue_name: string;
+    venue_location: string;
+    customer_name: string;
+    time_slot: string;
+    booking_date: string;
+    verification_code: string;
+    source: "app" | "walk_in";
+}
+
+/**
+ * Fetch all bookings for the current customer (by user_id).
+ * Groups by verification_code so multi-slot bookings appear together.
+ */
+export async function getCustomerBookings(userId: string): Promise<CustomerBooking[]> {
+    const { data, error } = await supabase
+        .from("bookings")
+        .select(`
+            id,
+            rig_id,
+            customer_name,
+            time_slot,
+            booking_date,
+            verification_code,
+            source,
+            rigs!inner(name, venue_id, venues!inner(name, location))
+        `)
+        .eq("user_id", userId)
+        .order("booking_date", { ascending: false })
+        .order("time_slot");
+
+    if (error || !data) {
+        // Fallback: if the join fails (e.g. user_id column not yet added),
+        // return empty instead of crashing
+        console.warn("getCustomerBookings failed:", error?.message);
+        return [];
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return data.map((row: any) => ({
+        id: row.id,
+        rig_id: row.rig_id,
+        rig_name: row.rigs?.name ?? `Rig ${row.rig_id}`,
+        venue_name: row.rigs?.venues?.name ?? "Unknown Venue",
+        venue_location: row.rigs?.venues?.location ?? "",
+        customer_name: row.customer_name,
+        time_slot: row.time_slot,
+        booking_date: row.booking_date,
+        verification_code: row.verification_code,
+        source: row.source,
+    }));
+}
+
+/**
+ * Cancel a customer's booking by verification code.
+ * Deletes all booking rows matching the code for the given user.
+ * Only allows cancellation of future app bookings.
+ */
+export async function cancelBooking(
+    verificationCode: string,
+    userId: string,
+): Promise<{ success: boolean; error?: string }> {
+    const today = getTodayStr();
+
+    // First verify the booking belongs to this user and is cancellable
+    const { data: rows } = await supabase
+        .from("bookings")
+        .select("id, booking_date, source")
+        .eq("verification_code", verificationCode)
+        .eq("user_id", userId);
+
+    if (!rows || rows.length === 0) {
+        return { success: false, error: "Booking not found." };
+    }
+
+    const firstRow = rows[0];
+    if (firstRow.source !== "app") {
+        return { success: false, error: "Walk-in bookings cannot be cancelled online." };
+    }
+    if (firstRow.booking_date < today) {
+        return { success: false, error: "Cannot cancel past bookings." };
+    }
+
+    const { error } = await supabase
+        .from("bookings")
+        .delete()
+        .eq("verification_code", verificationCode)
+        .eq("user_id", userId);
+
+    if (error) {
+        return { success: false, error: "Failed to cancel booking." };
+    }
     return { success: true };
 }

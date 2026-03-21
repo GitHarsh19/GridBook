@@ -1,36 +1,7 @@
 "use client";
 
 import { CalendarDays } from "lucide-react";
-
-/**
- * Returns the next `count` days starting from today as YYYY-MM-DD strings.
- */
-function getUpcomingDates(count: number): string[] {
-    const dates: string[] = [];
-    const now = new Date();
-    for (let i = 0; i < count; i++) {
-        const d = new Date(now);
-        d.setDate(now.getDate() + i);
-        dates.push(
-            `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-        );
-    }
-    return dates;
-}
-
-function formatDateLabel(dateStr: string, index: number): { day: string; date: string } {
-    const d = new Date(dateStr + "T00:00:00");
-    if (index === 0) return { day: "Today", date: String(d.getDate()) };
-    if (index === 1) return { day: "Tomorrow", date: String(d.getDate()) };
-    const dayName = d.toLocaleDateString("en-IN", { weekday: "short" });
-    const dateNum = String(d.getDate());
-    return { day: dayName, date: dateNum };
-}
-
-function formatMonthYear(dateStr: string): string {
-    const d = new Date(dateStr + "T00:00:00");
-    return d.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
-}
+import { getUpcomingDates, formatDateLabel, formatMonthYear } from "@/lib/utils";
 
 export function DateSelector({
     selectedDate,

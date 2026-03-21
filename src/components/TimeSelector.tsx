@@ -2,20 +2,7 @@
 
 import { Clock, X } from "lucide-react";
 import { TIME_SLOTS } from "@/lib/data";
-
-/**
- * Parse the start hour from a time slot string like "2:00 PM – 3:00 PM".
- * Returns the hour in 24h format (0–23).
- */
-function parseSlotStartHour(slot: string): number {
-    const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
-    if (!match) return -1;
-    let hour = parseInt(match[1], 10);
-    const period = match[2].toUpperCase();
-    if (period === "PM" && hour !== 12) hour += 12;
-    if (period === "AM" && hour === 12) hour = 0;
-    return hour;
-}
+import { parseSlotStartHour } from "@/lib/utils";
 
 export function TimeSelector({
     selectedSlots,
@@ -81,4 +68,4 @@ export function TimeSelector({
     );
 }
 
-export { parseSlotStartHour };
+export { parseSlotStartHour } from "@/lib/utils";

@@ -6,15 +6,11 @@ import { ArrowLeft, MapPin } from "lucide-react";
 
 import { Navbar } from "@/components/Navbar";
 import { DateSelector } from "@/components/DateSelector";
-import { TimeSelector, parseSlotStartHour } from "@/components/TimeSelector";
+import { TimeSelector } from "@/components/TimeSelector";
 import { RigGrid } from "@/components/RigGrid";
 import { CheckoutBar } from "@/components/CheckoutBar";
 import { type Venue, TIME_SLOTS, getBookedRigIdsForSlots, getVenueById, releaseExpiredWalkIns } from "@/lib/data";
-
-function getTodayStr(): string {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
+import { getTodayStr, parseSlotStartHour } from "@/lib/utils";
 
 export default function BookingClient({ venue: initialVenue }: { venue: Venue }) {
     const [venue, setVenue] = useState<Venue>(initialVenue);
