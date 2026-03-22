@@ -2,7 +2,6 @@
 
 import { Clock, X } from "lucide-react";
 import { TIME_SLOTS } from "@/lib/data";
-import { parseSlotStartHour } from "@/lib/utils";
 
 export function TimeSelector({
     selectedSlots,

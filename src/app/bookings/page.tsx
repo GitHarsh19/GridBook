@@ -12,8 +12,11 @@ import {
     X,
     ArrowLeft,
     CalendarX,
+    ExternalLink,
+    Pencil,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { ModifyBookingModal } from "@/components/ModifyBookingModal";
 import { supabase } from "@/lib/supabase";
 import { getCustomerBookings, cancelBooking, type CustomerBooking } from "@/lib/data";
 import { getTodayStr, formatBookingDate } from "@/lib/utils";
@@ -59,6 +62,8 @@ export default function BookingsPage() {
     const [cancelling, setCancelling] = useState<string | null>(null);
     const [cancelError, setCancelError] = useState<string | null>(null);
     const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
+    const [modifyTarget, setModifyTarget] = useState<BookingGroup | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
 
     const loadBookings = useCallback(async () => {
         try {
@@ -68,6 +73,7 @@ export default function BookingsPage() {
                 setIsLoading(false);
                 return;
             }
+            setUserId(session.user.id);
             const data = await getCustomerBookings(session.user.id);
             setBookings(data);
             setError(null);
@@ -133,7 +139,7 @@ export default function BookingsPage() {
                 <div className="mb-6 flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900 p-1">
                     <button
                         onClick={() => setTab("upcoming")}
-                        className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+                        className={`flex-1 cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-all ${
                             tab === "upcoming"
                                 ? "bg-cyan-500/10 text-cyan-400"
                                 : "text-zinc-400 hover:text-white"
@@ -148,7 +154,7 @@ export default function BookingsPage() {
                     </button>
                     <button
                         onClick={() => setTab("past")}
-                        className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+                        className={`flex-1 cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-all ${
                             tab === "past"
                                 ? "bg-zinc-800 text-white"
                                 : "text-zinc-400 hover:text-white"
@@ -279,22 +285,42 @@ export default function BookingsPage() {
 
                                         {/* Verification code + cancel */}
                                         <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3">
-                                            <div className={`font-mono text-sm font-bold ${isPast ? "text-zinc-600" : "text-cyan-500"}`}>
-                                                {group.verificationCode}
+                                            <div className="flex items-center gap-2">
+                                                <span className={`font-mono text-sm font-bold ${isPast ? "text-zinc-600" : "text-cyan-500"}`}>
+                                                    {group.verificationCode}
+                                                </span>
+                                                {!isPast && (
+                                                    <Link
+                                                        href={`/bookings/${group.verificationCode}`}
+                                                        className="flex items-center gap-1 text-[10px] text-zinc-500 transition-colors hover:text-cyan-400"
+                                                    >
+                                                        <ExternalLink className="h-3 w-3" />
+                                                        Details
+                                                    </Link>
+                                                )}
                                             </div>
                                             {!isPast && group.source === "app" && (
-                                                <button
-                                                    onClick={() => handleCancel(group.verificationCode)}
-                                                    disabled={isCancelling}
-                                                    className="flex cursor-pointer items-center gap-1 rounded-md border border-red-800/50 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-900/30 disabled:opacity-50"
-                                                >
-                                                    {isCancelling ? (
-                                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                                    ) : (
-                                                        <X className="h-3 w-3" />
-                                                    )}
-                                                    {isCancelling ? "Cancelling…" : "Cancel"}
-                                                </button>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => setModifyTarget(group)}
+                                                        className="flex cursor-pointer items-center gap-1 rounded-md border border-cyan-800/50 px-3 py-1.5 text-xs font-medium text-cyan-400 transition-colors hover:bg-cyan-900/30"
+                                                    >
+                                                        <Pencil className="h-3 w-3" />
+                                                        Modify
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleCancel(group.verificationCode)}
+                                                        disabled={isCancelling}
+                                                        className="flex cursor-pointer items-center gap-1 rounded-md border border-red-800/50 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-900/30 disabled:opacity-50"
+                                                    >
+                                                        {isCancelling ? (
+                                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                                        ) : (
+                                                            <X className="h-3 w-3" />
+                                                        )}
+                                                        {isCancelling ? "Cancelling…" : "Cancel"}
+                                                    </button>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -304,6 +330,21 @@ export default function BookingsPage() {
                     </div>
                 )}
             </main>
+
+            {/* Modify booking modal */}
+            {modifyTarget && userId && (
+                <ModifyBookingModal
+                    verificationCode={modifyTarget.verificationCode}
+                    userId={userId}
+                    currentDate={modifyTarget.bookingDate}
+                    currentSlots={[...new Set(modifyTarget.slots.map((s) => s.time_slot))]}
+                    onClose={() => setModifyTarget(null)}
+                    onSuccess={() => {
+                        setModifyTarget(null);
+                        loadBookings();
+                    }}
+                />
+            )}
         </div>
     );
 }

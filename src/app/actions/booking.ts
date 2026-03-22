@@ -61,7 +61,7 @@ export async function createAppBookingAction(
             const period = match[2].toUpperCase();
             if (period === "PM" && slotHour !== 12) slotHour += 12;
             if (period === "AM" && slotHour === 12) slotHour = 0;
-            if (slotHour <= currentHour) {
+            if (slotHour < currentHour) {
                 return { success: false, error: "Cannot book a time slot that has already passed." };
             }
         }
@@ -126,6 +126,9 @@ export async function createAppBookingAction(
 
     const { error: insertError } = await supabase.from("bookings").insert(rows);
     if (insertError) {
+        if (insertError.code === "23505") {
+            return { success: false, error: "Some slots were just booked by another user. Please refresh and try again." };
+        }
         return { success: false, error: "Booking failed. Please try again." };
     }
 

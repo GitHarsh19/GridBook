@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { MapPin, ChevronDown, Zap, LogOut, LogIn, CalendarCheck } from "lucide-react";
+import { MapPin, ChevronDown, Zap, LogOut, LogIn, CalendarCheck, UserCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
 export function Navbar() {
@@ -43,7 +43,7 @@ export function Navbar() {
           </button>
 
           {/* Explore link (when on venue detail or bookings) */}
-          {(pathname?.startsWith("/venue/") || pathname === "/bookings") && (
+          {(pathname?.startsWith("/venue/") || pathname === "/bookings" || pathname === "/profile") && (
             <Link
               href="/explore"
               className="rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white sm:px-3"
@@ -53,13 +53,24 @@ export function Navbar() {
           )}
 
           {/* My Bookings link (when logged in as customer) */}
-          {isLoggedIn && pathname !== "/bookings" && (
+          {isLoggedIn && pathname !== "/bookings" && !pathname?.startsWith("/bookings/") && (
             <Link
               href="/bookings"
               className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white sm:px-3"
             >
               <CalendarCheck className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Bookings</span>
+            </Link>
+          )}
+
+          {/* Profile link */}
+          {isLoggedIn && pathname !== "/profile" && (
+            <Link
+              href="/profile"
+              className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-sm text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white sm:px-3"
+            >
+              <UserCircle className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Profile</span>
             </Link>
           )}
 

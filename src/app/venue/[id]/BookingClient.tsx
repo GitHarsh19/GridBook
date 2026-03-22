@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MapPin } from "lucide-react";
 
@@ -13,28 +14,37 @@ import { type Venue, TIME_SLOTS, getBookedRigIdsForSlots, getVenueById, releaseE
 import { getTodayStr, parseSlotStartHour } from "@/lib/utils";
 
 export default function BookingClient({ venue: initialVenue }: { venue: Venue }) {
+    const router = useRouter();
     const [venue, setVenue] = useState<Venue>(initialVenue);
     const [selectedDate, setSelectedDate] = useState<string>(getTodayStr);
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
     const [selectedRigs, setSelectedRigs] = useState<number[]>([]);
     const [bookedRigIds, setBookedRigIds] = useState<Set<number>>(new Set());
 
+    // Track current hour so disabledSlots re-computes when the hour changes
+    const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentHour(new Date().getHours());
+        }, 60_000);
+        return () => clearInterval(timer);
+    }, []);
+
     // Compute which time slots are in the past (only matters for today)
     const disabledSlots = useMemo(() => {
-        const now = new Date();
         const todayStr = getTodayStr();
         if (selectedDate !== todayStr) return new Set<string>();
 
-        const currentHour = now.getHours();
         const past = new Set<string>();
         for (const slot of TIME_SLOTS) {
             const startHour = parseSlotStartHour(slot);
-            if (startHour <= currentHour) {
+            if (startHour < currentHour) {
                 past.add(slot);
             }
         }
         return past;
-    }, [selectedDate]);
+    }, [selectedDate, currentHour]);
 
     // Release expired walk-in blocks on mount (and every 30s)
     useEffect(() => {
@@ -54,6 +64,7 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
     // Auto-deselect any time slots that have become past
     useEffect(() => {
         if (disabledSlots.size === 0) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing selections when availability changes from realtime
         setSelectedTimeSlots((prev) => {
             const filtered = prev.filter((s) => !disabledSlots.has(s));
             return filtered.length !== prev.length ? filtered : prev;
@@ -63,7 +74,7 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
     // Fetch per-slot booked rig IDs whenever selected time slots or date change
     useEffect(() => {
         if (selectedTimeSlots.length === 0) {
-            setBookedRigIds(new Set());
+            setBookedRigIds(new Set()); // eslint-disable-line react-hooks/set-state-in-effect -- clearing state on empty selection
             return;
         }
         let cancelled = false;
@@ -78,6 +89,7 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
         const availableIds = new Set(
             venue.rigs.filter((r) => r.status === "available").map((r) => r.id)
         );
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing selections when realtime availability changes
         setSelectedRigs((prev) =>
             prev.filter((id) => availableIds.has(id) && !bookedRigIds.has(id))
         );
@@ -97,8 +109,9 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
         );
     };
 
-    // After a successful booking, clear selections and refresh availability
-    const handleBookingComplete = async () => {
+    // After a successful booking, navigate to confirmation page
+    const handleBookingComplete = async (code: string) => {
+        router.push(`/bookings/${code}`);
         setSelectedRigs([]);
         setSelectedTimeSlots([]);
         // Refresh venue data and booked rig IDs

@@ -289,7 +289,7 @@ export async function createAppBooking(
             const period = match[2].toUpperCase();
             if (period === "PM" && slotHour !== 12) slotHour += 12;
             if (period === "AM" && slotHour === 12) slotHour = 0;
-            if (slotHour <= currentHour) {
+            if (slotHour < currentHour) {
                 return { success: false, error: "Cannot book a time slot that has already passed." };
             }
         }
@@ -362,6 +362,9 @@ export async function createAppBooking(
     const { error: insertError } = await supabase.from("bookings").insert(rows);
 
     if (insertError) {
+        if (insertError.code === "23505") {
+            return { success: false, error: "Some slots were just booked by another user. Please refresh and try again." };
+        }
         return { success: false, error: "Booking failed. Please try again." };
     }
 
@@ -391,7 +394,7 @@ export async function getVenuesList(): Promise<VenueOption[]> {
 }
 
 export async function getDashboardRigs(venueId: number): Promise<DashboardRig[]> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
         .from("rigs")
         .select("id, name, status, specs")
         .eq("venue_id", venueId)
@@ -547,8 +550,7 @@ export async function releaseRig(rigId: number): Promise<{ success: boolean }> {
         .from("bookings")
         .delete()
         .eq("rig_id", rigId)
-        .eq("source", "walk_in")
-        .eq("booking_date", getTodayStr());
+        .eq("source", "walk_in");
 
     return { success: true };
 }
@@ -799,6 +801,24 @@ export async function deleteVenue(
     if (!venue) return { success: false, error: "Venue not found." };
     if (venue.owner_id !== adminId) return { success: false, error: "You do not own this venue." };
 
+    // Cascade-delete rigs and their bookings (defensive, mirrors deleteRig pattern)
+    const { data: rigRows } = await supabaseAdmin
+        .from("rigs")
+        .select("id")
+        .eq("venue_id", venueId);
+
+    if (rigRows && rigRows.length > 0) {
+        const rigIds = rigRows.map((r) => r.id);
+        await supabaseAdmin
+            .from("bookings")
+            .delete()
+            .in("rig_id", rigIds);
+        await supabaseAdmin
+            .from("rigs")
+            .delete()
+            .eq("venue_id", venueId);
+    }
+
     const { error } = await supabaseAdmin
         .from("venues")
         .delete()
@@ -905,5 +925,110 @@ export async function cancelBooking(
     if (error) {
         return { success: false, error: "Failed to cancel booking." };
     }
+    return { success: true };
+}
+
+/**
+ * Modify a customer's booking — change date and/or time slots.
+ * Atomically deletes old rows and inserts new ones with the same verification code.
+ */
+export async function modifyBooking(
+    verificationCode: string,
+    userId: string,
+    newDate: string,
+    newSlots: string[],
+): Promise<{ success: boolean; error?: string }> {
+    const today = getTodayStr();
+
+    if (newSlots.length === 0) {
+        return { success: false, error: "No time slots selected." };
+    }
+    if (newDate < today) {
+        return { success: false, error: "Cannot book for a past date." };
+    }
+
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 7);
+    if (newDate > toDateStr(maxDate)) {
+        return { success: false, error: "Cannot book more than 7 days in advance." };
+    }
+
+    for (const slot of newSlots) {
+        if (!TIME_SLOTS.includes(slot)) {
+            return { success: false, error: "Invalid time slot selected." };
+        }
+    }
+
+    // Validate time slots not in the past (for today)
+    if (newDate === today) {
+        const currentHour = new Date().getHours();
+        for (const slot of newSlots) {
+            const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
+            if (!match) return { success: false, error: "Invalid time slot format." };
+            let slotHour = parseInt(match[1], 10);
+            const period = match[2].toUpperCase();
+            if (period === "PM" && slotHour !== 12) slotHour += 12;
+            if (period === "AM" && slotHour === 12) slotHour = 0;
+            if (slotHour < currentHour) {
+                return { success: false, error: "Cannot book a time slot that has already passed." };
+            }
+        }
+    }
+
+    // Fetch existing booking rows
+    const { data: existing } = await supabase
+        .from("bookings")
+        .select("id, rig_id, customer_name, booking_date, source, user_id")
+        .eq("verification_code", verificationCode)
+        .eq("user_id", userId);
+
+    if (!existing || existing.length === 0) {
+        return { success: false, error: "Booking not found." };
+    }
+
+    if (existing[0].source !== "app") {
+        return { success: false, error: "Walk-in bookings cannot be modified online." };
+    }
+    if (existing[0].booking_date < today) {
+        return { success: false, error: "Cannot modify past bookings." };
+    }
+
+    // Get the unique rig IDs from the existing booking
+    const rigIds = [...new Set(existing.map((r) => r.rig_id))];
+    const customerName = existing[0].customer_name;
+
+    // Check for conflicts on the new date/slots (excluding current booking)
+    // This is a fast-path optimization; the RPC handles conflicts atomically.
+    const { data: conflicts } = await supabase
+        .from("bookings")
+        .select("rig_id, time_slot")
+        .eq("booking_date", newDate)
+        .in("rig_id", rigIds)
+        .in("time_slot", newSlots)
+        .neq("verification_code", verificationCode);
+
+    if (conflicts && conflicts.length > 0) {
+        return { success: false, error: "Some slots are already booked. Please try different slots." };
+    }
+
+    // Atomic modify via RPC (delete + insert in a single transaction)
+    const { data: rpcResult, error: rpcError } = await supabase.rpc("modify_booking", {
+        p_verification_code: verificationCode,
+        p_user_id: userId,
+        p_new_date: newDate,
+        p_new_slots: newSlots,
+        p_rig_ids: rigIds,
+        p_customer_name: customerName,
+    });
+
+    if (rpcError) {
+        return { success: false, error: "Failed to modify booking." };
+    }
+
+    const rpcData = rpcResult as { success: boolean; error?: string };
+    if (!rpcData.success) {
+        return { success: false, error: rpcData.error ?? "Failed to modify booking." };
+    }
+
     return { success: true };
 }

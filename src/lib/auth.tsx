@@ -63,9 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Restore admin session from localStorage or supabaseAdmin session
+    // Restore admin session from localStorage (must be in effect to avoid SSR hydration mismatch)
     if (loadAdminAuth()) {
-      setIsAdmin(true);
+      setIsAdmin(true); // eslint-disable-line react-hooks/set-state-in-effect
     }
 
     // Listen to CUSTOMER auth state (supabase client)

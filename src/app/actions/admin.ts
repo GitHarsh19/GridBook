@@ -131,8 +131,7 @@ export async function releaseRigAction(
         .from("bookings")
         .delete()
         .eq("rig_id", rigId)
-        .eq("source", "walk_in")
-        .eq("booking_date", getTodayStr());
+        .eq("source", "walk_in");
 
     return { success: true };
 }
@@ -333,6 +332,24 @@ export async function deleteVenueAction(
         .single();
     if (!venue) return { success: false, error: "Venue not found." };
     if (venue.owner_id !== adminId) return { success: false, error: "You do not own this venue." };
+
+    // Cascade-delete rigs and their bookings (defensive, mirrors deleteRigAction pattern)
+    const { data: rigRows } = await supabase
+        .from("rigs")
+        .select("id")
+        .eq("venue_id", venueId);
+
+    if (rigRows && rigRows.length > 0) {
+        const rigIds = rigRows.map((r) => r.id);
+        await supabase
+            .from("bookings")
+            .delete()
+            .in("rig_id", rigIds);
+        await supabase
+            .from("rigs")
+            .delete()
+            .eq("venue_id", venueId);
+    }
 
     const { error } = await supabase
         .from("venues")

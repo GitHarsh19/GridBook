@@ -83,11 +83,8 @@ export function CheckoutBar({
 
             setVerificationCode(result.verificationCode ?? "");
             setPayState("done");
-            // Increased timeout to 5s so users have time to see code + click link
-            setTimeout(() => {
-                onBookingComplete(result.verificationCode ?? "");
-                setPayState("idle");
-            }, 5000);
+            // Redirect to confirmation page immediately
+            onBookingComplete(result.verificationCode ?? "");
         } catch {
             setErrorMsg("Something went wrong. Please try again.");
             setPayState("error");
@@ -126,11 +123,11 @@ export function CheckoutBar({
                                 Code: <span className="font-mono font-bold">{verificationCode}</span>
                             </span>
                             <Link
-                                href="/bookings"
+                                href={`/bookings/${verificationCode}`}
                                 className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-400 transition-colors hover:bg-emerald-500/10"
                             >
                                 <CalendarCheck className="h-3 w-3" />
-                                View Bookings
+                                View Confirmation
                             </Link>
                         </div>
                     )}
