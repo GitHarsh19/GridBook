@@ -106,41 +106,16 @@ nav.open .nav-cta .btn-signin .btn-arrow {
 .venue-card--active {
   flex: 0 0 calc(55% - 18px);
   order: 1;
-  animation: venueCardIn 0.5s ease forwards;
 }
 
 .venue-card--next1 {
   flex: 0 0 calc(22.5% - 7px);
   order: 2;
-  animation: venueCardNext 0.4s ease forwards;
 }
 
 .venue-card--next2 {
   flex: 0 0 calc(22.5% - 7px);
   order: 3;
-  animation: venueCardNext 0.4s ease 0.05s forwards;
-}
-
-@keyframes venueCardIn {
-  from {
-    opacity: 0;
-    transform: translateX(60px) scaleX(0.85);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) scaleX(1);
-  }
-}
-
-@keyframes venueCardNext {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
 }
 
 /* ── Venue name active — slide in animation ── */
