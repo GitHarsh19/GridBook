@@ -8,22 +8,67 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            outfit: ["'Outfit'", '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              DEFAULT: '#ffb5a0',
+              container: '#fc5a28',
+            },
+            'on-primary-container': '#fff',
+            secondary: '#ffb68f',
+            tertiary: '#da745d',
+            surface: {
+              DEFAULT: '#131313',
+              'container-lowest': '#0e0e0e',
+              'container-low': '#1b1b1b',
+              'container': '#1f1f1f',
+              'container-high': '#2a2a2a',
+              'container-highest': '#353535',
+            },
+            'on-surface': {
+              DEFAULT: '#e2e2e2',
+              variant: '#e3beb4',
+            },
+            'outline-variant': '#5b4139',
+            'btn-red': '#d9331d',
+          },
+          borderRadius: {
+            sm: '0.125rem',
+            md: '0.375rem',
+            lg: '0.5rem',
+            xl: '0.75rem',
+          },
+          maxWidth: {
+            'container': '1280px',
+            'container-lg': '1400px',
+          },
+        },
+      },
+    }
+  </script>
   <link rel="stylesheet" href="styles.css" />
   <style>
     /* Page-specific overrides only — main styles in styles.css */
   </style>
 </head>
 
-<body>
+<body class="font-outfit bg-surface text-on-surface-variant overflow-x-hidden antialiased">
 
   <!-- ═══════ Glass Navigation — Floating Pill ═══════ -->
-  <nav id="navbar" class="nav-wrapper" id="signinCta">
-    <div class="nav-pill">
-      <a href="#" class="nav-logo">PitPass</a>
-      <div class="nav-cta">
-        <button class="btn-signin" onclick="document.getElementById('navbar').classList.toggle('open')">
+  <nav id="navbar" class="nav-wrapper fixed top-0 left-0 right-0 z-[100] p-4 px-8 pointer-events-none" id="signinCta">
+    <div class="nav-pill pointer-events-auto max-w-container-lg mx-auto flex items-center justify-between bg-white/5 backdrop-blur-[10px] rounded-full pl-6 pr-4 py-4 transition-all duration-300 ease-in-out">
+      <a href="#" class="nav-logo font-outfit text-[1.75rem] font-bold text-white tracking-[-0.03em]">PitPass</a>
+      <div class="nav-cta relative">
+        <button class="btn-signin inline-flex items-center gap-2 px-[23px] h-9 bg-btn-red text-white border border-btn-red rounded-full font-outfit text-sm font-medium tracking-[-0.03em] cursor-pointer transition-[0.15s] hover:bg-white hover:text-btn-red hover:border-white active:scale-[0.98]" onclick="document.getElementById('navbar').classList.toggle('open')">
           <span>Sign In</span>
-          <span class="btn-arrow">
+          <span class="btn-arrow w-3.5 h-3.5 flex items-center justify-center transition-transform duration-300 ease-in-out">
             <svg width="14" height="14" viewBox="0 0 17 17" fill="none">
               <path
                 d="M16.5977 16.1992H14.5977V3.61328L2.55469 15.6562L1.14062 14.2422L13.1836 2.19922H0.597656V0.199219H16.5977V16.1992Z"
@@ -33,130 +78,130 @@
         </button>
       </div>
     </div>
-    <div class="signin-dropdown">
-      <a href="/login" class="opt-customer">
-        <span class="dropdown-icon">🏁</span>
+    <div class="signin-dropdown max-w-container-lg ml-auto mr-4 w-fit bg-white/[0.06] backdrop-blur-[20px] rounded-xl p-2 opacity-0 invisible -translate-y-2 transition-all duration-200 ease-in-out pointer-events-none">
+      <a href="/login" class="opt-customer flex items-center gap-2.5 py-3 px-4 font-outfit text-[0.85rem] font-medium rounded-lg transition-all duration-200 ease-in-out text-btn-red hover:bg-btn-red/[0.12] hover:text-[#ff4a2e]">
+        <span class="dropdown-icon w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-high text-[0.85rem] shrink-0">🏁</span>
         I am a Customer
       </a>
-      <a href="/admin/login" class="opt-admin">
-        <span class="dropdown-icon">⚙</span>
+      <a href="/admin/login" class="opt-admin flex items-center gap-2.5 py-3 px-4 font-outfit text-[0.85rem] font-medium rounded-lg transition-all duration-200 ease-in-out text-white hover:bg-surface-container-highest hover:text-white">
+        <span class="dropdown-icon w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-high text-[0.85rem] shrink-0">⚙</span>
         Venue Admin Login
       </a>
     </div>
   </nav>
 
   <!-- ═══════ Hero — Tilted Image Grid ═══════ -->
-  <section class="hero">
+  <section class="hero relative overflow-hidden min-h-screen grid items-center justify-items-center bg-surface">
     <!-- Tilted image columns -->
-    <div class="hero-imgcols">
-      <div class="hero-imgcols-col">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-03.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-04.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-12.jpg" class="square" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-03.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-04.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-12.jpg" class="square" alt="">
+    <div class="hero-imgcols absolute inset-0 flex gap-[15px] justify-center origin-center" style="transform: rotate(20deg) scale(1.4);">
+      <div class="hero-imgcols-col flex flex-col gap-[15px] shrink-0 w-[220px]">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-03.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-04.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-12.jpg" class="square w-full rounded-xl block object-cover h-[220px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-03.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-04.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-12.jpg" class="square w-full rounded-xl block object-cover h-[220px]" alt="">
       </div>
-      <div class="hero-imgcols-col">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-01.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-09.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-05.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-01.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-09.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-05.jpg" class="tall" alt="">
+      <div class="hero-imgcols-col flex flex-col gap-[15px] shrink-0 w-[220px]">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-01.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-09.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-05.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-01.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-09.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-05.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
       </div>
-      <div class="hero-imgcols-col">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-06.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-10.jpg" class="square" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-02.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-06.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-10.jpg" class="square" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-02.jpg" class="tall" alt="">
+      <div class="hero-imgcols-col flex flex-col gap-[15px] shrink-0 w-[220px]">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-06.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-10.jpg" class="square w-full rounded-xl block object-cover h-[220px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-02.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-06.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-10.jpg" class="square w-full rounded-xl block object-cover h-[220px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-02.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
       </div>
-      <div class="hero-imgcols-col">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-14.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-07.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-13.jpg" class="square" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-14.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-07.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-13.jpg" class="square" alt="">
+      <div class="hero-imgcols-col flex flex-col gap-[15px] shrink-0 w-[220px]">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-14.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-07.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-13.jpg" class="square w-full rounded-xl block object-cover h-[220px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-14.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-07.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-13.jpg" class="square w-full rounded-xl block object-cover h-[220px]" alt="">
       </div>
-      <div class="hero-imgcols-col">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-11.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-08.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-15.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-11.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-08.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-15.jpg" class="tall" alt="">
+      <div class="hero-imgcols-col flex flex-col gap-[15px] shrink-0 w-[220px]">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-11.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-08.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-15.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-11.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-08.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-15.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
       </div>
-      <div class="hero-imgcols-col">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-03.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-01.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-09.jpg" class="square" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-03.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-01.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-09.jpg" class="square" alt="">
+      <div class="hero-imgcols-col flex flex-col gap-[15px] shrink-0 w-[220px]">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-03.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-01.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-09.jpg" class="square w-full rounded-xl block object-cover h-[220px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-03.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-01.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-09.jpg" class="square w-full rounded-xl block object-cover h-[220px]" alt="">
       </div>
-      <div class="hero-imgcols-col">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-04.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-06.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-02.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-04.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-06.jpg" class="tall" alt="">
-        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-02.jpg" class="tall" alt="">
+      <div class="hero-imgcols-col flex flex-col gap-[15px] shrink-0 w-[220px]">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-04.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-06.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-02.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-04.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-06.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
+        <img src="https://gcventures.vc/wp-content/themes/gcv/data/hero-02.jpg" class="tall w-full rounded-xl block object-cover h-[280px]" alt="">
       </div>
     </div>
 
     <!-- Dark overlay -->
-    <div class="hero-overlay"></div>
+    <div class="hero-overlay absolute inset-0 z-[1]" style="background: radial-gradient(ellipse at center, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.7) 100%);"></div>
 
     <!-- Hero text -->
-    <div class="hero-content fade-up">
-      <h1 class="display-lg">Backing the Next Generation of Game Changers</h1>
-      <p class="body-lg">Investing in sports, media, gaming, and entertainment — where culture meets innovation.</p>
-      <div class="hero-buttons">
-        <a href="#portfolio" class="btn btn-primary btn-arrow">Explore Our Portfolio</a>
-        <a href="#about" class="btn btn-ghost">Learn More</a>
+    <div class="hero-content fade-up relative z-[2] text-center max-w-[800px] px-8">
+      <h1 class="display-lg font-outfit font-extrabold leading-[1.02] tracking-[-0.04em] text-white mb-6" style="font-size: clamp(2rem, 4vw, 3.2rem);">Backing the Next Generation of Game Changers</h1>
+      <p class="body-lg font-outfit text-[1.15rem] leading-[1.7] text-on-surface max-w-[560px] mx-auto mb-10">Investing in sports, media, gaming, and entertainment — where culture meets innovation.</p>
+      <div class="hero-buttons flex gap-4 flex-wrap justify-center">
+        <a href="#portfolio" class="btn btn-primary btn-arrow inline-flex items-center gap-2 px-[23px] h-9 rounded-full font-outfit text-sm font-medium tracking-[-0.03em] transition-[0.15s] border border-transparent cursor-pointer bg-btn-red text-white border-btn-red hover:bg-white hover:text-btn-red hover:border-white active:scale-[0.98]">Explore Our Portfolio</a>
+        <a href="#about" class="btn btn-ghost inline-flex items-center gap-2 px-[23px] h-9 rounded-full font-outfit text-sm font-medium tracking-[-0.03em] transition-[0.15s] border cursor-pointer bg-transparent text-on-surface-variant border-white/15 hover:bg-white hover:text-[#131313] hover:border-white active:scale-[0.98]">Learn More</a>
       </div>
     </div>
   </section>
 
   <!-- ═══════ About — GCV-style cards ═══════ -->
-  <section class="about-section section-pad" id="about">
-    <div class="container">
-      <div class="about-header fade-up">
-        <span class="tag">About</span>
-        <h2>What We Stand for</h2>
+  <section class="about-section py-24 bg-black" id="about">
+    <div class="max-w-container mx-auto px-10">
+      <div class="about-header fade-up flex flex-col items-center text-center gap-5 mb-12">
+        <span class="tag font-outfit text-[0.95rem] font-medium text-white tracking-[-0.03em] py-2 px-4 border border-white rounded-full">About</span>
+        <h2 class="font-outfit font-medium text-white leading-none tracking-[-0.03em]" style="font-size: clamp(1.8rem, 3vw, 2.4rem);">What We Stand for</h2>
       </div>
 
-      <div class="about-cards">
-        <div class="about-card about-card--white fade-up">
-          <div class="about-card-media">
-            <img src="https://gcventures.vc/wp-content/themes/gcv/data/3-02.jpg" alt="">
+      <div class="about-cards flex gap-10 justify-center max-lg:flex-wrap max-md:flex-col max-md:items-center">
+        <div class="about-card about-card--white fade-up rounded-[15px] overflow-hidden flex flex-col relative w-[280px] h-[380px] shrink-0 transition-transform duration-[0.4s] ease-in-out bg-white" style="box-shadow: inset 0 0 0 1px #131313; backface-visibility: hidden; -webkit-backface-visibility: hidden; -webkit-transform: translateZ(0);">
+          <div class="about-card-media absolute -inset-px overflow-hidden opacity-0 transition-opacity duration-500 ease-in-out z-[1] rounded-[16px]">
+            <img src="https://gcventures.vc/wp-content/themes/gcv/data/3-02.jpg" class="w-full h-full object-cover block" alt="">
           </div>
-          <div class="about-card-inner">
-            <div class="card-title">Focus</div>
-            <div class="card-text">We invest where we know we can make the biggest impact: sports, gaming, media, and
+          <div class="about-card-inner p-[22px] pt-[40%] flex flex-col justify-between gap-6 flex-1 relative z-[2]">
+            <div class="card-title font-outfit text-2xl font-medium tracking-[-0.02em] text-black">Focus</div>
+            <div class="card-text font-outfit text-sm leading-normal text-black/80">We invest where we know we can make the biggest impact: sports, gaming, media, and
               entertainment.</div>
           </div>
         </div>
-        <div class="about-card about-card--red fade-up">
-          <div class="about-card-media">
-            <img src="https://gcventures.vc/wp-content/themes/gcv/data/3-01.jpg" alt="">
+        <div class="about-card about-card--red fade-up rounded-[15px] overflow-hidden flex flex-col relative w-[280px] h-[380px] shrink-0 transition-transform duration-[0.4s] ease-in-out bg-btn-red" style="box-shadow: inset 0 0 0 1px #131313; backface-visibility: hidden; -webkit-backface-visibility: hidden; -webkit-transform: translateZ(0);">
+          <div class="about-card-media absolute -inset-px overflow-hidden opacity-0 transition-opacity duration-500 ease-in-out z-[1] rounded-[16px]">
+            <img src="https://gcventures.vc/wp-content/themes/gcv/data/3-01.jpg" class="w-full h-full object-cover block" alt="">
           </div>
-          <div class="about-card-inner">
-            <div class="card-title">Community</div>
-            <div class="card-text">We've cultivated a network of athletes, investors, and operators who share our
+          <div class="about-card-inner p-[22px] pt-[40%] flex flex-col justify-between gap-6 flex-1 relative z-[2]">
+            <div class="card-title font-outfit text-2xl font-medium tracking-[-0.02em] text-white">Community</div>
+            <div class="card-text font-outfit text-sm leading-normal text-white/80">We've cultivated a network of athletes, investors, and operators who share our
               passion for shaping the future of these industries.</div>
           </div>
         </div>
-        <div class="about-card about-card--black fade-up">
-          <div class="about-card-media">
-            <img src="https://gcventures.vc/wp-content/themes/gcv/data/3-03.jpg" alt="">
+        <div class="about-card about-card--black fade-up rounded-[15px] overflow-hidden flex flex-col relative w-[280px] h-[380px] shrink-0 transition-transform duration-[0.4s] ease-in-out bg-surface-container-low" style="box-shadow: inset 0 0 0 1px #131313; backface-visibility: hidden; -webkit-backface-visibility: hidden; -webkit-transform: translateZ(0);">
+          <div class="about-card-media absolute -inset-px overflow-hidden opacity-0 transition-opacity duration-500 ease-in-out z-[1] rounded-[16px]">
+            <img src="https://gcventures.vc/wp-content/themes/gcv/data/3-03.jpg" class="w-full h-full object-cover block" alt="">
           </div>
-          <div class="about-card-inner">
-            <div class="card-title">Partnership</div>
-            <div class="card-text">We work closely with founders, often before the story is fully written, providing
+          <div class="about-card-inner p-[22px] pt-[40%] flex flex-col justify-between gap-6 flex-1 relative z-[2]">
+            <div class="card-title font-outfit text-2xl font-medium tracking-[-0.02em] text-white">Partnership</div>
+            <div class="card-text font-outfit text-sm leading-normal text-white/80">We work closely with founders, often before the story is fully written, providing
               capital, credibility, and connections.</div>
           </div>
         </div>
@@ -165,129 +210,129 @@
   </section>
 
   <!-- ═══════ Gaming Venues — GCV Investment-style ═══════ -->
-  <section class="venues-section section-pad" id="portfolio">
-    <div class="container">
-      <div class="venues-header fade-up">
+  <section class="venues-section overflow-hidden bg-black px-8 py-24" id="portfolio">
+    <div class="max-w-container-lg mx-auto p-0">
+      <div class="venues-header fade-up flex justify-between items-end mb-10 flex-wrap gap-5">
         <div>
-          <span class="tag">Venues</span>
-          <h2>Gaming Venues</h2>
+          <span class="tag font-outfit text-[0.95rem] font-medium text-white tracking-[-0.03em] py-2 px-4 border border-white rounded-full">Venues</span>
+          <h2 class="font-outfit text-[2.5rem] font-semibold text-white tracking-[-0.03em] mt-3">Gaming Venues</h2>
         </div>
-        <div class="venues-nav">
-          <button class="venues-nav-btn" id="venuesPrev" aria-label="Previous">
+        <div class="venues-nav flex gap-3">
+          <button class="venues-nav-btn w-14 h-10 rounded-lg border border-white/20 bg-transparent text-white cursor-pointer flex items-center justify-center transition-all duration-300 ease-in-out hover:bg-white hover:border-white hover:text-black" id="venuesPrev" aria-label="Previous">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-          <button class="venues-nav-btn" id="venuesNext" aria-label="Next">
+          <button class="venues-nav-btn w-14 h-10 rounded-lg border border-white/20 bg-transparent text-white cursor-pointer flex items-center justify-center transition-all duration-300 ease-in-out hover:bg-white hover:border-white hover:text-black" id="venuesNext" aria-label="Next">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
       </div>
 
-      <div class="venues-cards" id="venuesCards">
-        <div class="venue-card venue-card--active" data-venue="0">
-          <div class="venue-card-media">
-            <img src="https://images.unsplash.com/photo-1511882150382-421056c89033?w=800&q=80" alt="Apex Arena">
+      <div class="venues-cards flex gap-4 h-[400px] max-w-full max-md:h-[340px]" id="venuesCards">
+        <div class="venue-card rounded-[15px] overflow-hidden relative border border-white/25 cursor-pointer venue-card--active" data-venue="0">
+          <div class="venue-card-media absolute inset-0 opacity-0">
+            <img src="https://images.unsplash.com/photo-1511882150382-421056c89033?w=800&q=80" class="w-full h-full object-cover" alt="Apex Arena">
           </div>
-          <div class="venue-card-inner">
-            <div class="venue-card-header">
-              <div class="venue-card-title">Apex Arena</div>
-              <div class="venue-card-tags">
-                <span class="tag">Sim Racing</span>
-                <span class="tag">Premium</span>
+          <div class="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
+            <div class="venue-card-header flex justify-between items-start gap-3">
+              <div class="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">Apex Arena</div>
+              <div class="venue-card-tags hidden gap-2">
+                <span class="tag text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">Sim Racing</span>
+                <span class="tag text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">Premium</span>
               </div>
             </div>
-            <div class="venue-card-bottom">
-              <p class="venue-card-text">Full-motion Fanatec DD rigs with triple-screen setups and VR pods — the ultimate sim racing experience in downtown. Premium memberships and walk-in sessions available.</p>
-              <a href="#" class="venue-card-action">View Venue</a>
+            <div class="venue-card-bottom hidden">
+              <p class="venue-card-text font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">Full-motion Fanatec DD rigs with triple-screen setups and VR pods — the ultimate sim racing experience in downtown. Premium memberships and walk-in sessions available.</p>
+              <a href="#" class="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5">View Venue</a>
             </div>
           </div>
         </div>
 
-        <div class="venue-card" data-venue="1">
-          <div class="venue-card-media">
-            <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80" alt="Grid House">
+        <div class="venue-card rounded-[15px] overflow-hidden relative border border-white/25 cursor-pointer" data-venue="1">
+          <div class="venue-card-media absolute inset-0 opacity-0">
+            <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80" class="w-full h-full object-cover" alt="Grid House">
           </div>
-          <div class="venue-card-inner">
-            <div class="venue-card-header">
-              <div class="venue-card-title">Grid House</div>
-              <div class="venue-card-tags">
-                <span class="tag">Racing Lounge</span>
+          <div class="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
+            <div class="venue-card-header flex justify-between items-start gap-3">
+              <div class="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">Grid House</div>
+              <div class="venue-card-tags hidden gap-2">
+                <span class="tag text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">Racing Lounge</span>
               </div>
             </div>
-            <div class="venue-card-bottom">
-              <p class="venue-card-text">Casual and competitive sim racing lounge with Logitech G Pro and Thrustmaster rigs — open late nights, walk-ins welcome.</p>
-              <a href="#" class="venue-card-action">View Venue</a>
+            <div class="venue-card-bottom hidden">
+              <p class="venue-card-text font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">Casual and competitive sim racing lounge with Logitech G Pro and Thrustmaster rigs — open late nights, walk-ins welcome.</p>
+              <a href="#" class="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5">View Venue</a>
             </div>
           </div>
         </div>
 
-        <div class="venue-card" data-venue="2">
-          <div class="venue-card-media">
-            <img src="https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&q=80" alt="Pit Lane Club">
+        <div class="venue-card rounded-[15px] overflow-hidden relative border border-white/25 cursor-pointer" data-venue="2">
+          <div class="venue-card-media absolute inset-0 opacity-0">
+            <img src="https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&q=80" class="w-full h-full object-cover" alt="Pit Lane Club">
           </div>
-          <div class="venue-card-inner">
-            <div class="venue-card-header">
-              <div class="venue-card-title">Pit Lane Club</div>
-              <div class="venue-card-tags">
-                <span class="tag">VR Esports</span>
+          <div class="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
+            <div class="venue-card-header flex justify-between items-start gap-3">
+              <div class="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">Pit Lane Club</div>
+              <div class="venue-card-tags hidden gap-2">
+                <span class="tag text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">VR Esports</span>
               </div>
             </div>
-            <div class="venue-card-bottom">
-              <p class="venue-card-text">Esports-grade facility featuring motion platforms, direct-drive wheels, and dedicated VR racing booths for competitive sessions.</p>
-              <a href="#" class="venue-card-action">View Venue</a>
+            <div class="venue-card-bottom hidden">
+              <p class="venue-card-text font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">Esports-grade facility featuring motion platforms, direct-drive wheels, and dedicated VR racing booths for competitive sessions.</p>
+              <a href="#" class="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5">View Venue</a>
             </div>
           </div>
         </div>
 
-        <div class="venue-card" data-venue="3">
-          <div class="venue-card-media">
-            <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80" alt="Turbo Bay">
+        <div class="venue-card rounded-[15px] overflow-hidden relative border border-white/25 cursor-pointer" data-venue="3">
+          <div class="venue-card-media absolute inset-0 opacity-0">
+            <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80" class="w-full h-full object-cover" alt="Turbo Bay">
           </div>
-          <div class="venue-card-inner">
-            <div class="venue-card-header">
-              <div class="venue-card-title">Turbo Bay</div>
-              <div class="venue-card-tags">
-                <span class="tag">Gaming Cafe</span>
+          <div class="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
+            <div class="venue-card-header flex justify-between items-start gap-3">
+              <div class="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">Turbo Bay</div>
+              <div class="venue-card-tags hidden gap-2">
+                <span class="tag text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">Gaming Cafe</span>
               </div>
             </div>
-            <div class="venue-card-bottom">
-              <p class="venue-card-text">Gaming cafe meets racing hub — grab a drink, pick a rig, and race your friends on any track from F1 to rally cross.</p>
-              <a href="#" class="venue-card-action">View Venue</a>
+            <div class="venue-card-bottom hidden">
+              <p class="venue-card-text font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">Gaming cafe meets racing hub — grab a drink, pick a rig, and race your friends on any track from F1 to rally cross.</p>
+              <a href="#" class="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5">View Venue</a>
             </div>
           </div>
         </div>
 
-        <div class="venue-card" data-venue="4">
-          <div class="venue-card-media">
-            <img src="https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80" alt="DRS Zone">
+        <div class="venue-card rounded-[15px] overflow-hidden relative border border-white/25 cursor-pointer" data-venue="4">
+          <div class="venue-card-media absolute inset-0 opacity-0">
+            <img src="https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80" class="w-full h-full object-cover" alt="DRS Zone">
           </div>
-          <div class="venue-card-inner">
-            <div class="venue-card-header">
-              <div class="venue-card-title">DRS Zone</div>
-              <div class="venue-card-tags">
-                <span class="tag">Premium Events</span>
+          <div class="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
+            <div class="venue-card-header flex justify-between items-start gap-3">
+              <div class="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">DRS Zone</div>
+              <div class="venue-card-tags hidden gap-2">
+                <span class="tag text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">Premium Events</span>
               </div>
             </div>
-            <div class="venue-card-bottom">
-              <p class="venue-card-text">Private sim racing suites for corporate events, birthday parties, and league nights — bookable by the hour or full venue.</p>
-              <a href="#" class="venue-card-action">View Venue</a>
+            <div class="venue-card-bottom hidden">
+              <p class="venue-card-text font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">Private sim racing suites for corporate events, birthday parties, and league nights — bookable by the hour or full venue.</p>
+              <a href="#" class="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5">View Venue</a>
             </div>
           </div>
         </div>
 
-        <div class="venue-card" data-venue="5">
-          <div class="venue-card-media">
-            <img src="https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=800&q=80" alt="Chicane HQ">
+        <div class="venue-card rounded-[15px] overflow-hidden relative border border-white/25 cursor-pointer" data-venue="5">
+          <div class="venue-card-media absolute inset-0 opacity-0">
+            <img src="https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=800&q=80" class="w-full h-full object-cover" alt="Chicane HQ">
           </div>
-          <div class="venue-card-inner">
-            <div class="venue-card-header">
-              <div class="venue-card-title">Chicane HQ</div>
-              <div class="venue-card-tags">
-                <span class="tag">Academy</span>
+          <div class="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
+            <div class="venue-card-header flex justify-between items-start gap-3">
+              <div class="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">Chicane HQ</div>
+              <div class="venue-card-tags hidden gap-2">
+                <span class="tag text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">Academy</span>
               </div>
             </div>
-            <div class="venue-card-bottom">
-              <p class="venue-card-text">Sim racing academy with coaching sessions, telemetry analysis, and pro-grade equipment — from beginner to competitive driver.</p>
-              <a href="#" class="venue-card-action">View Venue</a>
+            <div class="venue-card-bottom hidden">
+              <p class="venue-card-text font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">Sim racing academy with coaching sessions, telemetry analysis, and pro-grade equipment — from beginner to competitive driver.</p>
+              <a href="#" class="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5">View Venue</a>
             </div>
           </div>
         </div>
@@ -295,193 +340,61 @@
     </div>
   </section>
 
-  <!-- ═══════ Partners ═══════ -->
-  <section class="partners-section">
-    <div class="partners-track">
-      <span class="partner-logo">PARTNER ONE</span>
-      <span class="partner-logo">ACME SPORTS</span>
-      <span class="partner-logo">NEXGEN MEDIA</span>
-      <span class="partner-logo">CULTURAL CO.</span>
-      <span class="partner-logo">FUTUREFUND</span>
-      <span class="partner-logo">GAMESTACK</span>
-      <span class="partner-logo">PARTNER ONE</span>
-      <span class="partner-logo">ACME SPORTS</span>
-      <span class="partner-logo">NEXGEN MEDIA</span>
-      <span class="partner-logo">CULTURAL CO.</span>
-      <span class="partner-logo">FUTUREFUND</span>
-      <span class="partner-logo">GAMESTACK</span>
+  <!-- ═══════ Venue Names Strip ═══════ -->
+  <section class="venue-names-strip bg-black pb-10 -mt-4">
+    <div class="venue-names-track flex justify-center items-center gap-0 max-w-container-lg mx-auto px-8">
+      <a class="venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium text-white/30 whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out py-2.5 px-5 no-underline hover:text-white border border-transparent rounded-lg" data-venue-index="0">Apex Arena</a>
+      <a class="venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium text-white/30 whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out py-2.5 px-5 no-underline hover:text-white border border-transparent rounded-lg" data-venue-index="1">Grid House</a>
+      <a class="venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium text-white/30 whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out py-2.5 px-5 no-underline hover:text-white border border-transparent rounded-lg" data-venue-index="2">Pit Lane Club</a>
+      <a class="venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium text-white/30 whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out py-2.5 px-5 no-underline hover:text-white border border-transparent rounded-lg" data-venue-index="3">Turbo Bay</a>
+      <a class="venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium text-white/30 whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out py-2.5 px-5 no-underline hover:text-white border border-transparent rounded-lg" data-venue-index="4">DRS Zone</a>
+      <a class="venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium text-white/30 whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out py-2.5 px-5 no-underline hover:text-white border border-transparent rounded-lg" data-venue-index="5">Chicane HQ</a>
     </div>
   </section>
 
-  <!-- ═══════ Team ═══════ -->
-  <section class="team-section section-pad" id="team">
-    <div class="container">
-      <p class="label-md fade-up">Our Team</p>
-      <h2 class="headline-md fade-up">Experienced Operators.<br />Committed Partners.</h2>
-      <p class="body-lg fade-up">Our team brings decades of experience across sports, media, gaming, and entertainment.
-      </p>
-      <div class="team-grid">
-        <div class="team-card fade-up">
-          <div class="team-card-image"></div>
-          <div class="team-card-body">
-            <h4>Team Member</h4>
-            <span>Managing Partner</span>
-          </div>
-        </div>
-        <div class="team-card fade-up">
-          <div class="team-card-image"></div>
-          <div class="team-card-body">
-            <h4>Team Member</h4>
-            <span>Partner</span>
-          </div>
-        </div>
-        <div class="team-card fade-up">
-          <div class="team-card-image"></div>
-          <div class="team-card-body">
-            <h4>Team Member</h4>
-            <span>Principal</span>
-          </div>
-        </div>
-        <div class="team-card fade-up">
-          <div class="team-card-image"></div>
-          <div class="team-card-body">
-            <h4>Team Member</h4>
-            <span>Vice President</span>
-          </div>
-        </div>
-      </div>
-      <div style="margin-top: var(--sp-12);">
-        <a href="#" class="btn btn-ghost btn-arrow fade-up">Our Team</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ News ═══════ -->
-  <section class="news-section section-pad" id="news">
-    <div class="container">
-      <div class="news-header fade-up">
-        <div>
-          <p class="label-md">News & Insights</p>
-          <h2 class="headline-md">Explore our latest thoughts on sports, gaming, and entertainment innovation.</h2>
-        </div>
-        <a href="#" class="btn btn-ghost btn-arrow">View All</a>
-      </div>
-      <div class="news-grid">
-        <div class="news-card fade-up">
-          <div class="news-card-image"></div>
-          <div class="news-card-body">
-            <span class="news-tag label-sm">Partnership</span>
-            <h3>Game Changers Ventures Announces Strategic Partnership</h3>
-            <p class="news-date">April 4, 2025</p>
-            <a href="#" class="news-link">Read More</a>
-          </div>
-        </div>
-        <div class="news-card fade-up">
-          <div class="news-card-image"></div>
-          <div class="news-card-body">
-            <span class="news-tag label-sm">Press</span>
-            <h3>GCV Featured in Industry Report on Cultural Innovation</h3>
-            <p class="news-date">January 21, 2025</p>
-            <a href="#" class="news-link">Read More</a>
-          </div>
-        </div>
-        <div class="news-card fade-up">
-          <div class="news-card-image"></div>
-          <div class="news-card-body">
-            <span class="news-tag label-sm">Portfolio</span>
-            <h3>Portfolio Company Reaches Major Product Milestone</h3>
-            <p class="news-date">February 28, 2025</p>
-            <a href="#" class="news-link">Read More</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════ Scrolling Image Strip 2 ═══════ -->
-  <section class="marquee-section-2">
-    <div class="marquee-track-2">
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-      <div class="marquee-item"></div>
-    </div>
-  </section>
-
-  <!-- ═══════ CTA / Careers ═══════ -->
-  <section class="cta-section section-pad" id="careers">
-    <div class="container">
-      <p class="label-md fade-up" style="margin-bottom: var(--sp-5);">Subscribe</p>
-      <h2 class="headline-md fade-up">Join the GCV Ecosystem</h2>
-      <p class="body-lg fade-up">Be part of the next generation of game changers in sports, media, gaming, and
-        entertainment.</p>
-      <a href="#" class="btn btn-primary btn-arrow fade-up">Explore Careers</a>
-    </div>
-  </section>
-
-  <!-- ═══════ Newsletter ═══════ -->
-  <section class="newsletter-section section-pad" id="contact">
-    <div class="container">
-      <div class="newsletter-inner fade-up">
-        <div>
-          <h3>Get the Latest Moves</h3>
-          <p class="body-md">Subscribe to stay in the loop on our investments, insights, and events.</p>
-        </div>
-        <form class="newsletter-form" onsubmit="event.preventDefault();">
-          <input type="email" placeholder="Enter your email" />
-          <button type="submit" class="btn btn-primary">Subscribe</button>
-        </form>
-      </div>
-    </div>
-  </section>
 
   <!-- ═══════ Footer ═══════ -->
-  <footer>
-    <div class="container">
-      <div class="footer-top">
-        <div>
-          <div class="footer-logo">G<span>C</span>V</div>
-          <p class="footer-desc">Investing in sports, media, gaming, and entertainment — where culture meets innovation.
-          </p>
+  <footer class="site-footer bg-black pt-28 pb-4">
+    <div class="footer-wrapper max-w-container-lg mx-auto px-8">
+      <div class="footer-grid grid grid-cols-6 gap-x-3 gap-y-0 max-md:grid-cols-2 max-md:gap-x-4 max-md:gap-y-8 max-[480px]:grid-cols-1">
+        <!-- Newsletter -->
+        <div class="footer-newsletter col-span-2 max-md:col-span-full">
+          <div class="footer-form-title font-outfit text-xl font-medium text-white mb-6">Get the Latest Moves</div>
+          <form class="footer-form" onsubmit="event.preventDefault();">
+            <div class="footer-form-input mb-3">
+              <input type="email" placeholder="Enter Email" class="w-full py-3.5 px-5 bg-transparent border border-on-surface rounded-full text-white font-outfit text-[0.9rem] outline-none transition-colors duration-300 ease-in-out placeholder:text-white/40 focus:border-primary-container" />
+            </div>
+            <div class="footer-form-footer">
+              <button type="submit" class="footer-subscribe-btn inline-flex items-center gap-2 bg-btn-red border-none text-white font-outfit text-sm font-medium cursor-pointer py-3 px-6 rounded-full transition-all duration-300 ease-in-out hover:bg-white hover:text-black">
+                <span>Subscribe</span>
+                <svg width="14" height="14" viewBox="0 0 17 17" fill="none">
+                  <path d="M16.5977 16.1992H14.5977V3.61328L2.55469 15.6562L1.14062 14.2422L13.1836 2.19922H0.597656V0.199219H16.5977V16.1992Z" fill="currentColor"/>
+                </svg>
+              </button>
+            </div>
+          </form>
         </div>
-        <div class="footer-links-group">
-          <h4>Company</h4>
-          <a href="#about">About</a>
-          <a href="#portfolio">Portfolio</a>
-          <a href="#team">Team</a>
-          <a href="#news">News</a>
+
+        <!-- Socials -->
+        <div class="footer-socials-col col-start-4 col-span-2 max-md:col-span-1 max-md:col-start-auto max-[480px]:col-span-full">
+          <div class="footer-nav-caption font-outfit text-xl font-medium text-white mb-6">Socials</div>
+          <ul class="footer-nav-list list-none p-0 m-0">
+            <li class="mb-3"><a href="#" class="font-outfit text-[1.1rem] text-on-surface no-underline relative inline-block">X</a></li>
+            <li class="mb-3"><a href="#" class="font-outfit text-[1.1rem] text-on-surface no-underline relative inline-block">Instagram</a></li>
+            <li class="mb-3"><a href="#" class="font-outfit text-[1.1rem] text-on-surface no-underline relative inline-block">LinkedIn</a></li>
+          </ul>
         </div>
-        <div class="footer-links-group">
-          <h4>Connect</h4>
-          <a href="#">X (Twitter)</a>
-          <a href="#">Instagram</a>
-          <a href="#">LinkedIn</a>
+
+        <!-- Large Logo -->
+        <div class="footer-logo-large col-span-full pt-16 pb-4 max-w-container-lg" id="footerLogo" style="width: calc(100% + 4rem); margin-left: -2rem;">
+          <span class="footer-logo-text block font-outfit font-black tracking-[-0.04em] leading-none text-white whitespace-nowrap w-full transition-colors duration-[0.8s] ease-in-out" style="font-size: clamp(5rem, 12vw, 12rem);">PitPass</span>
         </div>
-        <div class="footer-links-group">
-          <h4>Legal</h4>
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms & Conditions</a>
+
+        <!-- Copyright -->
+        <div class="footer-copyright col-span-full font-outfit text-[0.8rem] text-on-surface ml-[-2rem]">
+          &copy;<span id="year"></span> All Rights Reserved
         </div>
-      </div>
-      <div class="footer-bottom">
-        <p>&copy; <span id="year"></span> Game Changers Ventures. All Rights Reserved.</p>
-        <div class="footer-socials">
-          <a href="#" aria-label="X">𝕏</a>
-          <a href="#" aria-label="Instagram">IG</a>
-          <a href="#" aria-label="LinkedIn">in</a>
-        </div>
+
       </div>
     </div>
   </footer>
@@ -512,6 +425,8 @@
     const totalVenues = venueCards.length;
     let activeVenue = 0;
 
+    const venueNames = document.querySelectorAll('.venue-name-item');
+
     function setActiveVenue(index) {
       activeVenue = ((index % totalVenues) + totalVenues) % totalVenues;
       const next1 = (activeVenue + 1) % totalVenues;
@@ -524,6 +439,16 @@
       venueCards[activeVenue].classList.add('venue-card--active');
       venueCards[next1].classList.add('venue-card--next1');
       venueCards[next2].classList.add('venue-card--next2');
+
+      // Highlight active venue name
+      venueNames.forEach(n => {
+        n.classList.add('text-white/30', 'border-transparent', 'bg-transparent');
+        n.classList.remove('!text-white', 'bg-btn-red', 'venue-name--active');
+      });
+      if (venueNames[activeVenue]) {
+        venueNames[activeVenue].classList.remove('text-white/30', 'bg-transparent');
+        venueNames[activeVenue].classList.add('!text-white', 'bg-btn-red', 'venue-name--active');
+      }
     }
 
     setActiveVenue(0);
@@ -535,6 +460,27 @@
     document.addEventListener('click', (e) => {
       const nav = document.getElementById('navbar');
       if (!nav.contains(e.target)) nav.classList.remove('open');
+    });
+  </script>
+  <script>
+    // Venue name click → scroll to venues section & set active card
+    document.querySelectorAll('.venue-name-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const idx = parseInt(el.dataset.venueIndex);
+        setActiveVenue(idx);
+        document.getElementById('portfolio').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Footer logo: white → red only at page bottom, reverts on scroll up
+    const footerLogo = document.getElementById('footerLogo');
+    window.addEventListener('scroll', () => {
+      const atBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 5);
+      if (atBottom) {
+        footerLogo.classList.add('in-view');
+      } else {
+        footerLogo.classList.remove('in-view');
+      }
     });
   </script>
 
