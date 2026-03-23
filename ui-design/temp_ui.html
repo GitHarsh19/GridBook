@@ -164,103 +164,134 @@
     </div>
   </section>
 
-  <!-- ═══════ Gaming Venues ═══════ -->
-  <section class="portfolio-section section-pad" id="portfolio">
+  <!-- ═══════ Gaming Venues — GCV Investment-style ═══════ -->
+  <section class="venues-section section-pad" id="portfolio">
     <div class="container">
-      <div class="portfolio-header fade-up">
+      <div class="venues-header fade-up">
         <div>
-          <p class="label-md">Venues</p>
-          <h2 class="headline-md">Gaming Venues</h2>
+          <span class="tag">Venues</span>
+          <h2>Gaming Venues</h2>
         </div>
-        <a href="/explore" class="btn btn-ghost btn-arrow">View All Venues</a>
+        <div class="venues-nav">
+          <button class="venues-nav-btn" id="venuesPrev" aria-label="Previous">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="venues-nav-btn" id="venuesNext" aria-label="Next">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
       </div>
-    </div>
-    <div class="portfolio-carousel" style="padding-left: max(40px, calc((100vw - 1280px) / 2 + 40px));">
 
-      <div class="portfolio-card slide-in-right">
-        <div class="portfolio-card-image">
-          <span class="company-logo">Apex Arena</span>
-        </div>
-        <div class="portfolio-card-body">
-          <div class="portfolio-tags">
-            <span class="portfolio-tag label-sm">Sim Racing</span>
-            <span class="portfolio-tag label-sm">Premium</span>
+      <div class="venues-cards" id="venuesCards">
+        <div class="venue-card venue-card--active" data-venue="0">
+          <div class="venue-card-media">
+            <img src="https://images.unsplash.com/photo-1511882150382-421056c89033?w=800&q=80" alt="Apex Arena">
           </div>
-          <p class="body-md">Full-motion Fanatec DD rigs with triple-screen setups and VR pods — the ultimate sim racing experience in downtown.</p>
-          <a href="#" class="portfolio-link">View Venue</a>
-        </div>
-      </div>
-
-      <div class="portfolio-card slide-in-right">
-        <div class="portfolio-card-image">
-          <span class="company-logo">Grid House</span>
-        </div>
-        <div class="portfolio-card-body">
-          <div class="portfolio-tags">
-            <span class="portfolio-tag label-sm">Racing</span>
-            <span class="portfolio-tag label-sm">Lounge</span>
+          <div class="venue-card-inner">
+            <div class="venue-card-header">
+              <div class="venue-card-title">Apex Arena</div>
+              <div class="venue-card-tags">
+                <span class="tag">Sim Racing</span>
+                <span class="tag">Premium</span>
+              </div>
+            </div>
+            <div class="venue-card-bottom">
+              <p class="venue-card-text">Full-motion Fanatec DD rigs with triple-screen setups and VR pods — the ultimate sim racing experience in downtown. Premium memberships and walk-in sessions available.</p>
+              <a href="#" class="venue-card-action">View Venue</a>
+            </div>
           </div>
-          <p class="body-md">Casual and competitive sim racing lounge with Logitech G Pro and Thrustmaster rigs — open late nights, walk-ins welcome.</p>
-          <a href="#" class="portfolio-link">View Venue</a>
         </div>
-      </div>
 
-      <div class="portfolio-card slide-in-right">
-        <div class="portfolio-card-image">
-          <span class="company-logo">Pit Lane Club</span>
-        </div>
-        <div class="portfolio-card-body">
-          <div class="portfolio-tags">
-            <span class="portfolio-tag label-sm">VR</span>
-            <span class="portfolio-tag label-sm">Esports</span>
+        <div class="venue-card" data-venue="1">
+          <div class="venue-card-media">
+            <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80" alt="Grid House">
           </div>
-          <p class="body-md">Esports-grade facility featuring motion platforms, direct-drive wheels, and dedicated VR racing booths for competitive sessions.</p>
-          <a href="#" class="portfolio-link">View Venue</a>
-        </div>
-      </div>
-
-      <div class="portfolio-card slide-in-right">
-        <div class="portfolio-card-image">
-          <span class="company-logo">Turbo Bay</span>
-        </div>
-        <div class="portfolio-card-body">
-          <div class="portfolio-tags">
-            <span class="portfolio-tag label-sm">Gaming Cafe</span>
-            <span class="portfolio-tag label-sm">Social</span>
+          <div class="venue-card-inner">
+            <div class="venue-card-header">
+              <div class="venue-card-title">Grid House</div>
+              <div class="venue-card-tags">
+                <span class="tag">Racing Lounge</span>
+              </div>
+            </div>
+            <div class="venue-card-bottom">
+              <p class="venue-card-text">Casual and competitive sim racing lounge with Logitech G Pro and Thrustmaster rigs — open late nights, walk-ins welcome.</p>
+              <a href="#" class="venue-card-action">View Venue</a>
+            </div>
           </div>
-          <p class="body-md">Gaming cafe meets racing hub — grab a drink, pick a rig, and race your friends on any track from F1 to rally cross.</p>
-          <a href="#" class="portfolio-link">View Venue</a>
         </div>
-      </div>
 
-      <div class="portfolio-card slide-in-right">
-        <div class="portfolio-card-image">
-          <span class="company-logo">DRS Zone</span>
-        </div>
-        <div class="portfolio-card-body">
-          <div class="portfolio-tags">
-            <span class="portfolio-tag label-sm">Premium</span>
-            <span class="portfolio-tag label-sm">Events</span>
+        <div class="venue-card" data-venue="2">
+          <div class="venue-card-media">
+            <img src="https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&q=80" alt="Pit Lane Club">
           </div>
-          <p class="body-md">Private sim racing suites for corporate events, birthday parties, and league nights — bookable by the hour or full venue.</p>
-          <a href="#" class="portfolio-link">View Venue</a>
-        </div>
-      </div>
-
-      <div class="portfolio-card slide-in-right">
-        <div class="portfolio-card-image">
-          <span class="company-logo">Chicane HQ</span>
-        </div>
-        <div class="portfolio-card-body">
-          <div class="portfolio-tags">
-            <span class="portfolio-tag label-sm">Training</span>
-            <span class="portfolio-tag label-sm">Academy</span>
+          <div class="venue-card-inner">
+            <div class="venue-card-header">
+              <div class="venue-card-title">Pit Lane Club</div>
+              <div class="venue-card-tags">
+                <span class="tag">VR Esports</span>
+              </div>
+            </div>
+            <div class="venue-card-bottom">
+              <p class="venue-card-text">Esports-grade facility featuring motion platforms, direct-drive wheels, and dedicated VR racing booths for competitive sessions.</p>
+              <a href="#" class="venue-card-action">View Venue</a>
+            </div>
           </div>
-          <p class="body-md">Sim racing academy with coaching sessions, telemetry analysis, and pro-grade equipment — from beginner to competitive driver.</p>
-          <a href="#" class="portfolio-link">View Venue</a>
+        </div>
+
+        <div class="venue-card" data-venue="3">
+          <div class="venue-card-media">
+            <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80" alt="Turbo Bay">
+          </div>
+          <div class="venue-card-inner">
+            <div class="venue-card-header">
+              <div class="venue-card-title">Turbo Bay</div>
+              <div class="venue-card-tags">
+                <span class="tag">Gaming Cafe</span>
+              </div>
+            </div>
+            <div class="venue-card-bottom">
+              <p class="venue-card-text">Gaming cafe meets racing hub — grab a drink, pick a rig, and race your friends on any track from F1 to rally cross.</p>
+              <a href="#" class="venue-card-action">View Venue</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="venue-card" data-venue="4">
+          <div class="venue-card-media">
+            <img src="https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80" alt="DRS Zone">
+          </div>
+          <div class="venue-card-inner">
+            <div class="venue-card-header">
+              <div class="venue-card-title">DRS Zone</div>
+              <div class="venue-card-tags">
+                <span class="tag">Premium Events</span>
+              </div>
+            </div>
+            <div class="venue-card-bottom">
+              <p class="venue-card-text">Private sim racing suites for corporate events, birthday parties, and league nights — bookable by the hour or full venue.</p>
+              <a href="#" class="venue-card-action">View Venue</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="venue-card" data-venue="5">
+          <div class="venue-card-media">
+            <img src="https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=800&q=80" alt="Chicane HQ">
+          </div>
+          <div class="venue-card-inner">
+            <div class="venue-card-header">
+              <div class="venue-card-title">Chicane HQ</div>
+              <div class="venue-card-tags">
+                <span class="tag">Academy</span>
+              </div>
+            </div>
+            <div class="venue-card-bottom">
+              <p class="venue-card-text">Sim racing academy with coaching sessions, telemetry analysis, and pro-grade equipment — from beginner to competitive driver.</p>
+              <a href="#" class="venue-card-action">View Venue</a>
+            </div>
+          </div>
         </div>
       </div>
-
     </div>
   </section>
 
@@ -475,6 +506,30 @@
         if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
       });
     });
+
+    // Venues card navigation — show 3 at a time (1 active + 2 next)
+    const venueCards = document.querySelectorAll('.venue-card');
+    const totalVenues = venueCards.length;
+    let activeVenue = 0;
+
+    function setActiveVenue(index) {
+      activeVenue = ((index % totalVenues) + totalVenues) % totalVenues;
+      const next1 = (activeVenue + 1) % totalVenues;
+      const next2 = (activeVenue + 2) % totalVenues;
+
+      venueCards.forEach(c => {
+        c.classList.remove('venue-card--active', 'venue-card--next1', 'venue-card--next2');
+      });
+
+      venueCards[activeVenue].classList.add('venue-card--active');
+      venueCards[next1].classList.add('venue-card--next1');
+      venueCards[next2].classList.add('venue-card--next2');
+    }
+
+    setActiveVenue(0);
+    document.getElementById('venuesNext')?.addEventListener('click', () => setActiveVenue(activeVenue + 1));
+    document.getElementById('venuesPrev')?.addEventListener('click', () => setActiveVenue(activeVenue - 1));
+    venueCards.forEach((card, i) => card.addEventListener('click', () => setActiveVenue(i)));
 
     // Close sign-in dropdown when clicking outside
     document.addEventListener('click', (e) => {

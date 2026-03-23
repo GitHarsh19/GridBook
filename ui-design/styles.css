@@ -304,7 +304,7 @@ nav.open .signin-dropdown {
    ══════════════════════════════ */
 .about-section {
   padding: var(--sp-24) 0;
-  background: var(--surface);
+  background: #000;
 }
 .about-header {
   display: flex; flex-direction: column;
@@ -358,8 +358,8 @@ nav.open .signin-dropdown {
 
 /* Card color variants — all text white */
 .about-card--white { background: #fff; }
-.about-card--white .card-title { color: #fff; }
-.about-card--white .card-text { color: #fff; opacity: 0.8; }
+.about-card--white .card-title { color: #000; }
+.about-card--white .card-text { color: #000; opacity: 0.8; }
 
 .about-card--red { background: #d9331d; }
 .about-card--red .card-title { color: #fff; }
@@ -396,9 +396,9 @@ nav.open .signin-dropdown {
 
 /* Card inner content */
 .about-card-inner {
-  padding: 22px;
+  padding: 22px; padding-top: 40%;
   display: flex; flex-direction: column;
-  justify-content: flex-end; gap: var(--sp-6);
+  justify-content: space-between; gap: var(--sp-6);
   flex: 1; position: relative; z-index: 2;
 }
 .about-card-inner .card-title {
@@ -415,28 +415,155 @@ nav.open .signin-dropdown {
    PORTFOLIO — Horizontal scroll,
    chips with full roundedness
    ══════════════════════════════ */
-.portfolio-section { overflow: hidden; background: var(--surface-container-low); }
-.portfolio-header {
+/* ═══════ Gaming Venues — GCV Investment-style ═══════ */
+.venues-section { overflow: hidden; background: #000; }
+.venues-section > .container {
+  max-width: 1400px; padding: 0 32px;
+}
+.venues-header {
   display: flex; justify-content: space-between;
-  align-items: flex-end; margin-bottom: var(--sp-12);
+  align-items: flex-end; margin-bottom: var(--sp-10);
   flex-wrap: wrap; gap: var(--sp-5);
 }
-.portfolio-header .label-md { margin-bottom: var(--sp-3); }
-.portfolio-carousel {
-  display: flex; gap: var(--sp-6);
-  overflow-x: auto; scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: var(--sp-5); scrollbar-width: none;
+.venues-header .tag {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem; font-weight: 500;
+  color: #fff; letter-spacing: -0.03em;
+  padding: 8px 16px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--round-full);
 }
-.portfolio-carousel::-webkit-scrollbar { display: none; }
-.portfolio-card {
-  min-width: 380px; flex-shrink: 0;
-  scroll-snap-align: start;
-  background: var(--surface-container);
-  border-radius: var(--round-xl); overflow: hidden;
-  transition: background 0.4s ease, box-shadow 0.4s ease;
+.venues-header h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.5rem; font-weight: 600;
+  color: #fff; letter-spacing: -0.03em;
+  margin-top: var(--sp-3);
 }
-.portfolio-card:hover { background: var(--surface-container-high); box-shadow: var(--shadow-ambient); }
+.venues-nav { display: flex; gap: var(--sp-3); }
+.venues-nav-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.2); background: transparent;
+  color: #fff; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.venues-nav-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
+
+/* Cards container — shows 3 at a time: 1 large + 2 small */
+.venues-cards {
+  display: flex; gap: 16px;
+  height: 400px;
+  max-width: 100%;
+}
+
+/* All cards hidden by default */
+.venue-card {
+  border-radius: 15px; overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.25);
+  cursor: pointer;
+  display: none;
+  transition: none;
+}
+
+/* Only visible cards shown */
+.venue-card--active,
+.venue-card--next1,
+.venue-card--next2 { display: flex; }
+
+/* Active card: ~55% width */
+.venue-card--active {
+  flex: 0 0 calc(55% - 11px);
+}
+
+/* Next 2 cards: ~22.5% each */
+.venue-card--next1,
+.venue-card--next2 {
+  flex: 0 0 calc(22.5% - 5px);
+}
+
+/* Card background image */
+.venue-card-media {
+  position: absolute; inset: 0;
+  opacity: 0;
+}
+.venue-card--active .venue-card-media {
+  opacity: 1;
+  animation: venueImgIn 0.6s ease forwards;
+}
+@keyframes venueImgIn {
+  from { opacity: 0; transform: scale(1.05); }
+  to { opacity: 1; transform: scale(1); }
+}
+.venue-card-media img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.venue-card-media::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 100%);
+}
+
+/* Card inner content */
+.venue-card-inner {
+  position: relative; z-index: 2;
+  padding: 24px; width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Header: title + tags */
+.venue-card-header {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; gap: 12px;
+}
+.venue-card-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem; font-weight: 600;
+  color: #fff; letter-spacing: -0.02em;
+}
+.venue-card-tags {
+  display: none; gap: 8px;
+}
+.venue-card--active .venue-card-tags {
+  display: flex;
+  animation: venueFadeIn 0.5s ease 0.2s both;
+}
+.venue-card-tags .tag {
+  font-size: 0.7rem; padding: 5px 14px;
+  white-space: nowrap;
+}
+
+/* Bottom: text + action (only visible on active) */
+.venue-card-bottom {
+  display: none;
+}
+.venue-card--active .venue-card-bottom {
+  display: block;
+  animation: venueTextIn 0.5s ease 0.15s both;
+}
+@keyframes venueTextIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes venueFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.venue-card-text {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem; line-height: 1.65;
+  color: rgba(255,255,255,0.75);
+  max-width: 420px;
+}
+.venue-card-action {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem; font-weight: 600;
+  color: #fff; margin-top: 16px;
+  transition: gap 0.3s ease;
+}
+.venue-card-action::after { content: '\2192'; }
+.venue-card-action:hover { gap: 10px; }
 
 /* Slide-in from right animation */
 .slide-in-right {
@@ -448,37 +575,6 @@ nav.open .signin-dropdown {
   opacity: 1;
   transform: translateX(0);
 }
-.portfolio-card.slide-in-right:nth-child(1) { transition-delay: 0s; }
-.portfolio-card.slide-in-right:nth-child(2) { transition-delay: 0.1s; }
-.portfolio-card.slide-in-right:nth-child(3) { transition-delay: 0.2s; }
-.portfolio-card.slide-in-right:nth-child(4) { transition-delay: 0.3s; }
-.portfolio-card.slide-in-right:nth-child(5) { transition-delay: 0.4s; }
-.portfolio-card.slide-in-right:nth-child(6) { transition-delay: 0.5s; }
-.portfolio-card-image {
-  width: 100%; height: 220px; position: relative;
-  background: var(--surface-container-low);
-}
-.portfolio-card-image .company-logo {
-  position: absolute; bottom: 20px; left: 24px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.5rem; font-weight: 800;
-  letter-spacing: -0.02em; color: var(--on-surface);
-}
-.portfolio-card-body { padding: var(--sp-8); }
-.portfolio-tags { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-4); flex-wrap: wrap; }
-.portfolio-tag {
-  padding: 5px 14px; border-radius: var(--round-full);
-  background: var(--surface-container-highest); color: var(--primary);
-}
-.portfolio-card-body .body-md { margin-bottom: var(--sp-5); opacity: 0.7; }
-.portfolio-link {
-  font-size: 0.8rem; font-weight: 600;
-  color: var(--primary-container);
-  display: inline-flex; align-items: center; gap: 6px;
-  transition: gap 0.3s ease;
-}
-.portfolio-link:hover { gap: 10px; }
-.portfolio-link::after { content: '\2192'; }
 
 /* ══════════════════════════════
    PARTNERS — Surface-base tonal shift
@@ -680,7 +776,9 @@ footer { padding: var(--sp-16) 0 var(--sp-10); background: var(--surface-contain
   .about-cards { flex-direction: column; align-items: center; }
   .team-grid { grid-template-columns: repeat(2, 1fr); }
   .news-grid { grid-template-columns: 1fr; }
-  .portfolio-card { min-width: 300px; }
+  .venues-cards { height: 340px; }
+  .venue-card--active { flex: 0 0 100%; }
+  .venue-card--next1, .venue-card--next2 { display: none; }
   .newsletter-form input { width: 220px; }
   .footer-top { flex-direction: column; }
 }
