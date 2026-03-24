@@ -7,39 +7,39 @@ import Link from "next/link";
 
 const heroColumns = [
   [
-    "https://images.unsplash.com/photo-1511882150382-421056c89033?w=420&q=80",
-    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=420&q=80",
-    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=420&q=80",
+    "https://images.unsplash.com/photo-1511882150382-421056c89033?w=420&q=80", // gaming controller
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=420&q=80",   // game controller
+    "https://images.unsplash.com/photo-1616161560417-66d4db5892ec?w=420&q=80", // RGB gaming keyboard
   ],
   [
-    "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=420&q=80",
-    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=420&q=80",
-    "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=420&q=80",
+    "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=420&q=80",   // esports arena
+    "https://images.unsplash.com/photo-1605647540924-852290f6b0d5?w=420&q=80", // gaming setup
+    "https://images.unsplash.com/photo-1625842268584-8f3296236761?w=420&q=80", // gaming room
   ],
   [
-    "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=420&q=80",
-    "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=420&q=80",
-    "https://images.unsplash.com/photo-1504707748692-419802cf939d?w=420&q=80",
+    "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=420&q=80", // gaming lounge
+    "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=420&q=80", // person gaming
+    "https://images.unsplash.com/photo-1614680376739-414d95ff43df?w=420&q=80", // gaming desk
   ],
   [
-    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=420&q=80",
-    "https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=420&q=80",
-    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=420&q=80",
+    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=420&q=80",   // gaming PC
+    "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=420&q=80", // gaming laptop
+    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=420&q=80", // keyboards
   ],
   [
-    "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=420&q=80",
-    "https://images.unsplash.com/photo-1586182987320-4f376d39d787?w=420&q=80",
-    "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=420&q=80",
+    "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=420&q=80",   // gaming chair
+    "https://images.unsplash.com/photo-1586182987320-4f376d39d787?w=420&q=80", // RGB gaming
+    "https://images.unsplash.com/photo-1596495577886-d920f1fb7238?w=420&q=80", // gaming setup
   ],
   [
-    "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=420&q=80",
-    "https://images.unsplash.com/photo-1616588589676-62b3bd4ff6d2?w=420&q=80",
-    "https://images.unsplash.com/photo-1627163439134-7a8c47e08208?w=420&q=80",
+    "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=420&q=80", // gaming console
+    "https://images.unsplash.com/photo-1616588589676-62b3bd4ff6d2?w=420&q=80", // gaming setup
+    "https://images.unsplash.com/photo-1627163439134-7a8c47e08208?w=420&q=80", // gaming monitor
   ],
   [
-    "https://images.unsplash.com/photo-1576633587382-13ddf37b1fc1?w=420&q=80",
-    "https://images.unsplash.com/photo-1580234811497-9df7fd2f357e?w=420&q=80",
-    "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=420&q=80",
+    "https://images.unsplash.com/photo-1576633587382-13ddf37b1fc1?w=420&q=80", // gaming chair setup
+    "https://images.unsplash.com/photo-1580234811497-9df7fd2f357e?w=420&q=80", // keyboard
+    "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=420&q=80", // sim racing wheel
   ],
 ];
 
