@@ -6,13 +6,41 @@ import Link from "next/link";
 /* ── Static data ── */
 
 const heroColumns = [
-  ["hero-03", "hero-04", "hero-12"],
-  ["hero-01", "hero-09", "hero-05"],
-  ["hero-06", "hero-10", "hero-02"],
-  ["hero-14", "hero-07", "hero-13"],
-  ["hero-11", "hero-08", "hero-15"],
-  ["hero-03", "hero-01", "hero-09"],
-  ["hero-04", "hero-06", "hero-02"],
+  [
+    "https://images.unsplash.com/photo-1511882150382-421056c89033?w=420&q=80",
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=420&q=80",
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=420&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=420&q=80",
+    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=420&q=80",
+    "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=420&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=420&q=80",
+    "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=420&q=80",
+    "https://images.unsplash.com/photo-1504707748692-419802cf939d?w=420&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=420&q=80",
+    "https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=420&q=80",
+    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=420&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=420&q=80",
+    "https://images.unsplash.com/photo-1586182987320-4f376d39d787?w=420&q=80",
+    "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=420&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=420&q=80",
+    "https://images.unsplash.com/photo-1616588589676-62b3bd4ff6d2?w=420&q=80",
+    "https://images.unsplash.com/photo-1627163439134-7a8c47e08208?w=420&q=80",
+  ],
+  [
+    "https://images.unsplash.com/photo-1576633587382-13ddf37b1fc1?w=420&q=80",
+    "https://images.unsplash.com/photo-1580234811497-9df7fd2f357e?w=420&q=80",
+    "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=420&q=80",
+  ],
 ];
 
 const aboutCards = [
@@ -20,25 +48,25 @@ const aboutCards = [
     variant: "bg-white",
     titleColor: "text-black",
     textColor: "text-black/80",
-    title: "Focus",
-    text: "We invest where we know we can make the biggest impact: sports, gaming, media, and entertainment.",
-    image: "https://gcventures.vc/wp-content/themes/gcv/data/3-02.jpg",
+    title: "Discover",
+    text: "Find premium sim racing venues, gaming cafes, and esports facilities near you — all in one place, curated for serious drivers.",
+    image: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=600&q=80",
   },
   {
     variant: "bg-btn-red",
     titleColor: "text-white",
     textColor: "text-white/80",
-    title: "Community",
-    text: "We\u2019ve cultivated a network of athletes, investors, and operators who share our passion for shaping the future of these industries.",
-    image: "https://gcventures.vc/wp-content/themes/gcv/data/3-01.jpg",
+    title: "Race",
+    text: "Book a rig in seconds, join open sessions, and compete on world-class setups alongside a community of passionate sim racers.",
+    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80",
   },
   {
     variant: "bg-surface-container-low",
     titleColor: "text-white",
     textColor: "text-white/80",
-    title: "Partnership",
-    text: "We work closely with founders, often before the story is fully written, providing capital, credibility, and connections.",
-    image: "https://gcventures.vc/wp-content/themes/gcv/data/3-03.jpg",
+    title: "Experience",
+    text: "From walk-in gaming slots to full-motion sim rigs and VR pods — every venue on PitPass is vetted for premium quality.",
+    image: "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=600&q=80",
   },
 ];
 
@@ -265,8 +293,8 @@ export default function LandingPage() {
               {[...col, ...col].map((img, ii) => (
                 <img
                   key={ii}
-                  src={`https://gcventures.vc/wp-content/themes/gcv/data/${img}.jpg`}
-                  className={`w-full rounded-xl block object-cover ${img.includes("10") || img.includes("12") || img.includes("13") || img.includes("09") && ci === 5 ? "h-[220px]" : "h-[280px]"}`}
+                  src={img}
+                  className={`w-full rounded-xl block object-cover ${ii % 3 === 1 ? "h-[220px]" : "h-[280px]"}`}
                   alt=""
                 />
               ))}
@@ -283,24 +311,24 @@ export default function LandingPage() {
             className="font-outfit font-extrabold leading-[1.02] tracking-[-0.04em] text-white mb-6"
             style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)" }}
           >
-            Backing the Next Generation of Game Changers
+            Book the Best Sim Racing Rigs in Your City
           </h1>
           <p className="font-outfit text-[1.15rem] leading-[1.7] text-on-surface max-w-[560px] mx-auto mb-10">
-            Investing in sports, media, gaming, and entertainment — where
-            culture meets innovation.
+            Discover premium gaming venues, reserve a rig in minutes, and race
+            on world-class setups near you.
           </p>
           <div className="hero-buttons flex gap-4 flex-wrap justify-center">
             <a
               href="#portfolio"
               className="btn-arrow-icon inline-flex items-center gap-2 px-[23px] h-9 rounded-full font-outfit text-sm font-medium tracking-[-0.03em] transition-[0.15s] border border-transparent cursor-pointer bg-btn-red text-white border-btn-red hover:bg-white hover:text-btn-red hover:border-white active:scale-[0.98]"
             >
-              Explore Our Portfolio
+              Find a Venue
             </a>
             <a
               href="#about"
               className="inline-flex items-center gap-2 px-[23px] h-9 rounded-full font-outfit text-sm font-medium tracking-[-0.03em] transition-[0.15s] border cursor-pointer bg-transparent text-on-surface-variant border-white/15 hover:bg-white hover:text-[#131313] hover:border-white active:scale-[0.98]"
             >
-              Learn More
+              How It Works
             </a>
           </div>
         </div>
@@ -311,13 +339,13 @@ export default function LandingPage() {
         <div className="max-w-container mx-auto px-10">
           <div className="fade-up flex flex-col items-center text-center gap-5 mb-12">
             <span className="font-outfit text-[0.95rem] font-medium text-white tracking-[-0.03em] py-2 px-4 border border-white rounded-full">
-              About
+              Why PitPass
             </span>
             <h2
               className="font-outfit font-medium text-white leading-none tracking-[-0.03em]"
               style={{ fontSize: "clamp(1.8rem, 3vw, 2.4rem)" }}
             >
-              What We Stand for
+              Built for Drivers
             </h2>
           </div>
 
@@ -474,50 +502,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════ Venue Names Strip ═══════ */}
-      <section className="bg-black pb-10 -mt-4">
-        <div className="relative overflow-hidden" style={{ minHeight: "3.5rem" }}>
-          {/* Exit layer */}
-          {prevVenue !== null && (
-            <div
-              key={`names-exit-${prevVenue}`}
-              className={`venues-names-slide-layer venues-slide-${animDir === "left" ? "exit-left" : "exit-right"}`}
-            >
-              {venues.map((venue, i) => (
-                <button
-                  key={venue.name}
-                  className={`venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium whitespace-nowrap py-2.5 px-5 border rounded-lg pointer-events-none ${
-                    i === prevVenue
-                      ? "!text-white bg-btn-red border-transparent"
-                      : "text-white/30 bg-transparent border-transparent"
-                  }`}
-                >
-                  {venue.name}
-                </button>
-              ))}
-            </div>
-          )}
-          {/* Enter layer */}
-          <div
-            key={`names-enter-${activeVenue}`}
-            className={`venues-names-slide-layer ${prevVenue !== null ? `venues-slide-${animDir === "left" ? "enter-right" : "enter-left"}` : ""}`}
-          >
-            {venues.map((venue, i) => (
-              <button
-                key={venue.name}
-                className={`venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out py-2.5 px-5 border rounded-lg ${
-                  i === activeVenue
-                    ? "!text-white bg-btn-red border-transparent venue-name--active"
-                    : "text-white/30 bg-transparent border-transparent hover:text-white"
-                }`}
-                onClick={() => jumpTo(i)}
-              >
-                {venue.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ═══════ Footer ═══════ */}
       <footer className="bg-black pt-28 pb-4">
