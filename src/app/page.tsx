@@ -1,102 +1,607 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Zap, ArrowRight, ChevronDown, User, KeyRound } from "lucide-react";
+
+/* ── Static data ── */
+
+const heroColumns = [
+  ["hero-03", "hero-04", "hero-12"],
+  ["hero-01", "hero-09", "hero-05"],
+  ["hero-06", "hero-10", "hero-02"],
+  ["hero-14", "hero-07", "hero-13"],
+  ["hero-11", "hero-08", "hero-15"],
+  ["hero-03", "hero-01", "hero-09"],
+  ["hero-04", "hero-06", "hero-02"],
+];
+
+const aboutCards = [
+  {
+    variant: "bg-white",
+    titleColor: "text-black",
+    textColor: "text-black/80",
+    title: "Focus",
+    text: "We invest where we know we can make the biggest impact: sports, gaming, media, and entertainment.",
+    image: "https://gcventures.vc/wp-content/themes/gcv/data/3-02.jpg",
+  },
+  {
+    variant: "bg-btn-red",
+    titleColor: "text-white",
+    textColor: "text-white/80",
+    title: "Community",
+    text: "We\u2019ve cultivated a network of athletes, investors, and operators who share our passion for shaping the future of these industries.",
+    image: "https://gcventures.vc/wp-content/themes/gcv/data/3-01.jpg",
+  },
+  {
+    variant: "bg-surface-container-low",
+    titleColor: "text-white",
+    textColor: "text-white/80",
+    title: "Partnership",
+    text: "We work closely with founders, often before the story is fully written, providing capital, credibility, and connections.",
+    image: "https://gcventures.vc/wp-content/themes/gcv/data/3-03.jpg",
+  },
+];
+
+const venues = [
+  {
+    name: "Apex Arena",
+    tags: ["Sim Racing", "Premium"],
+    description:
+      "Full-motion Fanatec DD rigs with triple-screen setups and VR pods \u2014 the ultimate sim racing experience in downtown. Premium memberships and walk-in sessions available.",
+    image:
+      "https://images.unsplash.com/photo-1511882150382-421056c89033?w=800&q=80",
+  },
+  {
+    name: "Grid House",
+    tags: ["Racing Lounge"],
+    description:
+      "Casual and competitive sim racing lounge with Logitech G Pro and Thrustmaster rigs \u2014 open late nights, walk-ins welcome.",
+    image:
+      "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80",
+  },
+  {
+    name: "Pit Lane Club",
+    tags: ["VR Esports"],
+    description:
+      "Esports-grade facility featuring motion platforms, direct-drive wheels, and dedicated VR racing booths for competitive sessions.",
+    image:
+      "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&q=80",
+  },
+  {
+    name: "Turbo Bay",
+    tags: ["Gaming Cafe"],
+    description:
+      "Gaming cafe meets racing hub \u2014 grab a drink, pick a rig, and race your friends on any track from F1 to rally cross.",
+    image:
+      "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80",
+  },
+  {
+    name: "DRS Zone",
+    tags: ["Premium Events"],
+    description:
+      "Private sim racing suites for corporate events, birthday parties, and league nights \u2014 bookable by the hour or full venue.",
+    image:
+      "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80",
+  },
+  {
+    name: "Chicane HQ",
+    tags: ["Academy"],
+    description:
+      "Sim racing academy with coaching sessions, telemetry analysis, and pro-grade equipment \u2014 from beginner to competitive driver.",
+    image:
+      "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=800&q=80",
+  },
+];
+
+/* ── Arrow SVG reused in nav & footer ── */
+function ArrowSvg() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 17 17" fill="none">
+      <path
+        d="M16.5977 16.1992H14.5977V3.61328L2.55469 15.6562L1.14062 14.2422L13.1836 2.19922H0.597656V0.199219H16.5977V16.1992Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
 
 export default function LandingPage() {
-  const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [activeVenue, setActiveVenueRaw] = useState(0);
+  const [prevVenue, setPrevVenue] = useState<number | null>(null);
+  const [animDir, setAnimDir] = useState<"left" | "right" | null>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const footerLogoRef = useRef<HTMLDivElement>(null);
+  const animLock = useRef(false);
 
-  // Close dropdown on outside click
+  const totalVenues = venues.length;
+
+  const navigate = useCallback(
+    (dir: 1 | -1) => {
+      if (animLock.current) return;
+      animLock.current = true;
+      const next = ((activeVenue + dir) % totalVenues + totalVenues) % totalVenues;
+      setPrevVenue(activeVenue);
+      setAnimDir(dir === 1 ? "left" : "right");
+      setActiveVenueRaw(next);
+      setTimeout(() => {
+        setPrevVenue(null);
+        setAnimDir(null);
+        animLock.current = false;
+      }, 480);
+    },
+    [activeVenue, totalVenues]
+  );
+
+  const jumpTo = useCallback(
+    (index: number) => {
+      if (animLock.current || index === activeVenue) return;
+      animLock.current = true;
+      const cw = ((index - activeVenue) + totalVenues) % totalVenues;
+      const dir = cw <= totalVenues / 2 ? "left" : "right";
+      setPrevVenue(activeVenue);
+      setAnimDir(dir);
+      setActiveVenueRaw(index);
+      setTimeout(() => {
+        setPrevVenue(null);
+        setAnimDir(null);
+        animLock.current = false;
+      }, 480);
+    },
+    [activeVenue, totalVenues]
+  );
+
+  const next1 = (activeVenue + 1) % totalVenues;
+  const next2 = (activeVenue + 2) % totalVenues;
+
+  /* Close dropdown on outside click */
   useEffect(() => {
     if (!isDropdownOpen) return;
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+    function handleClick(e: MouseEvent) {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setIsDropdownOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, [isDropdownOpen]);
 
+  /* Intersection observer for fade-up animations */
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("visible");
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
+    );
+    document.querySelectorAll(".fade-up").forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  /* Footer logo color at page bottom */
+  useEffect(() => {
+    function onScroll() {
+      if (!footerLogoRef.current) return;
+      const atBottom =
+        window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 5;
+      footerLogoRef.current.classList.toggle("in-view", atBottom);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950">
-      {/* Navbar */}
-      <nav className="border-b border-zinc-800">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-cyan-500" />
-            <span className="text-lg font-bold tracking-tight text-white">
-              Grid<span className="text-cyan-500">Book</span>
-            </span>
-          </div>
-
-          {/* Sign In Dropdown */}
-          <div className="relative" ref={dropdownRef}>
+    <div className="font-outfit bg-surface text-on-surface-variant overflow-x-hidden antialiased">
+      {/* ═══════ Glass Navigation ═══════ */}
+      <nav
+        ref={navRef}
+        className={`nav-wrapper fixed top-0 left-0 right-0 z-[100] p-4 px-8 pointer-events-none ${isDropdownOpen ? "nav-open" : ""}`}
+      >
+        <div className="nav-pill pointer-events-auto max-w-container-lg mx-auto flex items-center justify-between bg-white/5 backdrop-blur-[10px] rounded-full pl-6 pr-4 py-4 transition-all duration-300 ease-in-out">
+          <a
+            href="#"
+            className="nav-logo font-outfit text-[1.75rem] font-bold text-white tracking-[-0.03em]"
+            onClick={(e) => {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          >
+            PitPass
+          </a>
+          <div className="nav-cta relative">
             <button
+              className="btn-signin inline-flex items-center gap-2 px-[23px] h-9 bg-btn-red text-white border border-btn-red rounded-full font-outfit text-sm font-medium tracking-[-0.03em] cursor-pointer transition-[0.15s] hover:bg-white hover:text-btn-red hover:border-white active:scale-[0.98]"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-700 hover:text-white"
             >
-              Sign In
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
+              <span>Sign In</span>
+              <span
+                className={`btn-arrow-rotate w-3.5 h-3.5 flex items-center justify-center transition-transform duration-300 ease-in-out`}
+              >
+                <ArrowSvg />
+              </span>
             </button>
-
-            {isDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 overflow-hidden rounded-md border border-zinc-800 bg-zinc-900 shadow-lg shadow-black/30">
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    router.push("/explore");
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-left text-sm text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
-                >
-                  <User className="h-4 w-4 text-cyan-500" />
-                  I&apos;m a Customer
-                </button>
-                <div className="mx-3 h-px bg-zinc-800" />
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    router.push("/admin/login");
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-left text-sm text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
-                >
-                  <KeyRound className="h-4 w-4 text-amber-500" />
-                  Venue Admin Login
-                </button>
-              </div>
-            )}
           </div>
+        </div>
+
+        {/* Sign-in dropdown */}
+        <div className="signin-dropdown max-w-container-lg ml-auto mr-4 w-fit bg-white/[0.06] backdrop-blur-[20px] rounded-xl p-2 opacity-0 invisible -translate-y-2 transition-all duration-200 ease-in-out pointer-events-none">
+          <Link
+            href="/login"
+            className="flex items-center gap-2.5 py-3 px-4 font-outfit text-[0.85rem] font-medium rounded-lg transition-all duration-200 ease-in-out text-btn-red hover:bg-btn-red/[0.12] hover:text-[#ff4a2e] no-underline"
+          >
+            <span className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-high text-[0.85rem] shrink-0">
+              🏁
+            </span>
+            I am a Customer
+          </Link>
+          <Link
+            href="/admin/login"
+            className="flex items-center gap-2.5 py-3 px-4 font-outfit text-[0.85rem] font-medium rounded-lg transition-all duration-200 ease-in-out text-white hover:bg-surface-container-highest hover:text-white no-underline"
+          >
+            <span className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-high text-[0.85rem] shrink-0">
+              ⚙
+            </span>
+            Venue Admin Login
+          </Link>
         </div>
       </nav>
 
-      {/* Center content */}
-      <main className="flex flex-1 items-center justify-center px-4">
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-6 flex items-center gap-3">
-            <Zap className="h-8 w-8 text-cyan-500" />
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Grid<span className="text-cyan-500">Book</span>
-            </h1>
-          </div>
-          <p className="max-w-md text-sm leading-relaxed text-zinc-400">
-            Real-time availability and booking for sim racing and gaming venues.
-          </p>
-          <Link
-            href="/explore"
-            className="mt-8 inline-flex items-center gap-2 rounded-lg bg-cyan-500 px-6 py-3 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98]"
-          >
-            Explore Venues & Book
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-          <p className="mt-4 text-xs text-zinc-600">
-            No sign-up required to browse venues
-          </p>
+      {/* ═══════ Hero — Tilted Image Grid ═══════ */}
+      <section className="hero relative overflow-hidden min-h-screen grid items-center justify-items-center bg-surface">
+        {/* Tilted image columns */}
+        <div
+          className="hero-imgcols absolute inset-0 flex gap-[15px] justify-center origin-center"
+          style={{ transform: "rotate(20deg) scale(1.4)" }}
+        >
+          {heroColumns.map((col, ci) => (
+            <div
+              key={ci}
+              className="hero-imgcols-col flex flex-col gap-[15px] shrink-0 w-[220px]"
+            >
+              {/* Duplicate images for seamless infinite scroll */}
+              {[...col, ...col].map((img, ii) => (
+                <img
+                  key={ii}
+                  src={`https://gcventures.vc/wp-content/themes/gcv/data/${img}.jpg`}
+                  className={`w-full rounded-xl block object-cover ${img.includes("10") || img.includes("12") || img.includes("13") || img.includes("09") && ci === 5 ? "h-[220px]" : "h-[280px]"}`}
+                  alt=""
+                />
+              ))}
+            </div>
+          ))}
         </div>
-      </main>
+
+        {/* Dark overlay */}
+        <div className="hero-overlay absolute inset-0 z-[1]" />
+
+        {/* Hero text */}
+        <div className="hero-content fade-up relative z-[2] text-center max-w-[800px] px-8">
+          <h1
+            className="font-outfit font-extrabold leading-[1.02] tracking-[-0.04em] text-white mb-6"
+            style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)" }}
+          >
+            Backing the Next Generation of Game Changers
+          </h1>
+          <p className="font-outfit text-[1.15rem] leading-[1.7] text-on-surface max-w-[560px] mx-auto mb-10">
+            Investing in sports, media, gaming, and entertainment — where
+            culture meets innovation.
+          </p>
+          <div className="hero-buttons flex gap-4 flex-wrap justify-center">
+            <a
+              href="#portfolio"
+              className="btn-arrow-icon inline-flex items-center gap-2 px-[23px] h-9 rounded-full font-outfit text-sm font-medium tracking-[-0.03em] transition-[0.15s] border border-transparent cursor-pointer bg-btn-red text-white border-btn-red hover:bg-white hover:text-btn-red hover:border-white active:scale-[0.98]"
+            >
+              Explore Our Portfolio
+            </a>
+            <a
+              href="#about"
+              className="inline-flex items-center gap-2 px-[23px] h-9 rounded-full font-outfit text-sm font-medium tracking-[-0.03em] transition-[0.15s] border cursor-pointer bg-transparent text-on-surface-variant border-white/15 hover:bg-white hover:text-[#131313] hover:border-white active:scale-[0.98]"
+            >
+              Learn More
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ About — Cards ═══════ */}
+      <section className="py-24 bg-black" id="about">
+        <div className="max-w-container mx-auto px-10">
+          <div className="fade-up flex flex-col items-center text-center gap-5 mb-12">
+            <span className="font-outfit text-[0.95rem] font-medium text-white tracking-[-0.03em] py-2 px-4 border border-white rounded-full">
+              About
+            </span>
+            <h2
+              className="font-outfit font-medium text-white leading-none tracking-[-0.03em]"
+              style={{ fontSize: "clamp(1.8rem, 3vw, 2.4rem)" }}
+            >
+              What We Stand for
+            </h2>
+          </div>
+
+          <div className="flex gap-10 justify-center max-lg:flex-wrap max-md:flex-col max-md:items-center">
+            {aboutCards.map((card) => (
+              <div
+                key={card.title}
+                className={`about-card fade-up rounded-[15px] overflow-hidden flex flex-col relative w-[280px] h-[380px] shrink-0 transition-transform duration-[0.4s] ease-in-out ${card.variant}`}
+                style={{
+                  boxShadow: "inset 0 0 0 1px #131313",
+                  backfaceVisibility: "hidden",
+                }}
+              >
+                <div className="about-card-media absolute -inset-px overflow-hidden opacity-0 transition-opacity duration-500 ease-in-out z-[1] rounded-[16px]">
+                  <img
+                    src={card.image}
+                    className="w-full h-full object-cover block"
+                    alt=""
+                  />
+                </div>
+                <div className="about-card-inner p-[22px] pt-[40%] flex flex-col justify-between gap-6 flex-1 relative z-[2]">
+                  <div
+                    className={`card-title font-outfit text-2xl font-medium tracking-[-0.02em] ${card.titleColor}`}
+                  >
+                    {card.title}
+                  </div>
+                  <div
+                    className={`card-text font-outfit text-sm leading-normal ${card.textColor}`}
+                  >
+                    {card.text}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ Gaming Venues ═══════ */}
+      <section
+        className="venues-section overflow-hidden bg-black px-8 py-24"
+        id="portfolio"
+      >
+        <div className="max-w-container-lg mx-auto p-0">
+          <div className="fade-up flex justify-between items-end mb-10 flex-wrap gap-5">
+            <div>
+              <span className="font-outfit text-[0.95rem] font-medium text-white tracking-[-0.03em] py-2 px-4 border border-white rounded-full">
+                Venues
+              </span>
+              <h2 className="font-outfit text-[2.5rem] font-semibold text-white tracking-[-0.03em] mt-3">
+                Gaming Venues
+              </h2>
+            </div>
+            <div className="flex gap-3">
+              <button
+                className="w-14 h-10 rounded-lg border border-white/20 bg-transparent text-white cursor-pointer flex items-center justify-center transition-all duration-300 ease-in-out hover:bg-white hover:border-white hover:text-black"
+                onClick={() => navigate(-1)}
+                aria-label="Previous"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <button
+                className="w-14 h-10 rounded-lg border border-white/20 bg-transparent text-white cursor-pointer flex items-center justify-center transition-all duration-300 ease-in-out hover:bg-white hover:border-white hover:text-black"
+                onClick={() => navigate(1)}
+                aria-label="Next"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Sliding venue cards */}
+          <div className="relative h-[400px] overflow-hidden max-md:h-[340px]">
+            {/* Exit layer — current cards slide out */}
+            {prevVenue !== null && (
+              <div
+                key={`cards-exit-${prevVenue}`}
+                className={`venues-slide-layer venues-slide-${animDir === "left" ? "exit-left" : "exit-right"}`}
+              >
+                {venues.map((venue, i) => {
+                  const n1 = (prevVenue + 1) % totalVenues;
+                  const n2 = (prevVenue + 2) % totalVenues;
+                  let sc = "";
+                  if (i === prevVenue) sc = "venue-card--active";
+                  else if (i === n1) sc = "venue-card--next1";
+                  else if (i === n2) sc = "venue-card--next2";
+                  return (
+                    <div key={venue.name} className={`venue-card rounded-[15px] overflow-hidden relative border border-white/25 ${sc}`}>
+                      <div className="venue-card-media absolute inset-0 opacity-0">
+                        <img src={venue.image} className="w-full h-full object-cover" alt={venue.name} />
+                      </div>
+                      <div className="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
+                        <div className="venue-card-header flex justify-between items-start gap-3">
+                          <div className="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">{venue.name}</div>
+                          <div className="venue-card-tags hidden gap-2">
+                            {venue.tags.map((tag) => (
+                              <span key={tag} className="text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">{tag}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="venue-card-bottom hidden">
+                          <p className="font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">{venue.description}</p>
+                          <Link href="/explore" className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue</Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Enter layer — new cards slide in */}
+            <div
+              key={`cards-enter-${activeVenue}`}
+              className={`venues-slide-layer ${prevVenue !== null ? `venues-slide-${animDir === "left" ? "enter-right" : "enter-left"}` : ""}`}
+            >
+              {venues.map((venue, i) => {
+                let sc = "";
+                if (i === activeVenue) sc = "venue-card--active";
+                else if (i === next1) sc = "venue-card--next1";
+                else if (i === next2) sc = "venue-card--next2";
+                return (
+                  <div
+                    key={venue.name}
+                    className={`venue-card rounded-[15px] overflow-hidden relative border border-white/25 cursor-pointer ${sc}`}
+                    onClick={() => jumpTo(i)}
+                  >
+                    <div className="venue-card-media absolute inset-0 opacity-0">
+                      <img src={venue.image} className="w-full h-full object-cover" alt={venue.name} />
+                    </div>
+                    <div className="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
+                      <div className="venue-card-header flex justify-between items-start gap-3">
+                        <div className="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">{venue.name}</div>
+                        <div className="venue-card-tags hidden gap-2">
+                          {venue.tags.map((tag) => (
+                            <span key={tag} className="text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="venue-card-bottom hidden">
+                        <p className="font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">{venue.description}</p>
+                        <Link href="/explore" className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue</Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ Venue Names Strip ═══════ */}
+      <section className="bg-black pb-10 -mt-4">
+        <div className="relative overflow-hidden" style={{ minHeight: "3.5rem" }}>
+          {/* Exit layer */}
+          {prevVenue !== null && (
+            <div
+              key={`names-exit-${prevVenue}`}
+              className={`venues-names-slide-layer venues-slide-${animDir === "left" ? "exit-left" : "exit-right"}`}
+            >
+              {venues.map((venue, i) => (
+                <button
+                  key={venue.name}
+                  className={`venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium whitespace-nowrap py-2.5 px-5 border rounded-lg pointer-events-none ${
+                    i === prevVenue
+                      ? "!text-white bg-btn-red border-transparent"
+                      : "text-white/30 bg-transparent border-transparent"
+                  }`}
+                >
+                  {venue.name}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Enter layer */}
+          <div
+            key={`names-enter-${activeVenue}`}
+            className={`venues-names-slide-layer ${prevVenue !== null ? `venues-slide-${animDir === "left" ? "enter-right" : "enter-left"}` : ""}`}
+          >
+            {venues.map((venue, i) => (
+              <button
+                key={venue.name}
+                className={`venue-name-item flex-1 text-center font-outfit text-[1.1rem] font-medium whitespace-nowrap cursor-pointer transition-all duration-300 ease-in-out py-2.5 px-5 border rounded-lg ${
+                  i === activeVenue
+                    ? "!text-white bg-btn-red border-transparent venue-name--active"
+                    : "text-white/30 bg-transparent border-transparent hover:text-white"
+                }`}
+                onClick={() => jumpTo(i)}
+              >
+                {venue.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ Footer ═══════ */}
+      <footer className="bg-black pt-28 pb-4">
+        <div className="max-w-container-lg mx-auto px-8">
+          <div className="grid grid-cols-6 gap-x-3 gap-y-0 max-md:grid-cols-2 max-md:gap-x-4 max-md:gap-y-8 max-[480px]:grid-cols-1">
+            {/* Newsletter */}
+            <div className="col-span-2 max-md:col-span-full">
+              <div className="font-outfit text-xl font-medium text-white mb-6">
+                Get the Latest Moves
+              </div>
+              <form onSubmit={(e) => e.preventDefault()}>
+                <div className="mb-3">
+                  <input
+                    type="email"
+                    placeholder="Enter Email"
+                    className="w-full py-3.5 px-5 bg-transparent border border-on-surface rounded-full text-white font-outfit text-[0.9rem] outline-none transition-colors duration-300 ease-in-out placeholder:text-white/40 focus:border-primary-container"
+                  />
+                </div>
+                <div>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 bg-btn-red border-none text-white font-outfit text-sm font-medium cursor-pointer py-3 px-6 rounded-full transition-all duration-300 ease-in-out hover:bg-white hover:text-black"
+                  >
+                    <span>Subscribe</span>
+                    <ArrowSvg />
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Socials */}
+            <div className="col-start-4 col-span-2 max-md:col-span-1 max-md:col-start-auto max-[480px]:col-span-full">
+              <div className="font-outfit text-xl font-medium text-white mb-6">
+                Socials
+              </div>
+              <ul className="footer-nav-list list-none p-0 m-0">
+                <li className="mb-3">
+                  <a
+                    href="#"
+                    className="font-outfit text-[1.1rem] text-on-surface no-underline relative inline-block"
+                  >
+                    X
+                  </a>
+                </li>
+                <li className="mb-3">
+                  <a
+                    href="#"
+                    className="font-outfit text-[1.1rem] text-on-surface no-underline relative inline-block"
+                  >
+                    Instagram
+                  </a>
+                </li>
+                <li className="mb-3">
+                  <a
+                    href="#"
+                    className="font-outfit text-[1.1rem] text-on-surface no-underline relative inline-block"
+                  >
+                    LinkedIn
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Large Logo */}
+            <div
+              ref={footerLogoRef}
+              className="footer-logo-large col-span-full pt-16 pb-4 max-w-container-lg"
+              style={{ width: "calc(100% + 4rem)", marginLeft: "-2rem" }}
+            >
+              <span
+                className="footer-logo-text block font-outfit font-black tracking-[-0.04em] leading-none text-white whitespace-nowrap w-full transition-colors duration-[0.8s] ease-in-out"
+                style={{ fontSize: "clamp(5rem, 12vw, 12rem)" }}
+              >
+                PitPass
+              </span>
+            </div>
+
+            {/* Copyright */}
+            <div className="col-span-full font-outfit text-[0.8rem] text-on-surface ml-[-2rem]">
+              &copy;{new Date().getFullYear()} All Rights Reserved
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
