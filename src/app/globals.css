@@ -164,12 +164,10 @@ html {
   to { opacity: 1; transform: translateX(0) scaleX(1); }
 }
 
-/* Venue card media animation — active state, then slow Ken Burns drift */
+/* Venue card media animation — active state fade in */
 .venue-card--active .venue-card-media {
   opacity: 1;
-  animation:
-    venueImgIn      0.6s ease               forwards,
-    venue-kenburns  14s ease-in-out  0.6s   infinite;
+  animation: venueImgIn 0.6s ease forwards;
 }
 
 /* Inactive cards — dim background image visible */
@@ -194,51 +192,32 @@ html {
   to   { opacity: 0.55; transform: translateX(0); }
 }
 @keyframes venueImgIn {
-  from { opacity: 0; transform: scale(1.05); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 @keyframes venue-kenburns {
-  0%   { transform: scale(1.00) translate(  0px,  0px); }
-  30%  { transform: scale(1.07) translate( -7px, -4px); }
-  70%  { transform: scale(1.10) translate(  7px,  3px); }
-  100% { transform: scale(1.00) translate(  0px,  0px); }
+  0%   { transform: translate(  0px,  0px); }
+  30%  { transform: translate( -6px, -3px); }
+  70%  { transform: translate(  6px,  3px); }
+  100% { transform: translate(  0px,  0px); }
 }
 
-/* Active card — slow full-card breathe */
+/* Active card */
 .venue-card--active {
   flex: 0 0 calc(55% - 18px);
   order: 1;
-  animation: venue-active-breathe 7s ease-in-out infinite;
-  will-change: transform;
-}
-@keyframes venue-active-breathe {
-  0%, 100% { transform: scale(1)     translateY(0px); }
-  50%      { transform: scale(1.012) translateY(-5px); }
 }
 
-/* Next1 — slowly drifts toward active, as if pulled */
+/* Next1 */
 .venue-card--next1 {
   flex: 0 0 calc(22.5% - 7px);
   order: 2;
-  animation: venue-next1-flow 9s ease-in-out infinite 0.8s;
-  will-change: transform;
-}
-@keyframes venue-next1-flow {
-  0%, 100% { transform: translateX(  0px) scale(1);     }
-  40%      { transform: translateX(-10px) scale(0.992); }
-  75%      { transform: translateX( -4px) scale(0.996); }
 }
 
-/* Next2 — drifts slightly, lagging behind next1 */
+/* Next2 */
 .venue-card--next2 {
   flex: 0 0 calc(22.5% - 7px);
   order: 3;
-  animation: venue-next2-flow 11s ease-in-out infinite 2s;
-  will-change: transform;
-}
-@keyframes venue-next2-flow {
-  0%, 100% { transform: translateX( 0px) scale(1);     }
-  50%      { transform: translateX(-7px) scale(0.994); }
 }
 
 /* Venue card media gradient overlay */
@@ -292,28 +271,24 @@ html {
   padding: 0 2rem;
 }
 
-/* Slide keyframes */
-@keyframes venues-slide-exit-l {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-105%); }
+/* Slide keyframes — cinematic crossfade with depth */
+@keyframes venues-fade-exit {
+  0%   { opacity: 1; transform: scale(1)    translateY(0px); }
+  100% { opacity: 0; transform: scale(0.96) translateY(12px); }
 }
-@keyframes venues-slide-exit-r {
-  from { transform: translateX(0); }
-  to   { transform: translateX(105%); }
+@keyframes venues-fade-enter-r {
+  0%   { opacity: 0; transform: scale(0.97) translateX(32px); }
+  100% { opacity: 1; transform: scale(1)    translateX(0px); }
 }
-@keyframes venues-slide-enter-r {
-  from { transform: translateX(105%); }
-  to   { transform: translateX(0); }
-}
-@keyframes venues-slide-enter-l {
-  from { transform: translateX(-105%); }
-  to   { transform: translateX(0); }
+@keyframes venues-fade-enter-l {
+  0%   { opacity: 0; transform: scale(0.97) translateX(-32px); }
+  100% { opacity: 1; transform: scale(1)    translateX(0px); }
 }
 
-.venues-slide-exit-left  { animation: venues-slide-exit-l  0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-.venues-slide-exit-right { animation: venues-slide-exit-r  0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-.venues-slide-enter-right { animation: venues-slide-enter-r 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-.venues-slide-enter-left  { animation: venues-slide-enter-l 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.venues-slide-exit-left  { animation: venues-fade-exit    0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.venues-slide-exit-right { animation: venues-fade-exit    0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+.venues-slide-enter-right { animation: venues-fade-enter-r 0.70s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.venues-slide-enter-left  { animation: venues-fade-enter-l 0.70s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
 /* Footer nav list underline pseudo-element */
 .footer-nav-list a::after {

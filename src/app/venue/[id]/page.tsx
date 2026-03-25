@@ -10,8 +10,8 @@ import BookingClient from "./BookingClient";
 function VenueBookingSkeleton() {
     return (
         <div className="min-h-screen bg-surface font-outfit">
-            <Navbar />
-            <main className="mx-auto max-w-[var(--max-width-container)] px-8 py-10">
+            <Navbar floating />
+            <main className="mx-auto max-w-[var(--max-width-container)] px-8 pt-28 pb-10">
                 <div className="mb-6 h-3 w-24 animate-pulse rounded-full bg-surface-container-high" />
                 <div className="mb-8 animate-pulse overflow-hidden rounded-2xl bg-surface-container">
                     <div className="h-64 w-full bg-surface-container-high" />
@@ -57,7 +57,7 @@ function VenueBookingContent() {
     if (error || !venue) {
         return (
             <div className="min-h-screen bg-surface font-outfit">
-                <Navbar />
+                <Navbar floating />
                 <main className="mx-auto max-w-[var(--max-width-container)] px-8 py-28 text-center">
                     <AlertCircle className="mx-auto mb-4 h-12 w-12 text-surface-container-highest" />
                     <h1 className="text-2xl font-bold tracking-tight text-on-surface">

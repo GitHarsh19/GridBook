@@ -101,8 +101,8 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
 
     return (
         <div className={`min-h-screen bg-surface font-outfit text-on-surface-variant antialiased ${selectedRigs.length > 0 ? "pb-36" : ""}`}>
-            <Navbar />
-            <main className="mx-auto max-w-[var(--max-width-container)] px-8 py-10">
+            <Navbar floating />
+            <main className="mx-auto max-w-[var(--max-width-container)] px-8 pt-28 pb-10">
 
                 {/* Back link */}
                 <Link

@@ -402,63 +402,66 @@ export default function AdminDashboardPage() {
     return (
         <div className="min-h-screen bg-surface font-outfit antialiased">
             {/* ── Navbar ── */}
-            <nav className="sticky top-0 z-40 backdrop-blur-2xl" style={{ background: "rgba(19,19,19,0.80)" }}>
-                <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-                    <Link href="/" className="flex flex-col items-start justify-center">
-                        <span className="text-[1.5rem] font-black tracking-[-0.04em] text-on-surface leading-none">
-                            PitPass
-                        </span>
-                        <span className="mt-0.5 rounded-full bg-btn-red/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-btn-red">
-                            Admin
-                        </span>
-                    </Link>
+            <nav className="fixed top-0 left-0 right-0 z-50 pointer-events-none pt-4">
+                <div className="mx-auto max-w-5xl px-4">
+                    <div className="pointer-events-auto flex items-center justify-between rounded-full px-6 py-3.5 transition-all duration-300" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <Link href="/" className="flex flex-col items-start justify-center">
+                            <span className="text-[1.5rem] font-black tracking-[-0.04em] text-on-surface leading-none">
+                                PitPass
+                            </span>
+                            <span className="mt-0.5 rounded-full bg-btn-red/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-btn-red">
+                                Admin
+                            </span>
+                        </Link>
 
-                    <div className="flex items-center gap-2">
-                        {venues.length > 0 && (
-                            <>
-                                <select
-                                    value={selectedVenueId ?? ""}
-                                    onChange={(e) => {
-                                        setSelectedVenueId(Number(e.target.value));
-                                        setLoading(true);
-                                    }}
-                                    className="cursor-pointer max-w-[160px] truncate rounded-xl border border-on-surface bg-surface-container px-3 py-1.5 text-sm text-on-surface-variant outline-none focus:border-primary-container"
-                                >
-                                    {venues.map((v) => (
-                                        <option key={v.id} value={v.id} className="bg-surface-container">
-                                            {v.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <button
-                                    onClick={() => selectedVenue && setEditVenueTarget(selectedVenue)}
-                                    title="Edit venue"
-                                    className="cursor-pointer rounded-xl border border-on-surface bg-surface-container p-1.5 text-on-surface-variant/60 transition-colors hover:bg-surface-container-high hover:text-on-surface"
-                                >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                </button>
-                            </>
-                        )}
-                        <button
-                            onClick={() => setShowAddVenue(true)}
-                            title="Add venue"
-                            className="flex cursor-pointer items-center gap-1.5 rounded-full bg-btn-red px-3 py-1.5 text-xs font-medium text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98]"
-                        >
-                            <Plus className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Venue</span>
-                        </button>
-                        <button
-                            onClick={handleLogout}
-                            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-on-surface bg-transparent px-3 py-1.5 text-xs text-on-surface-variant/60 transition-all duration-300 hover:border-white hover:text-on-surface active:scale-[0.98]"
-                        >
-                            <LogOut className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Logout</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {venues.length > 0 && (
+                                <>
+                                    <select
+                                        value={selectedVenueId ?? ""}
+                                        onChange={(e) => {
+                                            setSelectedVenueId(Number(e.target.value));
+                                            setLoading(true);
+                                        }}
+                                        className="cursor-pointer max-w-[160px] truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/70 outline-none focus:border-white/20"
+                                    >
+                                        {venues.map((v) => (
+                                            <option key={v.id} value={v.id} className="bg-surface-container">
+                                                {v.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        onClick={() => selectedVenue && setEditVenueTarget(selectedVenue)}
+                                        title="Edit venue"
+                                        className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white/70 transition-all hover:bg-white hover:text-[#131313] active:scale-[0.98]"
+                                    >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                        <span className="hidden sm:inline">Edit</span>
+                                    </button>
+                                </>
+                            )}
+                            <button
+                                onClick={() => setShowAddVenue(true)}
+                                title="Add venue"
+                                className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white/70 transition-all hover:bg-white hover:text-[#131313] active:scale-[0.98]"
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Venue</span>
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="flex cursor-pointer items-center gap-1.5 rounded-full bg-btn-red px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white transition-all hover:bg-white hover:text-btn-red active:scale-[0.98]"
+                            >
+                                <LogOut className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">Logout</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </nav>
 
-            <main className="mx-auto max-w-5xl px-4 py-6">
+            <main className="mx-auto max-w-5xl px-4 pt-28 pb-6">
                 {/* ── Error toast ── */}
                 {error && (
                     <div className="mb-4 flex items-center gap-2 rounded-2xl bg-btn-red/[0.08] px-4 py-3 text-sm text-btn-red">

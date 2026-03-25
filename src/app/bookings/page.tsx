@@ -99,8 +99,8 @@ export default function BookingsPage() {
 
     return (
         <div className="min-h-screen bg-surface font-outfit text-on-surface-variant antialiased">
-            <Navbar />
-            <main className="mx-auto max-w-[var(--max-width-container)] px-8 py-10">
+            <Navbar floating />
+            <main className="mx-auto max-w-[var(--max-width-container)] px-8 pt-28 pb-10">
 
                 {/* Back */}
                 <Link href="/explore" className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant/60 transition-colors hover:text-on-surface">

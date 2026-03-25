@@ -156,7 +156,7 @@ export default function LandingPage() {
         setPrevVenue(null);
         setAnimDir(null);
         animLock.current = false;
-      }, 480);
+      }, 720);
     },
     [activeVenue, totalVenues]
   );
@@ -174,7 +174,7 @@ export default function LandingPage() {
         setPrevVenue(null);
         setAnimDir(null);
         animLock.current = false;
-      }, 480);
+      }, 720);
     },
     [activeVenue, totalVenues]
   );
@@ -443,7 +443,7 @@ export default function LandingPage() {
                       </div>
                       <div className="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
                         <div className="venue-card-header flex justify-between items-start gap-3">
-                          <div className="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">{venue.name}</div>
+                          <div className="venue-card-title font-outfit text-2xl font-bold text-white tracking-[-0.02em]">{venue.name}</div>
                           <div className="venue-card-tags hidden gap-2">
                             {venue.tags.map((tag) => (
                               <span key={tag} className="text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">{tag}</span>
@@ -451,7 +451,7 @@ export default function LandingPage() {
                           </div>
                         </div>
                         <div className="venue-card-bottom hidden">
-                          <p className="font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">{venue.description}</p>
+                          <p className="font-outfit text-[0.85rem] leading-[1.65] text-white max-w-[420px]">{venue.description}</p>
                           <Link href="/explore" className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue</Link>
                         </div>
                       </div>
@@ -482,7 +482,7 @@ export default function LandingPage() {
                     </div>
                     <div className="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
                       <div className="venue-card-header flex justify-between items-start gap-3">
-                        <div className="venue-card-title font-outfit text-2xl font-semibold text-white tracking-[-0.02em]">{venue.name}</div>
+                        <div className="venue-card-title font-outfit text-2xl font-bold text-white tracking-[-0.02em]">{venue.name}</div>
                         <div className="venue-card-tags hidden gap-2">
                           {venue.tags.map((tag) => (
                             <span key={tag} className="text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">{tag}</span>
@@ -490,7 +490,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="venue-card-bottom hidden">
-                        <p className="font-outfit text-[0.85rem] leading-[1.65] text-white/75 max-w-[420px]">{venue.description}</p>
+                        <p className="font-outfit text-[0.85rem] leading-[1.65] text-white max-w-[420px]">{venue.description}</p>
                         <Link href="/explore" className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue</Link>
                       </div>
                     </div>
