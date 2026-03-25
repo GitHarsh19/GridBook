@@ -12,23 +12,23 @@ export const STATUS_CONFIG: Record<
     }
 > = {
     available: {
-        border: "border-emerald-500/50 hover:border-emerald-400",
-        bg: "bg-zinc-900",
+        border: "border-emerald-500/30 hover:border-emerald-400/60",
+        bg: "bg-surface-container",
         dot: "bg-emerald-400",
         label: "Available",
         labelColor: "text-emerald-400",
         clickable: true,
     },
     booked: {
-        border: "border-red-500/50",
-        bg: "bg-zinc-900",
-        dot: "bg-red-400",
+        border: "border-btn-red/20",
+        bg: "bg-surface-container",
+        dot: "bg-btn-red",
         label: "App Booked",
-        labelColor: "text-red-400",
+        labelColor: "text-btn-red",
         clickable: false,
     },
     blocked: {
-        border: "border-amber-500/50 hover:border-amber-400",
+        border: "border-amber-500/30 hover:border-amber-400/60",
         bg: "bg-amber-500/5",
         dot: "bg-amber-400",
         label: "Walk-In",
@@ -36,11 +36,11 @@ export const STATUS_CONFIG: Record<
         clickable: true,
     },
     out_of_order: {
-        border: "border-zinc-800 hover:border-zinc-700",
-        bg: "bg-zinc-900/50",
-        dot: "bg-zinc-600",
+        border: "border-white/[0.06] hover:border-white/10",
+        bg: "bg-surface-container-high/40",
+        dot: "bg-on-surface-variant/20",
         label: "Out of Order",
-        labelColor: "text-zinc-600",
+        labelColor: "text-on-surface-variant/30",
         clickable: true,
     },
 };

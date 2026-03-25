@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { Building2, ImageIcon, X } from "lucide-react";
 
+const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
+
+const inputClass =
+    "w-full rounded-full border border-on-surface bg-transparent px-5 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/30 outline-none transition-colors focus:border-primary-container";
+
 export function AddVenueModal({
     onConfirm,
     onClose,
@@ -18,36 +23,38 @@ export function AddVenueModal({
     const [description, setDescription] = useState("");
     const [imageUrl, setImageUrl] = useState("");
 
-    const inputClass =
-        "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
-
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 font-outfit"
+            style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(12px)" }}
             onClick={onClose}
         >
             <div
-                className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-6"
+                className="w-full max-w-md rounded-2xl bg-surface-container p-6"
+                style={ghostCard}
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="mb-5 flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-lg font-bold text-white">
-                        <Building2 className="h-5 w-5 text-cyan-500" />
-                        Add Venue
-                    </h3>
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h3 className="flex items-center gap-2 text-sm font-bold text-on-surface">
+                            <Building2 className="h-4 w-4 text-btn-red" />
+                            Add Venue
+                        </h3>
+                        <p className="mt-0.5 text-xs text-on-surface-variant/40">Create a new sim racing venue</p>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="cursor-pointer text-zinc-500 transition-colors hover:text-white"
+                        className="cursor-pointer rounded-xl p-2 text-on-surface-variant/40 transition-colors hover:bg-surface-container-high hover:text-on-surface"
                     >
-                        <X className="h-5 w-5" />
+                        <X className="h-4 w-4" />
                     </button>
                 </div>
 
                 <div className="space-y-4">
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
                             Venue Name
-                        </label>
+                        </p>
                         <input
                             type="text"
                             value={name}
@@ -57,9 +64,9 @@ export function AddVenueModal({
                         />
                     </div>
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
                             Location
-                        </label>
+                        </p>
                         <input
                             type="text"
                             value={location}
@@ -69,9 +76,9 @@ export function AddVenueModal({
                         />
                     </div>
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
                             Price per hour (₹)
-                        </label>
+                        </p>
                         <input
                             type="number"
                             value={price}
@@ -82,23 +89,23 @@ export function AddVenueModal({
                         />
                     </div>
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-zinc-400">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
                             Description
-                        </label>
+                        </p>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Short description of your venue"
                             rows={2}
-                            className={inputClass + " resize-none"}
+                            className="w-full rounded-2xl border border-on-surface bg-transparent px-5 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/30 outline-none transition-colors focus:border-primary-container resize-none"
                         />
                     </div>
                     <div>
-                        <label className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-400">
+                        <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-btn-red">
                             <ImageIcon className="h-3 w-3" />
                             Image URL
-                            <span className="text-zinc-600">(optional)</span>
-                        </label>
+                            <span className="text-on-surface-variant/30 normal-case tracking-normal font-normal">(optional)</span>
+                        </p>
                         <input
                             type="url"
                             value={imageUrl}
@@ -109,10 +116,10 @@ export function AddVenueModal({
                     </div>
                 </div>
 
-                <div className="mt-6 flex gap-3">
+                <div className="mt-6 flex gap-2">
                     <button
                         onClick={onClose}
-                        className="flex-1 cursor-pointer rounded-md border border-zinc-700 py-2.5 text-sm text-zinc-400 transition-colors hover:text-white"
+                        className="flex-1 cursor-pointer rounded-full border border-on-surface bg-transparent py-2.5 text-sm text-on-surface-variant transition-all duration-200 hover:border-white hover:text-on-surface active:scale-[0.98]"
                     >
                         Cancel
                     </button>
@@ -127,7 +134,7 @@ export function AddVenueModal({
                             )
                         }
                         disabled={loading || !name.trim() || !location.trim() || !price}
-                        className="flex-1 cursor-pointer rounded-md bg-cyan-600 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-500 disabled:opacity-50"
+                        className="flex-1 cursor-pointer rounded-full bg-btn-red py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         {loading ? "Adding\u2026" : "Add Venue"}
                     </button>

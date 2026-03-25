@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-    Zap,
     CalendarCheck,
     CalendarDays,
     IndianRupee,
@@ -398,17 +397,18 @@ export default function AdminDashboardPage() {
         return { day: d.toLocaleDateString("en-IN", { weekday: "short" }), date: d.getDate() };
     };
 
+    const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
+
     return (
-        <div className="min-h-screen bg-zinc-950">
+        <div className="min-h-screen bg-surface font-outfit antialiased">
             {/* ── Navbar ── */}
-            <nav className="sticky top-0 z-40 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-sm">
+            <nav className="sticky top-0 z-40 backdrop-blur-2xl" style={{ background: "rgba(19,19,19,0.80)" }}>
                 <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-                    <Link href="/" className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-cyan-500" />
-                        <span className="text-lg font-bold tracking-tight text-white">
-                            Grid<span className="text-cyan-500">Book</span>
+                    <Link href="/" className="flex flex-col items-start justify-center">
+                        <span className="text-[1.5rem] font-black tracking-[-0.04em] text-on-surface leading-none">
+                            PitPass
                         </span>
-                        <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
+                        <span className="mt-0.5 rounded-full bg-btn-red/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-btn-red">
                             Admin
                         </span>
                     </Link>
@@ -422,10 +422,10 @@ export default function AdminDashboardPage() {
                                         setSelectedVenueId(Number(e.target.value));
                                         setLoading(true);
                                     }}
-                                    className="cursor-pointer max-w-[160px] truncate rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-300 focus:border-cyan-500 focus:outline-none"
+                                    className="cursor-pointer max-w-[160px] truncate rounded-xl border border-on-surface bg-surface-container px-3 py-1.5 text-sm text-on-surface-variant outline-none focus:border-primary-container"
                                 >
                                     {venues.map((v) => (
-                                        <option key={v.id} value={v.id}>
+                                        <option key={v.id} value={v.id} className="bg-surface-container">
                                             {v.name}
                                         </option>
                                     ))}
@@ -433,7 +433,7 @@ export default function AdminDashboardPage() {
                                 <button
                                     onClick={() => selectedVenue && setEditVenueTarget(selectedVenue)}
                                     title="Edit venue"
-                                    className="cursor-pointer rounded-md border border-zinc-700 bg-zinc-800 p-1.5 text-zinc-400 transition-colors hover:border-cyan-500/50 hover:text-cyan-400"
+                                    className="cursor-pointer rounded-xl border border-on-surface bg-surface-container p-1.5 text-on-surface-variant/60 transition-colors hover:bg-surface-container-high hover:text-on-surface"
                                 >
                                     <Pencil className="h-3.5 w-3.5" />
                                 </button>
@@ -442,14 +442,14 @@ export default function AdminDashboardPage() {
                         <button
                             onClick={() => setShowAddVenue(true)}
                             title="Add venue"
-                            className="flex cursor-pointer items-center gap-1 rounded-md bg-cyan-600 px-2.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-cyan-500"
+                            className="flex cursor-pointer items-center gap-1.5 rounded-full bg-btn-red px-3 py-1.5 text-xs font-medium text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98]"
                         >
                             <Plus className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Venue</span>
                         </button>
                         <button
                             onClick={handleLogout}
-                            className="flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
+                            className="flex cursor-pointer items-center gap-1.5 rounded-full border border-on-surface bg-transparent px-3 py-1.5 text-xs text-on-surface-variant/60 transition-all duration-300 hover:border-white hover:text-on-surface active:scale-[0.98]"
                         >
                             <LogOut className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Logout</span>
@@ -461,7 +461,7 @@ export default function AdminDashboardPage() {
             <main className="mx-auto max-w-5xl px-4 py-6">
                 {/* ── Error toast ── */}
                 {error && (
-                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                    <div className="mb-4 flex items-center gap-2 rounded-2xl bg-btn-red/[0.08] px-4 py-3 text-sm text-btn-red">
                         <AlertTriangle className="h-4 w-4 shrink-0" />
                         {error}
                     </div>
@@ -470,14 +470,14 @@ export default function AdminDashboardPage() {
                 {/* ── No venues empty state ── */}
                 {!loading && venues.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <Building2 className="mb-4 h-12 w-12 text-zinc-700" />
-                        <h2 className="text-lg font-bold text-white">No Venues Yet</h2>
-                        <p className="mt-1 mb-6 text-sm text-zinc-500">
+                        <Building2 className="mb-4 h-12 w-12 text-on-surface-variant/20" />
+                        <h2 className="text-lg font-bold text-on-surface">No Venues Yet</h2>
+                        <p className="mt-1 mb-6 text-sm text-on-surface-variant/50">
                             Create your first venue to start managing rigs and bookings.
                         </p>
                         <button
                             onClick={() => setShowAddVenue(true)}
-                            className="flex cursor-pointer items-center gap-2 rounded-lg bg-cyan-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-cyan-500"
+                            className="flex cursor-pointer items-center gap-2 rounded-full bg-btn-red px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98]"
                         >
                             <Plus className="h-4 w-4" />
                             Create Your First Venue
@@ -487,40 +487,41 @@ export default function AdminDashboardPage() {
 
                 {/* ── Metrics ribbon ── */}
                 {selectedVenueId && (<><div className="mb-6 grid grid-cols-2 gap-3">
-                    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-                        <div className="flex items-center gap-2 text-xs text-zinc-500">
-                            <CalendarCheck className="h-3.5 w-3.5" />
+                    <div className="rounded-2xl bg-surface-container p-5" style={ghostCard}>
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-btn-red">
                             {adminDate === todayStr ? "Today\u2019s" : (() => {
                                 const d = new Date(adminDate + "T00:00:00");
                                 return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-                            })()} App Bookings
-                        </div>
-                        <p className="mt-1 text-2xl font-bold text-white">
+                            })()} Bookings
+                        </p>
+                        <p className="text-3xl font-black tracking-tight text-on-surface">
                             {dateAppBookings.length}
                         </p>
+                        <p className="mt-1 flex items-center gap-1 text-[10px] text-on-surface-variant/40">
+                            <CalendarCheck className="h-3 w-3" /> App only
+                        </p>
                     </div>
-                    <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-                        <div className="flex items-center gap-2 text-xs text-zinc-500">
-                            <IndianRupee className="h-3.5 w-3.5" />
-                            Estimated Revenue
-                        </div>
-                        <p className="mt-1 text-2xl font-bold text-white">
-                            ₹
-                            {(
-                                dateAppBookings.length * venuePrice
-                            ).toLocaleString("en-IN")}
+                    <div className="rounded-2xl bg-surface-container p-5" style={ghostCard}>
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-btn-red">
+                            Est. Revenue
+                        </p>
+                        <p className="text-3xl font-black tracking-tight text-on-surface">
+                            ₹{(dateAppBookings.length * venuePrice).toLocaleString("en-IN")}
+                        </p>
+                        <p className="mt-1 flex items-center gap-1 text-[10px] text-on-surface-variant/40">
+                            <IndianRupee className="h-3 w-3" /> ₹{venuePrice}/slot
                         </p>
                     </div>
                 </div>
 
                 {/* ── Date & Time Selector ── */}
-                <div className="mb-6 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
+                <div className="mb-6 rounded-2xl bg-surface-container p-5" style={ghostCard}>
                     {/* Date picker row */}
-                    <div className="mb-4">
-                        <div className="mb-2.5 flex items-center gap-2 text-xs font-medium text-zinc-500">
+                    <div className="mb-5">
+                        <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
                             <CalendarDays className="h-3.5 w-3.5" />
                             Date
-                        </div>
+                        </p>
                         <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
                             {adminDates.map((dateStr, i) => {
                                 const isSelected = adminDate === dateStr;
@@ -530,16 +531,17 @@ export default function AdminDashboardPage() {
                                     <button
                                         key={dateStr}
                                         onClick={() => { setAdminDate(dateStr); setAdminSlot(null); }}
-                                        className={`relative flex shrink-0 cursor-pointer flex-col items-center rounded-md border px-3.5 py-2 text-xs font-medium transition-all ${
+                                        className={`relative flex shrink-0 cursor-pointer flex-col items-center rounded-2xl px-4 py-2.5 text-xs transition-all duration-150 active:scale-95 ${
                                             isSelected
-                                                ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
-                                                : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                                                ? "bg-btn-red text-white"
+                                                : "bg-surface-container-high text-on-surface-variant/60 hover:bg-surface-container-highest hover:text-on-surface"
                                         }`}
+                                        style={isSelected ? { boxShadow: "0 4px 16px rgba(217,51,29,0.25)" } : {}}
                                     >
-                                        <span className="text-[10px] uppercase tracking-wider opacity-70">{day}</span>
-                                        <span className="text-base font-bold leading-tight">{date}</span>
+                                        <span className="font-semibold uppercase tracking-wider opacity-70">{day}</span>
+                                        <span className="text-lg font-black leading-tight">{date}</span>
                                         {hasBookings && (
-                                            <span className={`absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full ${isSelected ? "bg-cyan-400" : "bg-zinc-500"}`} />
+                                            <span className={`absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full ${isSelected ? "bg-white/70" : "bg-btn-red/60"}`} />
                                         )}
                                     </button>
                                 );
@@ -549,20 +551,20 @@ export default function AdminDashboardPage() {
 
                     {/* Time slot row */}
                     <div>
-                        <div className="mb-2.5 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-xs font-medium text-zinc-500">
+                        <div className="mb-3 flex items-center justify-between">
+                            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
                                 <Clock className="h-3.5 w-3.5" />
                                 Time Slot
                                 {adminSlot && (
-                                    <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] text-cyan-400">
+                                    <span className="rounded-full bg-btn-red/10 px-2 py-0.5 text-[10px] text-btn-red normal-case tracking-normal">
                                         {adminSlot}
                                     </span>
                                 )}
-                            </div>
+                            </p>
                             {adminSlot && (
                                 <button
                                     onClick={() => setAdminSlot(null)}
-                                    className="flex cursor-pointer items-center gap-1 text-[10px] text-zinc-500 transition-colors hover:text-zinc-300"
+                                    className="flex cursor-pointer items-center gap-1 text-[10px] text-on-surface-variant/40 transition-colors hover:text-on-surface"
                                 >
                                     <X className="h-3 w-3" />
                                     Clear
@@ -580,13 +582,14 @@ export default function AdminDashboardPage() {
                                     <button
                                         key={slot}
                                         onClick={() => setAdminSlot(isSelected ? null : slot)}
-                                        className={`relative shrink-0 cursor-pointer rounded-md border px-3 py-2 text-[11px] font-medium transition-all ${
+                                        className={`relative shrink-0 cursor-pointer rounded-xl px-3 py-2 text-[11px] font-medium transition-all duration-150 ${
                                             isSelected
-                                                ? "border-cyan-500 bg-cyan-500/10 text-cyan-400"
+                                                ? "bg-btn-red text-white"
                                                 : isPast
-                                                    ? "border-zinc-800/50 bg-zinc-900/30 text-zinc-600"
-                                                    : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600 hover:text-white"
+                                                    ? "bg-surface-container-high/40 text-on-surface-variant/20"
+                                                    : "bg-surface-container-high text-on-surface-variant/60 hover:bg-surface-container-highest hover:text-on-surface active:scale-95"
                                         }`}
+                                        style={isSelected ? { boxShadow: "0 2px 12px rgba(217,51,29,0.2)" } : {}}
                                     >
                                         {isCurrent && (
                                             <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 text-[8px] font-bold uppercase text-emerald-400">
@@ -597,8 +600,8 @@ export default function AdminDashboardPage() {
                                         {slotBookingCount > 0 && (
                                             <span className={`ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${
                                                 isSelected
-                                                    ? "bg-cyan-500/20 text-cyan-300"
-                                                    : "bg-red-500/20 text-red-400"
+                                                    ? "bg-white/20 text-white"
+                                                    : "bg-btn-red/20 text-btn-red"
                                             }`}>
                                                 {slotBookingCount}
                                             </span>
@@ -614,35 +617,35 @@ export default function AdminDashboardPage() {
                 <div className="mb-8">
                     <div className="mb-4 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <h2 className="flex items-center gap-2 text-sm font-medium text-zinc-400">
-                                <Monitor className="h-4 w-4" />
+                            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
+                                <Monitor className="h-3.5 w-3.5" />
                                 Live Floor
-                                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
-                            </h2>
+                                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                            </p>
                             <button
                                 onClick={() => setShowAddRig(true)}
-                                className="flex cursor-pointer items-center gap-1 rounded-md bg-cyan-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-cyan-500"
+                                className="flex cursor-pointer items-center gap-1 rounded-full bg-btn-red px-3 py-1 text-xs font-medium text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98]"
                             >
                                 <Plus className="h-3.5 w-3.5" />
                                 Add Rig
                             </button>
                         </div>
                         {/* Desktop legend */}
-                        <div className="hidden items-center gap-4 text-xs text-zinc-500 sm:flex">
+                        <div className="hidden items-center gap-4 text-xs text-on-surface-variant/40 sm:flex">
                             <div className="flex items-center gap-1.5">
-                                <div className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                                <div className="h-2 w-2 rounded-full bg-emerald-400" />
                                 Available
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
+                                <div className="h-2 w-2 rounded-full bg-btn-red" />
                                 App Booked
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <div className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+                                <div className="h-2 w-2 rounded-full bg-amber-400" />
                                 Walk-In
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <div className="h-2.5 w-2.5 rounded-full bg-zinc-600" />
+                                <div className="h-2 w-2 rounded-full bg-on-surface-variant/20" />
                                 Out of Order
                             </div>
                         </div>
@@ -653,13 +656,14 @@ export default function AdminDashboardPage() {
                             {Array.from({ length: 6 }).map((_, i) => (
                                 <div
                                     key={i}
-                                    className="h-[130px] animate-pulse rounded-lg border border-zinc-800 bg-zinc-800/40"
+                                    className="h-[130px] animate-pulse rounded-2xl bg-surface-container"
+                                    style={ghostCard}
                                 />
                             ))}
                         </div>
                     ) : rigs.length === 0 ? (
-                        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
-                            <p className="text-sm text-zinc-500">
+                        <div className="rounded-2xl bg-surface-container p-8 text-center" style={ghostCard}>
+                            <p className="text-sm text-on-surface-variant/40">
                                 No rigs found for this venue
                             </p>
                         </div>
@@ -683,7 +687,7 @@ export default function AdminDashboardPage() {
                                                 handleRigClick(rig);
                                             }
                                         }}
-                                        className={`group relative flex min-h-[130px] flex-col items-center justify-center rounded-lg border p-4 text-center transition-all ${cfg.border} ${cfg.bg} ${cfg.clickable ? "cursor-pointer" : "cursor-default"}`}
+                                        className={`group relative flex min-h-[130px] flex-col items-center justify-center rounded-2xl border p-4 text-center transition-all duration-200 ${cfg.border} ${cfg.bg} ${cfg.clickable ? "cursor-pointer" : "cursor-default"}`}
                                     >
                                         {/* Edit + OOO icons (top-right) */}
                                         <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 transition-all group-hover:opacity-100">
@@ -693,25 +697,23 @@ export default function AdminDashboardPage() {
                                                     setEditTarget(rig);
                                                 }}
                                                 title="Edit rig"
-                                                className="rounded p-1 text-zinc-700 transition-all hover:bg-zinc-800 hover:text-zinc-400"
+                                                className="rounded-lg p-1 text-on-surface-variant/30 transition-all hover:bg-surface-container-high hover:text-on-surface-variant"
                                             >
                                                 <Settings className="h-3.5 w-3.5" />
                                             </button>
                                             {(effectiveStatus === "available" ||
-                                                effectiveStatus ===
-                                                    "out_of_order") && (
+                                                effectiveStatus === "out_of_order") && (
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleToggleOOO(rig.id);
                                                     }}
                                                     title={
-                                                        rig.status ===
-                                                        "out_of_order"
+                                                        rig.status === "out_of_order"
                                                             ? "Restore"
                                                             : "Mark Out of Order"
                                                     }
-                                                    className="rounded p-1 text-zinc-700 transition-all hover:bg-zinc-800 hover:text-zinc-400"
+                                                    className="rounded-lg p-1 text-on-surface-variant/30 transition-all hover:bg-surface-container-high hover:text-on-surface-variant"
                                                 >
                                                     <Wrench className="h-3.5 w-3.5" />
                                                 </button>
@@ -720,37 +722,31 @@ export default function AdminDashboardPage() {
 
                                         {/* Status dot */}
                                         <div
-                                            className={`mb-2 h-3 w-3 rounded-full ${cfg.dot} ${effectiveStatus === "available" ? "animate-pulse" : ""}`}
+                                            className={`mb-2 h-2.5 w-2.5 rounded-full ${cfg.dot} ${effectiveStatus === "available" ? "animate-pulse" : ""}`}
                                         />
 
                                         {/* Rig name */}
                                         <span
-                                            className={`text-sm font-semibold ${effectiveStatus === "out_of_order" ? "text-zinc-600" : "text-white"}`}
+                                            className={`text-sm font-bold ${effectiveStatus === "out_of_order" ? "text-on-surface-variant/30" : "text-on-surface"}`}
                                         >
                                             {rig.name}
                                         </span>
 
                                         {/* Status label */}
-                                        <span
-                                            className={`mt-0.5 text-[10px] font-medium ${cfg.labelColor}`}
-                                        >
+                                        <span className={`mt-0.5 text-[10px] font-medium ${cfg.labelColor}`}>
                                             {cfg.label}
                                         </span>
 
                                         {/* Booking info */}
-                                        {booking &&
-                                            effectiveStatus !== "available" && (
-                                                <span className="mt-1 max-w-full truncate px-2 text-[10px] text-zinc-500">
-                                                    {booking.customer_name}
-                                                    {booking.time_slot &&
-                                                        ` \u00b7 ${booking.time_slot}`}
-                                                </span>
-                                            )}
+                                        {booking && effectiveStatus !== "available" && (
+                                            <span className="mt-1 max-w-full truncate px-2 text-[10px] text-on-surface-variant/40">
+                                                {booking.customer_name}
+                                                {booking.time_slot && ` \u00b7 ${booking.time_slot}`}
+                                            </span>
+                                        )}
 
                                         {/* Specs */}
-                                        <span
-                                            className={`mt-1 text-[9px] ${effectiveStatus === "out_of_order" ? "text-zinc-700" : "text-zinc-600"}`}
-                                        >
+                                        <span className={`mt-1 text-[9px] ${effectiveStatus === "out_of_order" ? "text-on-surface-variant/20" : "text-on-surface-variant/30"}`}>
                                             {rig.specs}
                                         </span>
                                     </div>
@@ -760,13 +756,13 @@ export default function AdminDashboardPage() {
                     )}
 
                     {/* Mobile legend */}
-                    <div className="mt-4 flex flex-wrap gap-3 text-xs text-zinc-500 sm:hidden">
+                    <div className="mt-4 flex flex-wrap gap-3 text-xs text-on-surface-variant/40 sm:hidden">
                         <div className="flex items-center gap-1.5">
                             <div className="h-2 w-2 rounded-full bg-emerald-400" />
                             Available
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-red-400" />
+                            <div className="h-2 w-2 rounded-full bg-btn-red" />
                             Booked
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -774,7 +770,7 @@ export default function AdminDashboardPage() {
                             Walk-In
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 rounded-full bg-zinc-600" />
+                            <div className="h-2 w-2 rounded-full bg-on-surface-variant/20" />
                             OOO
                         </div>
                     </div>
@@ -783,21 +779,21 @@ export default function AdminDashboardPage() {
                 {/* ── Slot Timeline Heatmap ── */}
                 {rigs.length > 0 && (
                 <div className="mb-8">
-                    <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-zinc-400">
-                        <Clock className="h-4 w-4" />
+                    <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
+                        <Clock className="h-3.5 w-3.5" />
                         Slot Overview
-                        <span className="text-xs text-zinc-600">
+                        <span className="text-[10px] font-normal normal-case tracking-normal text-on-surface-variant/40">
                             &middot; {adminDate === todayStr ? "Today" : (() => {
                                 const d = new Date(adminDate + "T00:00:00");
                                 return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
                             })()}
                         </span>
-                    </h2>
-                    <div className="overflow-x-auto rounded-lg border border-zinc-800">
+                    </p>
+                    <div className="overflow-x-auto rounded-2xl bg-surface-container" style={ghostCard}>
                         <table className="w-full min-w-[640px] text-[10px]">
                             <thead>
-                                <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                                    <th className="sticky left-0 z-10 bg-zinc-900 px-3 py-2 text-left text-xs font-medium text-zinc-500">
+                                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                                    <th className="sticky left-0 z-10 bg-surface-container px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">
                                         Rig
                                     </th>
                                     {TIME_SLOTS.map((slot) => {
@@ -807,12 +803,12 @@ export default function AdminDashboardPage() {
                                             <th
                                                 key={slot}
                                                 onClick={() => setAdminSlot(adminSlot === slot ? null : slot)}
-                                                className={`cursor-pointer px-1 py-2 text-center font-medium transition-colors ${
+                                                className={`cursor-pointer px-1 py-2.5 text-center font-medium transition-colors ${
                                                     adminSlot === slot
-                                                        ? "bg-cyan-500/10 text-cyan-400"
+                                                        ? "bg-btn-red/10 text-btn-red"
                                                         : isCurrent
                                                             ? "text-emerald-400"
-                                                            : "text-zinc-600 hover:text-zinc-400"
+                                                            : "text-on-surface-variant/30 hover:text-on-surface-variant/60"
                                                 }`}
                                             >
                                                 {shortSlotLabel(slot)}
@@ -825,8 +821,8 @@ export default function AdminDashboardPage() {
                                 {rigs.map((rig) => {
                                     const rigBookedSlots = rigSlotMap.get(rig.id);
                                     return (
-                                        <tr key={rig.id} className="border-b border-zinc-800/50 last:border-0">
-                                            <td className="sticky left-0 z-10 bg-zinc-950 px-3 py-1.5 font-medium text-zinc-300">
+                                        <tr key={rig.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }} className="last:border-0">
+                                            <td className="sticky left-0 z-10 bg-surface-container px-3 py-1.5 font-medium text-on-surface-variant/70">
                                                 {rig.name}
                                             </td>
                                             {TIME_SLOTS.map((slot) => {
@@ -843,21 +839,21 @@ export default function AdminDashboardPage() {
                                                 let tooltip = "Available";
 
                                                 if (isOOO) {
-                                                    cellBg = "bg-zinc-800/30";
-                                                    cellText = "text-zinc-700";
+                                                    cellBg = "bg-surface-container-high/30";
+                                                    cellText = "text-on-surface-variant/20";
                                                     tooltip = "Out of Order";
                                                 } else if (booking) {
                                                     if (booking.source === "app") {
-                                                        cellBg = "bg-red-500/15";
-                                                        cellText = "text-red-400";
+                                                        cellBg = "bg-btn-red/10";
+                                                        cellText = "text-btn-red";
                                                     } else {
-                                                        cellBg = "bg-amber-500/15";
+                                                        cellBg = "bg-amber-500/10";
                                                         cellText = "text-amber-400";
                                                     }
                                                     tooltip = `${booking.customer_name} (${booking.source === "app" ? "App" : "Walk-In"}) ${booking.verification_code}`;
                                                 } else if (isPast) {
-                                                    cellBg = "bg-zinc-900/30";
-                                                    cellText = "text-zinc-800";
+                                                    cellBg = "bg-surface-container-high/20";
+                                                    cellText = "text-on-surface-variant/10";
                                                     tooltip = "Past";
                                                 }
 
@@ -867,19 +863,19 @@ export default function AdminDashboardPage() {
                                                         title={tooltip}
                                                         onClick={() => setAdminSlot(adminSlot === slot ? null : slot)}
                                                         className={`cursor-pointer px-1 py-1.5 text-center transition-all ${cellBg} ${
-                                                            adminSlot === slot ? "ring-1 ring-inset ring-cyan-500/30" : ""
+                                                            adminSlot === slot ? "ring-1 ring-inset ring-btn-red/20" : ""
                                                         } ${isCurrent && !booking ? "ring-1 ring-inset ring-emerald-500/20" : ""}`}
                                                     >
                                                         {isOOO ? (
                                                             <span className={cellText}>&mdash;</span>
                                                         ) : booking ? (
                                                             <span className={`inline-block h-2.5 w-2.5 rounded-full ${
-                                                                booking.source === "app" ? "bg-red-400" : "bg-amber-400"
+                                                                booking.source === "app" ? "bg-btn-red" : "bg-amber-400"
                                                             }`} title={tooltip} />
                                                         ) : isPast ? (
-                                                            <span className="text-zinc-800">&middot;</span>
+                                                            <span className="text-on-surface-variant/10">&middot;</span>
                                                         ) : (
-                                                            <span className="text-zinc-700">&middot;</span>
+                                                            <span className="text-on-surface-variant/20">&middot;</span>
                                                         )}
                                                     </td>
                                                 );
@@ -891,21 +887,21 @@ export default function AdminDashboardPage() {
                         </table>
                     </div>
                     {/* Timeline legend */}
-                    <div className="mt-2.5 flex flex-wrap items-center gap-4 text-[10px] text-zinc-600">
+                    <div className="mt-2.5 flex flex-wrap items-center gap-4 text-[10px] text-on-surface-variant/30">
                         <div className="flex items-center gap-1.5">
-                            <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-400" />
+                            <span className="inline-block h-2 w-2 rounded-full bg-btn-red" />
                             App Booked
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-400" />
+                            <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
                             Walk-In
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-zinc-700">&middot;</span>
+                            <span className="text-on-surface-variant/20">&middot;</span>
                             Available
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-zinc-700">&mdash;</span>
+                            <span className="text-on-surface-variant/20">&mdash;</span>
                             Out of Order
                         </div>
                     </div>
@@ -923,44 +919,46 @@ export default function AdminDashboardPage() {
                             return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
                         })();
                         return (<>
-                    <h2 className="mb-3 flex items-center gap-2 text-sm font-medium text-zinc-400">
-                        <Users className="h-4 w-4" />
-                        {ledgerLabel}{adminSlot ? ` \u00b7 ${adminSlot}` : ""} Bookings
-                        <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-500">
+                    <div className="mb-4 flex items-center gap-3">
+                        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
+                            <Users className="h-3.5 w-3.5" />
+                            {ledgerLabel}{adminSlot ? ` \u00b7 ${adminSlot}` : ""} Bookings
+                        </p>
+                        <span className="rounded-full bg-surface-container-high px-2.5 py-0.5 text-[10px] font-semibold text-on-surface-variant/50">
                             {ledgerBookings.length}
                         </span>
-                    </h2>
+                    </div>
 
                     {ledgerBookings.length === 0 ? (
-                        <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
-                            <CalendarCheck className="mx-auto mb-2 h-6 w-6 text-zinc-700" />
-                            <p className="text-sm text-zinc-500">
+                        <div className="rounded-2xl bg-surface-container p-8 text-center" style={ghostCard}>
+                            <CalendarCheck className="mx-auto mb-2 h-6 w-6 text-on-surface-variant/20" />
+                            <p className="text-sm text-on-surface-variant/40">
                                 No bookings {adminSlot ? "for this slot" : "for this date"}
                             </p>
                         </div>
                     ) : (
-                        <div className="overflow-hidden rounded-lg border border-zinc-800">
+                        <div className="overflow-hidden rounded-2xl bg-surface-container" style={ghostCard}>
                             {/* Desktop table */}
                             <div className="hidden sm:block">
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
+                                        <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                                            <th className="bg-surface-container-high/30 px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">
                                                 Date
                                             </th>
-                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
+                                            <th className="bg-surface-container-high/30 px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">
                                                 Time
                                             </th>
-                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
+                                            <th className="bg-surface-container-high/30 px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">
                                                 Rig
                                             </th>
-                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
+                                            <th className="bg-surface-container-high/30 px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">
                                                 Customer
                                             </th>
-                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
+                                            <th className="bg-surface-container-high/30 px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">
                                                 Code
                                             </th>
-                                            <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-500">
+                                            <th className="bg-surface-container-high/30 px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">
                                                 Source
                                             </th>
                                         </tr>
@@ -969,40 +967,39 @@ export default function AdminDashboardPage() {
                                         {ledgerBookings.map((b) => (
                                             <tr
                                                 key={b.id}
-                                                className="border-b border-zinc-800/50 last:border-0"
+                                                style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                                                className="last:border-0"
                                             >
-                                                <td className="px-4 py-3 text-zinc-400 text-xs">
+                                                <td className="px-4 py-3 text-xs text-on-surface-variant/50">
                                                     {b.booking_date === todayStr ? "Today" : (() => {
                                                         const d = new Date(b.booking_date + "T00:00:00");
                                                         return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
                                                     })()}
                                                 </td>
-                                                <td className="px-4 py-3 text-zinc-300">
+                                                <td className="px-4 py-3 text-on-surface-variant/70">
                                                     <div className="flex items-center gap-1.5">
-                                                        <Clock className="h-3 w-3 text-zinc-600" />
+                                                        <Clock className="h-3 w-3 text-on-surface-variant/30" />
                                                         {b.time_slot}
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3 font-medium text-white">
+                                                <td className="px-4 py-3 font-semibold text-on-surface">
                                                     {b.rig_name}
                                                 </td>
-                                                <td className="px-4 py-3 text-zinc-400">
+                                                <td className="px-4 py-3 text-on-surface-variant/60">
                                                     {b.customer_name}
                                                 </td>
-                                                <td className="px-4 py-3 font-mono text-xs text-cyan-500">
+                                                <td className="px-4 py-3 font-mono text-xs text-primary">
                                                     {b.verification_code}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <span
-                                                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
                                                             b.source === "app"
-                                                                ? "bg-cyan-500/10 text-cyan-400"
+                                                                ? "bg-primary/10 text-primary"
                                                                 : "bg-amber-500/10 text-amber-400"
                                                         }`}
                                                     >
-                                                        {b.source === "app"
-                                                            ? "App"
-                                                            : "Walk-In"}
+                                                        {b.source === "app" ? "App" : "Walk-In"}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -1012,32 +1009,30 @@ export default function AdminDashboardPage() {
                             </div>
 
                             {/* Mobile cards */}
-                            <div className="divide-y divide-zinc-800/50 sm:hidden">
+                            <div className="divide-y sm:hidden" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
                                 {ledgerBookings.map((b) => (
                                     <div key={b.id} className="px-4 py-3">
                                         <div className="flex items-center justify-between">
-                                            <span className="font-medium text-white">
+                                            <span className="font-semibold text-on-surface">
                                                 {b.rig_name}
                                             </span>
                                             <span
-                                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
                                                     b.source === "app"
-                                                        ? "bg-cyan-500/10 text-cyan-400"
+                                                        ? "bg-primary/10 text-primary"
                                                         : "bg-amber-500/10 text-amber-400"
                                                 }`}
                                             >
-                                                {b.source === "app"
-                                                    ? "App"
-                                                    : "Walk-In"}
+                                                {b.source === "app" ? "App" : "Walk-In"}
                                             </span>
                                         </div>
-                                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+                                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-on-surface-variant/50">
                                             <span className="flex items-center gap-1">
                                                 <Clock className="h-3 w-3" />
                                                 {b.time_slot}
                                             </span>
                                             <span>{b.customer_name}</span>
-                                            <span className="font-mono text-cyan-500/70">
+                                            <span className="font-mono text-primary/70">
                                                 {b.verification_code}
                                             </span>
                                         </div>

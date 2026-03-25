@@ -3,10 +3,13 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Zap, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { useRateLimit } from "@/lib/hooks/useRateLimit";
+
+const inputClass =
+    "w-full rounded-full border border-on-surface bg-transparent px-5 py-3.5 font-outfit text-[0.9rem] text-white placeholder:text-white/40 outline-none transition-colors duration-300 ease-in-out focus:border-primary-container";
 
 function AdminLoginForm() {
     const router = useRouter();
@@ -19,6 +22,7 @@ function AdminLoginForm() {
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [demoLoading, setDemoLoading] = useState(false);
     const [messageRendered, setMessageRendered] = useState(showMessage);
     const [messageExpanded, setMessageExpanded] = useState(false);
     const { blocked, cooldownSeconds, recordAttempt } = useRateLimit();
@@ -31,40 +35,18 @@ function AdminLoginForm() {
         return () => { clearTimeout(expandTimer); clearTimeout(contractTimer); clearTimeout(removeTimer); };
     }, [showMessage]);
 
-    /** Promote a Supabase user's profile to admin */
     const assignAdminRole = async (userId: string) => {
-        const { error } = await supabaseAdmin
-            .from("profiles")
-            .update({ role: "admin" })
-            .eq("id", userId);
-        if (error) {
-            console.error("Failed to assign admin role:", error);
-        }
+        const { error } = await supabaseAdmin.from("profiles").update({ role: "admin" }).eq("id", userId);
+        if (error) console.error("Failed to assign admin role:", error);
     };
 
     const handleSupabaseLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         if (blocked) return;
-        setError("");
-        setLoading(true);
-        recordAttempt();
-
-        const { data, error: authError } = await supabaseAdmin.auth.signInWithPassword({
-            email,
-            password,
-        });
-
-        if (authError) {
-            setLoading(false);
-            setError(authError.message);
-            return;
-        }
-
-        if (data.user) {
-            await assignAdminRole(data.user.id);
-            setLoggedIn(true, "admin");
-        }
-
+        setError(""); setLoading(true); recordAttempt();
+        const { data, error: authError } = await supabaseAdmin.auth.signInWithPassword({ email, password });
+        if (authError) { setLoading(false); setError(authError.message); return; }
+        if (data.user) { await assignAdminRole(data.user.id); setLoggedIn(true, "admin"); }
         setLoading(false);
         router.push("/admin/dashboard");
     };
@@ -73,169 +55,110 @@ function AdminLoginForm() {
         setError("");
         const { error: oauthError } = await supabaseAdmin.auth.signInWithOAuth({
             provider: "google",
-            options: {
-                redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent("/admin/dashboard")}&role=admin`,
-            },
+            options: { redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent("/admin/dashboard")}&role=admin` },
         });
         if (oauthError) setError(oauthError.message);
     };
 
-    const [demoLoading, setDemoLoading] = useState(false);
-
     const handleDemoLogin = async () => {
         const demoEmail = process.env.NEXT_PUBLIC_DEMO_ADMIN_EMAIL;
         const demoPassword = process.env.NEXT_PUBLIC_DEMO_ADMIN_PASSWORD;
+        if (!demoEmail || !demoPassword) { setError("Demo account not configured."); return; }
+        setDemoLoading(true); setError("");
 
-        if (!demoEmail || !demoPassword) {
-            setError("Demo account not configured. Please sign up instead.");
-            return;
-        }
-
-        setDemoLoading(true);
-        setError("");
-
-        // Try signing in first
-        let { data, error: authError } = await supabaseAdmin.auth.signInWithPassword({
-            email: demoEmail,
-            password: demoPassword,
-        });
-
-        // If user doesn't exist, auto-create then sign in
+        let { data, error: authError } = await supabaseAdmin.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
         if (authError) {
-            const { error: signUpError } = await supabaseAdmin.auth.signUp({
-                email: demoEmail,
-                password: demoPassword,
-                options: { data: { full_name: "Demo Admin" } },
-            });
-
-            if (signUpError) {
-                setDemoLoading(false);
-                setError("Demo setup failed: " + signUpError.message);
-                return;
-            }
-
-            // Sign in with the newly created account
-            const result = await supabaseAdmin.auth.signInWithPassword({
-                email: demoEmail,
-                password: demoPassword,
-            });
-            data = result.data;
-            authError = result.error;
-
-            if (authError) {
-                setDemoLoading(false);
-                setError("Demo login failed: " + authError.message);
-                return;
-            }
+            const { error: signUpError } = await supabaseAdmin.auth.signUp({ email: demoEmail, password: demoPassword, options: { data: { full_name: "Demo Admin" } } });
+            if (signUpError) { setDemoLoading(false); setError("Demo setup failed: " + signUpError.message); return; }
+            const result = await supabaseAdmin.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
+            data = result.data; authError = result.error;
+            if (authError) { setDemoLoading(false); setError("Demo login failed: " + authError.message); return; }
         }
-
-        if (data?.user) {
-            await assignAdminRole(data.user.id);
-            setLoggedIn(true, "admin");
-        }
-
+        if (data?.user) { await assignAdminRole(data.user.id); setLoggedIn(true, "admin"); }
         setDemoLoading(false);
         router.push("/admin/dashboard");
     };
 
-    const inputClass =
-        "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-colors focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20";
-
     return (
-        <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
+        <div className="flex min-h-screen items-center justify-center bg-surface font-outfit px-4 overflow-x-hidden antialiased">
             <div className="w-full max-w-sm">
                 {/* Logo */}
-                <Link href="/" className="mb-8 flex items-center justify-center gap-2">
-                    <Zap className="h-6 w-6 text-cyan-500" />
-                    <span className="text-2xl font-bold tracking-tight text-white">
-                        Grid<span className="text-cyan-500">Book</span>
+                <Link href="/" className="mb-3 flex flex-col items-center justify-center">
+                    <span className="text-[2rem] font-black tracking-[-0.04em] text-on-surface">
+                        PitPass
                     </span>
-                    <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cyan-400">
+                    <span className="mt-1 rounded-full bg-btn-red/10 px-3 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-btn-red">
                         Admin
                     </span>
                 </Link>
 
-                {/* Login Card */}
-                <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-6">
+                {/* Card */}
+                <div className="mt-8 rounded-2xl bg-surface-container p-8" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
                     {/* Sign-in message */}
                     {messageRendered && (
-                        <div className={`overflow-hidden transition-all duration-400 ease-in-out ${messageExpanded ? "max-h-10 opacity-100 mb-4" : "max-h-0 opacity-0 mb-0"}`}>
-                            <p className="text-center text-sm text-red-400">Sign in to continue</p>
+                        <div className={`overflow-hidden transition-all duration-400 ease-in-out ${messageExpanded ? "max-h-10 opacity-100 mb-6" : "max-h-0 opacity-0 mb-0"}`}>
+                            <p className="text-center text-sm text-btn-red">Sign in to continue</p>
                         </div>
                     )}
 
-                    <h2 className="mb-6 text-center text-sm font-medium text-zinc-400">
+                    <h2 className="mb-8 text-center text-[0.85rem] font-medium uppercase tracking-widest text-on-surface-variant/60">
                         Venue Admin Login
                     </h2>
 
-                    {/* Server Error */}
+                    {/* Error */}
                     {error && (
-                        <div className="mb-4 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-500">
+                        <div className="mb-6 rounded-2xl bg-btn-red/[0.08] px-5 py-3 text-sm text-btn-red">
                             {error}
                         </div>
                     )}
 
                     <form onSubmit={handleSupabaseLogin} className="space-y-4">
-                        {/* Email */}
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                                Email
-                            </label>
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                            placeholder="Email"
+                            className={inputClass}
+                        />
+
+                        <div className="relative">
                             <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => { setEmail(e.target.value); setError(""); }}
-                                placeholder="you@example.com"
-                                className={inputClass}
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                                placeholder="Password"
+                                className={`${inputClass} pr-12`}
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-5 top-1/2 -translate-y-1/2 cursor-pointer text-white/40 transition-colors hover:text-white"
+                            >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
                         </div>
 
-                        {/* Password */}
-                        <div>
-                            <label className="mb-1.5 block text-xs font-medium text-zinc-400">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                                    placeholder="Enter password"
-                                    className={`${inputClass} pr-10`}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-500 transition-colors hover:text-zinc-300"
-                                >
-                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Submit */}
                         <button
                             type="submit"
                             disabled={loading || blocked}
-                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-cyan-500 py-2.5 text-sm font-bold text-black transition-all hover:bg-cyan-400 active:scale-[0.98] disabled:opacity-60"
+                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-btn-red py-3.5 text-sm font-medium tracking-[-0.03em] text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98] disabled:opacity-60"
                         >
                             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                            {blocked
-                                ? `Too many attempts — retry in ${cooldownSeconds}s`
-                                : loading ? "Signing in\u2026" : "Login"}
+                            {blocked ? `Too many attempts — retry in ${cooldownSeconds}s` : loading ? "Signing in\u2026" : "Login"}
                         </button>
 
-                        {/* Divider + Google */}
-                        <div className="flex items-center gap-3">
-                            <div className="h-px flex-1 bg-zinc-800" />
-                            <span className="text-xs text-zinc-600">or</span>
-                            <div className="h-px flex-1 bg-zinc-800" />
+                        {/* Divider */}
+                        <div className="flex items-center gap-4 py-1">
+                            <div className="h-px flex-1 bg-on-surface/10" />
+                            <span className="text-xs text-on-surface-variant/40">or</span>
+                            <div className="h-px flex-1 bg-on-surface/10" />
                         </div>
 
+                        {/* Google */}
                         <button
                             type="button"
                             onClick={handleGoogleLogin}
-                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-zinc-700 bg-zinc-800 py-2.5 text-sm font-medium text-white transition-all hover:border-zinc-600 hover:bg-zinc-700 active:scale-[0.98]"
+                            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-on-surface bg-transparent py-3.5 text-sm font-medium text-white transition-all duration-300 hover:border-white hover:bg-surface-container-high active:scale-[0.98]"
                         >
                             <svg className="h-4 w-4" viewBox="0 0 24 24">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -248,22 +171,19 @@ function AdminLoginForm() {
                     </form>
 
                     {/* Sign up link */}
-                    <p className="mt-4 text-center text-xs text-zinc-500">
+                    <p className="mt-8 text-center text-xs text-on-surface-variant/50">
                         Don&apos;t have an account?{" "}
-                        <Link
-                            href="/admin/signup"
-                            className="text-cyan-500 transition-colors hover:text-cyan-400"
-                        >
+                        <Link href="/admin/signup" className="text-on-surface transition-colors hover:text-primary">
                             Sign Up
                         </Link>{" "}
                         first, then log in here.
                     </p>
 
                     {/* Demo divider */}
-                    <div className="mt-4 flex items-center gap-3">
-                        <div className="h-px flex-1 bg-zinc-800" />
-                        <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Demo</span>
-                        <div className="h-px flex-1 bg-zinc-800" />
+                    <div className="mt-6 flex items-center gap-4">
+                        <div className="h-px flex-1 bg-on-surface/10" />
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/30">Demo</span>
+                        <div className="h-px flex-1 bg-on-surface/10" />
                     </div>
 
                     {/* Demo login */}
@@ -271,7 +191,7 @@ function AdminLoginForm() {
                         type="button"
                         onClick={handleDemoLogin}
                         disabled={demoLoading}
-                        className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-zinc-800 py-2 text-xs text-zinc-500 transition-colors hover:border-zinc-700 hover:text-zinc-400 disabled:opacity-50"
+                        className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-on-surface/20 py-2.5 text-xs font-medium text-on-surface-variant/40 transition-all hover:border-on-surface/40 hover:text-on-surface-variant/70 disabled:opacity-50"
                     >
                         {demoLoading && <Loader2 className="h-3 w-3 animate-spin" />}
                         {demoLoading ? "Signing into demo\u2026" : "Try demo account"}
