@@ -20,40 +20,29 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
     const [selectedRigs, setSelectedRigs] = useState<number[]>([]);
     const [bookedRigIds, setBookedRigIds] = useState<Set<number>>(new Set());
-
-    // Track current hour so disabledSlots re-computes when the hour changes
     const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
 
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentHour(new Date().getHours());
-        }, 60_000);
+        const timer = setInterval(() => setCurrentHour(new Date().getHours()), 60_000);
         return () => clearInterval(timer);
     }, []);
 
-    // Compute which time slots are in the past (only matters for today)
     const disabledSlots = useMemo(() => {
         const todayStr = getTodayStr();
         if (selectedDate !== todayStr) return new Set<string>();
-
         const past = new Set<string>();
         for (const slot of TIME_SLOTS) {
-            const startHour = parseSlotStartHour(slot);
-            if (startHour < currentHour) {
-                past.add(slot);
-            }
+            if (parseSlotStartHour(slot) < currentHour) past.add(slot);
         }
         return past;
     }, [selectedDate, currentHour]);
 
-    // Release expired walk-in blocks on mount (and every 30s)
     useEffect(() => {
         releaseExpiredWalkIns().catch(() => {});
         const interval = setInterval(() => releaseExpiredWalkIns().catch(() => {}), 30_000);
         return () => clearInterval(interval);
     }, []);
 
-    // Reset time & rig selections when the date changes
     const handleDateChange = (date: string) => {
         setSelectedDate(date);
         setSelectedTimeSlots([]);
@@ -61,20 +50,18 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
         setBookedRigIds(new Set());
     };
 
-    // Auto-deselect any time slots that have become past
     useEffect(() => {
         if (disabledSlots.size === 0) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing selections when availability changes from realtime
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedTimeSlots((prev) => {
             const filtered = prev.filter((s) => !disabledSlots.has(s));
             return filtered.length !== prev.length ? filtered : prev;
         });
     }, [disabledSlots]);
 
-    // Fetch per-slot booked rig IDs whenever selected time slots or date change
     useEffect(() => {
         if (selectedTimeSlots.length === 0) {
-            setBookedRigIds(new Set()); // eslint-disable-line react-hooks/set-state-in-effect -- clearing state on empty selection
+            setBookedRigIds(new Set()); // eslint-disable-line react-hooks/set-state-in-effect
             return;
         }
         let cancelled = false;
@@ -84,15 +71,10 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
         return () => { cancelled = true; };
     }, [venue.id, selectedTimeSlots, selectedDate]);
 
-    // Auto-deselect rigs that become unavailable (e.g. booked/blocked by admin or per-slot)
     useEffect(() => {
-        const availableIds = new Set(
-            venue.rigs.filter((r) => r.status === "available").map((r) => r.id)
-        );
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing selections when realtime availability changes
-        setSelectedRigs((prev) =>
-            prev.filter((id) => availableIds.has(id) && !bookedRigIds.has(id))
-        );
+        const availableIds = new Set(venue.rigs.filter((r) => r.status === "available").map((r) => r.id));
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedRigs((prev) => prev.filter((id) => availableIds.has(id) && !bookedRigIds.has(id)));
     }, [venue.rigs, bookedRigIds]);
 
     const toggleTimeSlot = (slot: string) => {
@@ -103,87 +85,89 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
 
     const toggleRig = (rigId: number) => {
         setSelectedRigs((prev) =>
-            prev.includes(rigId)
-                ? prev.filter((id) => id !== rigId)
-                : [...prev, rigId]
+            prev.includes(rigId) ? prev.filter((id) => id !== rigId) : [...prev, rigId]
         );
     };
 
-    // After a successful booking, navigate to confirmation page
     const handleBookingComplete = async (code: string) => {
         router.push(`/bookings/${code}`);
         setSelectedRigs([]);
         setSelectedTimeSlots([]);
-        // Refresh venue data and booked rig IDs
         try {
             const updated = await getVenueById(venue.id);
             if (updated) setVenue(updated);
-        } catch {
-            // Silently fail — data will refresh on next interaction
-        }
+        } catch { /* silently fail */ }
     };
 
     return (
-        <div
-            className={`min-h-screen bg-zinc-950 ${selectedRigs.length > 0 ? "pb-36" : ""}`}
-        >
+        <div className={`min-h-screen bg-surface font-outfit text-on-surface-variant antialiased ${selectedRigs.length > 0 ? "pb-36" : ""}`}>
             <Navbar />
-            <main className="mx-auto max-w-5xl px-4 py-6">
-                {/* Back + Header */}
+            <main className="mx-auto max-w-[var(--max-width-container)] px-8 py-10">
+
+                {/* Back link */}
                 <Link
                     href="/explore"
-                    className="mb-4 flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-white"
+                    className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant/60 transition-colors hover:text-on-surface"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     Back to venues
                 </Link>
 
-                <div className="mb-6 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+                {/* Venue hero card */}
+                <div className="mb-10 overflow-hidden rounded-2xl bg-surface-container" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
                     {venue.imageUrl && (
-                        <img
-                            src={venue.imageUrl}
-                            alt={venue.name}
-                            className="h-48 w-full object-cover"
-                        />
-                    )}
-                    <div className="p-4">
-                    <h2 className="text-lg font-bold text-white">{venue.name}</h2>
-                    <div className="mt-1 flex items-center gap-1.5 text-sm text-zinc-400">
-                        <MapPin className="h-3 w-3" />
-                        {venue.location}
-                    </div>
-                    <p className="mt-2 text-sm text-zinc-500">{venue.description}</p>
-                    <div className="mt-3 flex items-center gap-3 text-sm">
-                        <span className="font-medium text-white">
-                            ₹{venue.price}
-                            <span className="text-zinc-500">/hr per rig</span>
-                        </span>
-                        <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${venue.availableRigs > 0
-                                ? "bg-emerald-500/10 text-emerald-400"
-                                : "bg-red-500/10 text-red-400"
-                                }`}
-                        >
-                            <span
-                                className={`inline-block h-1.5 w-1.5 rounded-full ${venue.availableRigs > 0 ? "bg-emerald-400" : "bg-red-400"
-                                    }`}
+                        <div className="relative h-64 w-full overflow-hidden">
+                            <img
+                                src={venue.imageUrl}
+                                alt={venue.name}
+                                className="h-full w-full object-cover"
                             />
-                            {venue.availableRigs} of {venue.totalRigs} Available
-                        </span>
-                    </div>
+                            <div
+                                className="absolute inset-0 pointer-events-none"
+                                style={{ background: "linear-gradient(to top, rgba(31,31,31,0.95) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.05) 100%)" }}
+                            />
+                            {/* Availability badge on image */}
+                            <div className="absolute bottom-4 left-6">
+                                <span
+                                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                                        venue.availableRigs > 0
+                                            ? "bg-emerald-500/15 text-emerald-300"
+                                            : "bg-red-500/15 text-red-300"
+                                    }`}
+                                    style={{ backdropFilter: "blur(8px)" }}
+                                >
+                                    <span className={`inline-block h-1.5 w-1.5 rounded-full ${venue.availableRigs > 0 ? "bg-emerald-400 animate-pulse" : "bg-red-400"}`} />
+                                    {venue.availableRigs} of {venue.totalRigs} rigs available
+                                </span>
+                            </div>
+                            {/* Price badge on image */}
+                            <div
+                                className="absolute bottom-4 right-6 rounded-xl px-3 py-1.5 text-sm font-bold text-primary"
+                                style={{ background: "rgba(19,19,19,0.75)", backdropFilter: "blur(12px)" }}
+                            >
+                                ₹{venue.price}<span className="text-xs font-normal text-on-surface-variant/60">/hr per rig</span>
+                            </div>
+                        </div>
+                    )}
+                    <div className="px-6 py-5">
+                        <h1 className="text-2xl font-black tracking-[-0.03em] text-on-surface">{venue.name}</h1>
+                        <div className="mt-2 flex items-center gap-1.5 text-sm text-on-surface-variant/70">
+                            <MapPin className="h-3.5 w-3.5 text-btn-red" />
+                            {venue.location}
+                        </div>
+                        {venue.description && (
+                            <p className="mt-3 text-sm leading-relaxed text-on-surface-variant/60">{venue.description}</p>
+                        )}
                     </div>
                 </div>
 
                 {/* Date selector */}
-                <div className="mb-6">
-                    <DateSelector
-                        selectedDate={selectedDate}
-                        onSelect={handleDateChange}
-                    />
+                <div className="mb-8">
+                    <DateSelector selectedDate={selectedDate} onSelect={handleDateChange} />
                 </div>
 
                 {/* Time selector */}
-                <div className="mb-6">
+                <div className="mb-8">
                     <TimeSelector
                         selectedSlots={selectedTimeSlots}
                         onToggle={toggleTimeSlot}
@@ -202,7 +186,6 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
                 />
             </main>
 
-            {/* Checkout bar */}
             <CheckoutBar
                 venueId={venue.id}
                 selectedRigs={selectedRigs}

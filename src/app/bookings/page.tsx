@@ -3,17 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-    CalendarCheck,
-    Clock,
-    MapPin,
-    Monitor,
-    AlertCircle,
-    Loader2,
-    X,
-    ArrowLeft,
-    CalendarX,
-    ExternalLink,
-    Pencil,
+    CalendarCheck, Clock, MapPin, Monitor, AlertCircle,
+    Loader2, X, ArrowLeft, CalendarX, ExternalLink, Pencil,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { ModifyBookingModal } from "@/components/ModifyBookingModal";
@@ -46,11 +37,7 @@ function groupBookings(bookings: CustomerBooking[]): BookingGroup[] {
                 slots: [],
             });
         }
-        map.get(key)!.slots.push({
-            time_slot: b.time_slot,
-            rig_name: b.rig_name,
-            id: b.id,
-        });
+        map.get(key)!.slots.push({ time_slot: b.time_slot, rig_name: b.rig_name, id: b.id });
     }
     return Array.from(map.values());
 }
@@ -68,11 +55,7 @@ export default function BookingsPage() {
     const loadBookings = useCallback(async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                setError("Please sign in to view your bookings.");
-                setIsLoading(false);
-                return;
-            }
+            if (!session) { setError("Please sign in to view your bookings."); setIsLoading(false); return; }
             setUserId(session.user.id);
             const data = await getCustomerBookings(session.user.id);
             setBookings(data);
@@ -84,9 +67,7 @@ export default function BookingsPage() {
         }
     }, []);
 
-    useEffect(() => {
-        loadBookings();
-    }, [loadBookings]);
+    useEffect(() => { loadBookings(); }, [loadBookings]);
 
     const handleCancel = async (verificationCode: string) => {
         if (!window.confirm("Cancel this booking? This action cannot be undone.")) return;
@@ -117,61 +98,57 @@ export default function BookingsPage() {
     const displayed = tab === "upcoming" ? upcoming : past;
 
     return (
-        <div className="min-h-screen bg-zinc-950">
+        <div className="min-h-screen bg-surface font-outfit text-on-surface-variant antialiased">
             <Navbar />
-            <main className="mx-auto max-w-5xl px-4 py-6">
-                <Link
-                    href="/explore"
-                    className="mb-4 flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-white"
-                >
+            <main className="mx-auto max-w-[var(--max-width-container)] px-8 py-10">
+
+                {/* Back */}
+                <Link href="/explore" className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant/60 transition-colors hover:text-on-surface">
                     <ArrowLeft className="h-4 w-4" />
                     Back to venues
                 </Link>
 
-                <div className="mb-6">
-                    <h1 className="text-xl font-bold text-white sm:text-2xl">My Bookings</h1>
-                    <p className="mt-1 text-sm text-zinc-500">
+                {/* Header */}
+                <div className="mb-8">
+                    <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-btn-red">Your Sessions</p>
+                    <h1 className="font-extrabold leading-none tracking-[-0.04em] text-white" style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}>
+                        My Bookings
+                    </h1>
+                    <p className="mt-3 text-sm text-on-surface font-medium">
                         View and manage your sim racing sessions
                     </p>
                 </div>
 
                 {/* Tab bar */}
-                <div className="mb-6 flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900 p-1">
-                    <button
-                        onClick={() => setTab("upcoming")}
-                        className={`flex-1 cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                            tab === "upcoming"
-                                ? "bg-cyan-500/10 text-cyan-400"
-                                : "text-zinc-400 hover:text-white"
-                        }`}
-                    >
-                        Upcoming
-                        {upcoming.length > 0 && (
-                            <span className="ml-2 rounded-full bg-cyan-500/10 px-2 py-0.5 text-xs">
-                                {upcoming.length}
-                            </span>
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setTab("past")}
-                        className={`flex-1 cursor-pointer rounded-md px-4 py-2 text-sm font-medium transition-all ${
-                            tab === "past"
-                                ? "bg-zinc-800 text-white"
-                                : "text-zinc-400 hover:text-white"
-                        }`}
-                    >
-                        Past
-                        {past.length > 0 && (
-                            <span className="ml-2 rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-500">
-                                {past.length}
-                            </span>
-                        )}
-                    </button>
+                <div className="mb-8 flex gap-1 rounded-2xl bg-surface-container p-1" style={{ maxWidth: 320 }}>
+                    {(["upcoming", "past"] as const).map((t) => {
+                        const count = t === "upcoming" ? upcoming.length : past.length;
+                        return (
+                            <button
+                                key={t}
+                                onClick={() => setTab(t)}
+                                className={`flex-1 cursor-pointer rounded-xl px-4 py-2.5 text-sm font-medium capitalize transition-all duration-200 ${
+                                    tab === t
+                                        ? "bg-btn-red text-white shadow-sm"
+                                        : "text-on-surface-variant/60 hover:text-on-surface"
+                                }`}
+                            >
+                                {t}
+                                {count > 0 && (
+                                    <span className={`ml-2 rounded-full px-1.5 py-0.5 text-xs font-semibold ${
+                                        tab === t ? "bg-white/20 text-white" : "bg-surface-container-high text-on-surface-variant/60"
+                                    }`}>
+                                        {count}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Cancel error */}
                 {cancelError && (
-                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                    <div className="mb-6 flex items-center gap-2 rounded-2xl bg-btn-red/[0.08] px-5 py-3 text-sm text-btn-red">
                         <AlertCircle className="h-4 w-4 shrink-0" />
                         {cancelError}
                     </div>
@@ -179,40 +156,38 @@ export default function BookingsPage() {
 
                 {/* Loading */}
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20">
-                        <Loader2 className="mb-3 h-8 w-8 animate-spin text-zinc-600" />
-                        <p className="text-sm text-zinc-500">Loading your bookings…</p>
+                    <div className="flex flex-col items-center justify-center py-28">
+                        <Loader2 className="mb-4 h-8 w-8 animate-spin text-on-surface-variant/30" />
+                        <p className="text-sm text-on-surface-variant/50">Loading your bookings…</p>
                     </div>
                 ) : error ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <AlertCircle className="mb-3 h-10 w-10 text-red-500/50" />
-                        <p className="text-sm text-zinc-400">{error}</p>
+                    <div className="flex flex-col items-center justify-center py-28 text-center">
+                        <AlertCircle className="mb-4 h-12 w-12 text-btn-red/30" />
+                        <p className="text-sm text-on-surface">{error}</p>
                         <button
                             onClick={loadBookings}
-                            className="mt-4 rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-400 transition-colors hover:text-white"
+                            className="mt-6 rounded-full bg-surface-container px-6 py-2.5 text-sm text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface"
                         >
                             Retry
                         </button>
                     </div>
                 ) : displayed.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <CalendarX className="mb-3 h-10 w-10 text-zinc-700" />
-                        <p className="text-sm font-medium text-zinc-400">
-                            {tab === "upcoming"
-                                ? "No upcoming bookings"
-                                : "No past bookings"}
+                    <div className="flex flex-col items-center justify-center py-28 text-center">
+                        <CalendarX className="mb-4 h-12 w-12 text-surface-container-highest" />
+                        <p className="text-base font-semibold text-on-surface">
+                            {tab === "upcoming" ? "No upcoming bookings" : "No past bookings"}
                         </p>
                         {tab === "upcoming" && (
                             <Link
                                 href="/explore"
-                                className="mt-4 rounded-md bg-cyan-600 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-cyan-500"
+                                className="mt-6 inline-flex items-center gap-2 rounded-full bg-btn-red px-6 py-3 text-sm font-medium text-white transition-all hover:bg-white hover:text-btn-red active:scale-[0.98]"
                             >
                                 Explore Venues
                             </Link>
                         )}
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-4 max-w-2xl">
                         {displayed.map((group) => {
                             const isPast = group.bookingDate < today;
                             const isCancelling = cancelling === group.verificationCode;
@@ -222,60 +197,55 @@ export default function BookingsPage() {
                             return (
                                 <div
                                     key={group.verificationCode}
-                                    className={`overflow-hidden rounded-lg border ${
-                                        isPast
-                                            ? "border-zinc-800/50 bg-zinc-900/50"
-                                            : "border-zinc-800 bg-zinc-900"
-                                    }`}
+                                    className={`overflow-hidden rounded-2xl transition-colors ${isPast ? "bg-surface-container/50" : "bg-surface-container"}`}
+                                    style={{ border: "1px solid rgba(255,255,255,0.06)" }}
                                 >
-                                    <div className="p-4">
+                                    <div className="p-6">
                                         {/* Header */}
-                                        <div className="flex items-start justify-between">
+                                        <div className="flex items-start justify-between gap-4">
                                             <div>
-                                                <h3 className={`text-sm font-bold ${isPast ? "text-zinc-500" : "text-white"}`}>
+                                                <h3 className={`text-base font-bold tracking-tight ${isPast ? "text-on-surface-variant/40" : "text-on-surface"}`}>
                                                     {group.venueName}
                                                 </h3>
-                                                <div className="mt-1 flex items-center gap-1.5 text-xs text-zinc-500">
-                                                    <MapPin className="h-3 w-3" />
+                                                <div className="mt-1.5 flex items-center gap-1.5 text-xs text-on-surface-variant/50">
+                                                    <MapPin className="h-3 w-3 text-btn-red/50" />
                                                     {group.venueLocation}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
-                                                    group.source === "app"
-                                                        ? "bg-cyan-500/10 text-cyan-400"
-                                                        : "bg-amber-500/10 text-amber-400"
-                                                }`}>
-                                                    {group.source === "app" ? "App" : "Walk-In"}
-                                                </span>
-                                            </div>
+                                            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                                                group.source === "app"
+                                                    ? "bg-btn-red/10 text-btn-red"
+                                                    : "bg-secondary/10 text-secondary"
+                                            }`}>
+                                                {group.source === "app" ? "App" : "Walk-In"}
+                                            </span>
                                         </div>
 
-                                        {/* Details */}
-                                        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
-                                            <span className={`flex items-center gap-1.5 ${isPast ? "text-zinc-600" : "text-zinc-400"}`}>
+                                        {/* Details row */}
+                                        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-on-surface-variant/50">
+                                            <span className="flex items-center gap-1.5">
                                                 <CalendarCheck className="h-3.5 w-3.5" />
                                                 {formatBookingDate(group.bookingDate)}
                                             </span>
-                                            <span className={`flex items-center gap-1.5 ${isPast ? "text-zinc-600" : "text-zinc-400"}`}>
+                                            <span className="flex items-center gap-1.5">
                                                 <Clock className="h-3.5 w-3.5" />
                                                 {uniqueSlots.length} {uniqueSlots.length === 1 ? "slot" : "slots"}
                                             </span>
-                                            <span className={`flex items-center gap-1.5 ${isPast ? "text-zinc-600" : "text-zinc-400"}`}>
+                                            <span className="flex items-center gap-1.5">
                                                 <Monitor className="h-3.5 w-3.5" />
                                                 {uniqueRigs.join(", ")}
                                             </span>
                                         </div>
 
-                                        {/* Time slots */}
+                                        {/* Time slot chips */}
                                         <div className="mt-3 flex flex-wrap gap-1.5">
                                             {uniqueSlots.map((slot) => (
                                                 <span
                                                     key={slot}
-                                                    className={`rounded-md border px-2 py-1 text-[10px] font-medium ${
+                                                    className={`rounded-lg px-2.5 py-1 text-[10px] font-medium ${
                                                         isPast
-                                                            ? "border-zinc-800/50 text-zinc-600"
-                                                            : "border-zinc-700 bg-zinc-800 text-zinc-300"
+                                                            ? "bg-surface-container-high/50 text-on-surface-variant/25"
+                                                            : "bg-surface-container-high text-on-surface-variant/70"
                                                     }`}
                                                 >
                                                     {slot}
@@ -283,16 +253,16 @@ export default function BookingsPage() {
                                             ))}
                                         </div>
 
-                                        {/* Verification code + cancel */}
-                                        <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`font-mono text-sm font-bold ${isPast ? "text-zinc-600" : "text-cyan-500"}`}>
+                                        {/* Footer */}
+                                        <div className="mt-5 flex items-center justify-between pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`font-mono text-sm font-bold tracking-wider ${isPast ? "text-on-surface-variant/30" : "text-primary"}`}>
                                                     {group.verificationCode}
                                                 </span>
                                                 {!isPast && (
                                                     <Link
                                                         href={`/bookings/${group.verificationCode}`}
-                                                        className="flex items-center gap-1 text-[10px] text-zinc-500 transition-colors hover:text-cyan-400"
+                                                        className="flex items-center gap-1 text-[10px] text-on-surface-variant/40 transition-colors hover:text-on-surface-variant"
                                                     >
                                                         <ExternalLink className="h-3 w-3" />
                                                         Details
@@ -303,7 +273,7 @@ export default function BookingsPage() {
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         onClick={() => setModifyTarget(group)}
-                                                        className="flex cursor-pointer items-center gap-1 rounded-md border border-cyan-800/50 px-3 py-1.5 text-xs font-medium text-cyan-400 transition-colors hover:bg-cyan-900/30"
+                                                        className="flex cursor-pointer items-center gap-1.5 rounded-full bg-surface-container-high px-3 py-1.5 text-xs font-medium text-on-surface-variant/70 transition-colors hover:bg-surface-container-highest hover:text-on-surface"
                                                     >
                                                         <Pencil className="h-3 w-3" />
                                                         Modify
@@ -311,13 +281,9 @@ export default function BookingsPage() {
                                                     <button
                                                         onClick={() => handleCancel(group.verificationCode)}
                                                         disabled={isCancelling}
-                                                        className="flex cursor-pointer items-center gap-1 rounded-md border border-red-800/50 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-900/30 disabled:opacity-50"
+                                                        className="flex cursor-pointer items-center gap-1.5 rounded-full bg-btn-red/10 px-3 py-1.5 text-xs font-medium text-btn-red transition-colors hover:bg-btn-red/20 disabled:opacity-50"
                                                     >
-                                                        {isCancelling ? (
-                                                            <Loader2 className="h-3 w-3 animate-spin" />
-                                                        ) : (
-                                                            <X className="h-3 w-3" />
-                                                        )}
+                                                        {isCancelling ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
                                                         {isCancelling ? "Cancelling…" : "Cancel"}
                                                     </button>
                                                 </div>
@@ -331,7 +297,6 @@ export default function BookingsPage() {
                 )}
             </main>
 
-            {/* Modify booking modal */}
             {modifyTarget && userId && (
                 <ModifyBookingModal
                     verificationCode={modifyTarget.verificationCode}
@@ -339,10 +304,7 @@ export default function BookingsPage() {
                     currentDate={modifyTarget.bookingDate}
                     currentSlots={[...new Set(modifyTarget.slots.map((s) => s.time_slot))]}
                     onClose={() => setModifyTarget(null)}
-                    onSuccess={() => {
-                        setModifyTarget(null);
-                        loadBookings();
-                    }}
+                    onSuccess={() => { setModifyTarget(null); loadBookings(); }}
                 />
             )}
         </div>

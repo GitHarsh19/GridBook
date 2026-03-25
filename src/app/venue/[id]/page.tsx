@@ -9,32 +9,35 @@ import BookingClient from "./BookingClient";
 
 function VenueBookingSkeleton() {
     return (
-        <div className="min-h-screen bg-zinc-950">
+        <div className="min-h-screen bg-surface font-outfit">
             <Navbar />
-            <main className="mx-auto max-w-5xl px-4 py-6">
-                <div className="mb-4 h-4 w-28 animate-pulse rounded bg-zinc-800" />
-                <div className="mb-6 animate-pulse rounded-lg border border-zinc-800 bg-zinc-900 p-4">
-                    <div className="h-5 w-48 rounded bg-zinc-800" />
-                    <div className="mt-2 h-3 w-32 rounded bg-zinc-800/60" />
-                    <div className="mt-3 h-3 w-full rounded bg-zinc-800/40" />
-                    <div className="mt-4 flex gap-3">
-                        <div className="h-5 w-20 rounded bg-zinc-800" />
-                        <div className="h-5 w-28 rounded-full bg-zinc-800/60" />
+            <main className="mx-auto max-w-[var(--max-width-container)] px-8 py-10">
+                <div className="mb-6 h-3 w-24 animate-pulse rounded-full bg-surface-container-high" />
+                <div className="mb-8 animate-pulse overflow-hidden rounded-2xl bg-surface-container">
+                    <div className="h-64 w-full bg-surface-container-high" />
+                    <div className="p-6 space-y-3">
+                        <div className="h-5 w-48 rounded-full bg-surface-container-high" />
+                        <div className="h-3 w-32 rounded-full bg-surface-container-high/70" />
+                        <div className="h-3 w-full rounded-full bg-surface-container-high/50" />
+                        <div className="flex gap-3 pt-1">
+                            <div className="h-5 w-20 rounded-full bg-surface-container-high" />
+                            <div className="h-5 w-28 rounded-full bg-surface-container-high/60" />
+                        </div>
                     </div>
                 </div>
                 <div className="mb-6">
-                    <div className="mb-3 h-4 w-32 rounded bg-zinc-800" />
+                    <div className="mb-3 h-3 w-24 rounded-full bg-surface-container-high" />
                     <div className="flex gap-2">
                         {Array.from({ length: 5 }).map((_, i) => (
-                            <div key={i} className="h-10 w-36 shrink-0 animate-pulse rounded-md bg-zinc-800/60" />
+                            <div key={i} className="h-16 w-16 shrink-0 animate-pulse rounded-2xl bg-surface-container" />
                         ))}
                     </div>
                 </div>
                 <div>
-                    <div className="mb-3 h-4 w-24 rounded bg-zinc-800" />
+                    <div className="mb-3 h-3 w-20 rounded-full bg-surface-container-high" />
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="h-[90px] animate-pulse rounded-lg bg-zinc-800/40" />
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="h-24 animate-pulse rounded-2xl bg-surface-container" />
                         ))}
                     </div>
                 </div>
@@ -49,27 +52,25 @@ function VenueBookingContent() {
     const { venue, error: loadError } = useRealtimeVenue(!id || isNaN(numId) ? 0 : numId);
     const error = !!loadError;
 
-    if (venue === undefined && !error) {
-        return <VenueBookingSkeleton />;
-    }
+    if (venue === undefined && !error) return <VenueBookingSkeleton />;
 
     if (error || !venue) {
         return (
-            <div className="min-h-screen bg-zinc-950">
+            <div className="min-h-screen bg-surface font-outfit">
                 <Navbar />
-                <main className="mx-auto max-w-5xl px-4 py-16 text-center">
-                    <AlertCircle className="mx-auto mb-3 h-10 w-10 text-zinc-700" />
-                    <h1 className="text-xl font-bold text-white">
+                <main className="mx-auto max-w-[var(--max-width-container)] px-8 py-28 text-center">
+                    <AlertCircle className="mx-auto mb-4 h-12 w-12 text-surface-container-highest" />
+                    <h1 className="text-2xl font-bold tracking-tight text-on-surface">
                         {error ? "Something went wrong" : "Venue not found"}
                     </h1>
-                    <p className="mt-2 text-sm text-zinc-500">
+                    <p className="mt-3 text-sm text-on-surface-variant/60">
                         {error
                             ? "We couldn\u2019t load this venue. Please try again."
                             : "This venue may have been removed or the link is incorrect."}
                     </p>
                     <Link
                         href="/explore"
-                        className="mt-6 inline-flex items-center gap-1.5 text-sm text-cyan-500 hover:text-cyan-400 transition-colors"
+                        className="mt-8 inline-flex items-center gap-2 rounded-full bg-btn-red px-6 py-3 text-sm font-medium text-white transition-all hover:bg-white hover:text-btn-red active:scale-[0.98]"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to venues

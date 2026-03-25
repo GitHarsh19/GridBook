@@ -20,48 +20,51 @@ export function VenueCard({ venue }: { venue: Venue }) {
     return (
         <button
             onClick={handleClick}
-            className="group block w-full cursor-pointer rounded-lg border border-zinc-800 bg-zinc-900 text-left transition-all duration-200 hover:border-zinc-700 hover:bg-zinc-900/80 hover:shadow-lg hover:shadow-cyan-500/5 hover:-translate-y-0.5 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+            className="group block w-full cursor-pointer rounded-2xl bg-surface-container text-left font-outfit transition-all duration-300 hover:bg-surface-container-high hover:-translate-y-1 active:scale-[0.99] focus:outline-none"
         >
-            {/* Venue image or placeholder */}
-            <div className="relative flex h-36 items-center justify-center overflow-hidden rounded-t-lg bg-zinc-800/60">
+            {/* Venue image */}
+            <div className="relative flex h-52 items-center justify-center overflow-hidden rounded-2xl bg-surface-container-low">
                 {venue.imageUrl ? (
                     <img
                         src={venue.imageUrl}
                         alt={venue.name}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                 ) : (
-                    <Monitor className="h-10 w-10 text-zinc-600 transition-colors duration-200 group-hover:text-zinc-500" />
+                    <Monitor className="h-12 w-12 text-surface-container-highest transition-colors group-hover:text-on-surface-variant/20" />
                 )}
-                {/* Price badge */}
-                <div className="absolute bottom-2 right-2 rounded-md bg-zinc-950/80 px-2 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
-                    ₹{venue.price}<span className="text-zinc-400">/hr</span>
+
+                {/* Gradient overlay */}
+                <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                        background:
+                            "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.04) 100%)",
+                    }}
+                />
+
+                {/* Price badge — glassmorphic, top-right */}
+                <div
+                    className="absolute top-3 right-3 rounded-xl px-3 py-1 text-sm font-bold text-primary"
+                    style={{
+                        background: "rgba(19,19,19,0.72)",
+                        backdropFilter: "blur(12px)",
+                        WebkitBackdropFilter: "blur(12px)",
+                    }}
+                >
+                    ₹{venue.price}
+                    <span className="text-xs font-normal text-on-surface-variant/60">/hr</span>
                 </div>
-            </div>
 
-            <div className="p-4">
-                {/* Venue name */}
-                <h3 className="text-base font-semibold text-white transition-colors duration-200 group-hover:text-cyan-400">
-                    {venue.name}
-                </h3>
-
-                {/* Location */}
-                <div className="mt-1 flex items-center gap-1 text-sm text-zinc-400">
-                    <MapPin className="h-3 w-3" />
-                    {venue.location}
-                </div>
-
-                {/* Availability + rig count */}
-                <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-zinc-500">
-                        {venue.totalRigs} total rigs
-                    </span>
+                {/* Availability badge — bottom-left */}
+                <div className="absolute bottom-3 left-3">
                     <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
                             venue.availableRigs > 0
-                                ? "bg-emerald-500/10 text-emerald-400"
-                                : "bg-red-500/10 text-red-400"
+                                ? "bg-emerald-500/15 text-emerald-300"
+                                : "bg-red-500/15 text-red-300"
                         }`}
+                        style={{ backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
                     >
                         <span
                             className={`inline-block h-1.5 w-1.5 rounded-full ${
@@ -73,6 +76,23 @@ export function VenueCard({ venue }: { venue: Venue }) {
                         {venue.availableRigs > 0
                             ? `${venue.availableRigs} Available`
                             : "Fully Booked"}
+                    </span>
+                </div>
+            </div>
+
+            {/* Card content */}
+            <div className="px-5 py-4">
+                <h3 className="text-base font-bold tracking-tight text-on-surface transition-colors duration-200 group-hover:text-primary">
+                    {venue.name}
+                </h3>
+
+                <div className="mt-1.5 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-sm text-on-surface-variant/70">
+                        <MapPin className="h-3 w-3 text-btn-red" />
+                        {venue.location}
+                    </div>
+                    <span className="text-xs text-on-surface-variant/40">
+                        {venue.totalRigs} rigs
                     </span>
                 </div>
             </div>

@@ -14,39 +14,23 @@ export function RigGrid({
     selectedRigs: number[];
     onToggle: (id: number) => void;
     onClear: () => void;
-    /** Rig IDs booked for the currently selected time slots (overrides flat status) */
     bookedRigIds?: Set<number>;
 }) {
     return (
         <div>
-            <div className="mb-3 flex items-center gap-2 text-sm font-medium text-zinc-400">
-                <Monitor className="h-4 w-4" />
-                Select Rigs
+            <div className="mb-4 flex items-center gap-3 font-outfit">
+                <p className="text-sm font-semibold uppercase tracking-widest text-btn-red">
+                    Select Rigs
+                </p>
                 {selectedRigs.length > 0 && (
-                    <span className="ml-1 rounded-full bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-400">
+                    <span className="rounded-full bg-btn-red/10 px-2.5 py-0.5 text-xs font-semibold text-btn-red">
                         {selectedRigs.length} selected
                     </span>
                 )}
-            </div>
-
-            {/* Legend */}
-            <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-zinc-500">
-                <div className="flex items-center gap-1.5">
-                    <div className="h-3 w-3 rounded border border-zinc-700" />
-                    Available
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="h-3 w-3 rounded bg-cyan-500" />
-                    Selected
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <div className="h-3 w-3 rounded bg-zinc-800" />
-                    Booked
-                </div>
                 {selectedRigs.length > 0 && (
                     <button
                         onClick={onClear}
-                        className="ml-auto flex cursor-pointer items-center gap-1 rounded-md border border-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-400 transition-colors hover:border-red-500/50 hover:text-red-400"
+                        className="ml-auto flex cursor-pointer items-center gap-1 rounded-full bg-surface-container px-3 py-1 text-xs font-medium text-on-surface-variant/60 transition-colors hover:bg-btn-red/10 hover:text-btn-red"
                     >
                         <X className="h-3 w-3" />
                         Clear
@@ -54,12 +38,26 @@ export function RigGrid({
                 )}
             </div>
 
+            {/* Legend */}
+            <div className="mb-5 flex flex-wrap items-center gap-4 font-outfit text-xs text-on-surface-variant/50">
+                <div className="flex items-center gap-1.5">
+                    <div className="h-3 w-3 rounded-md bg-surface-container-high" />
+                    Available
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <div className="h-3 w-3 rounded-md bg-btn-red" />
+                    Selected
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <div className="h-3 w-3 rounded-md bg-surface-container-lowest" />
+                    Booked
+                </div>
+            </div>
+
             {/* Grid */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                 {rigs.map((rig) => {
                     const isSelected = selectedRigs.includes(rig.id);
-                    // When time slots are selected, use per-slot booking data;
-                    // otherwise fall back to the flat rig status
                     const isBooked = bookedRigIds
                         ? bookedRigIds.has(rig.id) || rig.status === "booked"
                         : rig.status === "booked";
@@ -71,38 +69,39 @@ export function RigGrid({
                             onClick={() => onToggle(rig.id)}
                             aria-pressed={isSelected}
                             aria-label={`${rig.name} — ${rig.specs}${isBooked ? " (booked)" : ""}`}
-                            className={`relative flex min-h-[90px] flex-col items-center justify-center rounded-lg border p-3 text-center transition-all duration-150 ${
+                            className={`relative flex min-h-[100px] flex-col items-center justify-center rounded-2xl p-4 font-outfit text-center transition-all duration-150 ${
                                 isBooked
-                                    ? "cursor-not-allowed border-zinc-800/50 bg-zinc-800/40 text-zinc-600"
+                                    ? "cursor-not-allowed bg-surface-container-lowest text-on-surface-variant/20"
                                     : isSelected
-                                        ? "cursor-pointer border-cyan-500 bg-cyan-500 text-black shadow-lg shadow-cyan-500/20 scale-[1.02]"
-                                        : "cursor-pointer border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-cyan-500/50 hover:bg-zinc-800/80 hover:scale-[1.02]"
+                                        ? "cursor-pointer bg-btn-red text-white scale-[1.02]"
+                                        : "cursor-pointer bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface hover:scale-[1.02] active:scale-[0.98]"
                             }`}
+                            style={isSelected ? { boxShadow: "0 4px 20px rgba(217,51,29,0.25)" } : {}}
                         >
                             <Monitor
-                                className={`mb-1.5 h-5 w-5 ${
+                                className={`mb-2 h-5 w-5 ${
                                     isBooked
-                                        ? "text-zinc-700"
+                                        ? "text-on-surface-variant/15"
                                         : isSelected
-                                            ? "text-black"
-                                            : "text-zinc-500"
+                                            ? "text-white/80"
+                                            : "text-on-surface-variant/50"
                                 }`}
                             />
-                            <span className="text-sm font-semibold">{rig.name}</span>
+                            <span className="text-sm font-bold">{rig.name}</span>
                             <span
                                 className={`mt-0.5 text-[10px] leading-tight ${
                                     isBooked
-                                        ? "text-zinc-700"
+                                        ? "text-on-surface-variant/15"
                                         : isSelected
-                                            ? "text-black/70"
-                                            : "text-zinc-500"
+                                            ? "text-white/60"
+                                            : "text-on-surface-variant/40"
                                 }`}
                             >
                                 {rig.specs}
                             </span>
                             {isBooked && (
-                                <div className="absolute right-1.5 top-1.5">
-                                    <X className="h-3 w-3 text-zinc-700" />
+                                <div className="absolute right-2 top-2">
+                                    <X className="h-3 w-3 text-on-surface-variant/20" />
                                 </div>
                             )}
                         </button>

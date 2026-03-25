@@ -45,7 +45,6 @@ export function CheckoutBar({
         setErrorMsg("");
 
         try {
-            // Require login to book
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
                 setErrorMsg("Please sign in to book slots.");
@@ -54,24 +53,16 @@ export function CheckoutBar({
                 return;
             }
 
-            // Get customer name from profile
             let customerName = "Online User";
             const { data: profile } = await supabase
                 .from("profiles")
                 .select("full_name")
                 .eq("id", session.user.id)
                 .single();
-            if (profile?.full_name) {
-                customerName = profile.full_name;
-            }
+            if (profile?.full_name) customerName = profile.full_name;
 
             const result = await createAppBooking(
-                venueId,
-                selectedRigs,
-                selectedSlots,
-                bookingDate,
-                customerName,
-                session.user.id,
+                venueId, selectedRigs, selectedSlots, bookingDate, customerName, session.user.id,
             );
 
             if (!result.success) {
@@ -83,7 +74,6 @@ export function CheckoutBar({
 
             setVerificationCode(result.verificationCode ?? "");
             setPayState("done");
-            // Redirect to confirmation page immediately
             onBookingComplete(result.verificationCode ?? "");
         } catch {
             setErrorMsg("Something went wrong. Please try again.");
@@ -94,37 +84,36 @@ export function CheckoutBar({
 
     return (
         <div
-            className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-sm animate-in slide-in-from-bottom"
+            className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom font-outfit"
+            style={{ background: "rgba(19,19,19,0.85)", backdropFilter: "blur(24px)", borderTop: "1px solid rgba(255,255,255,0.06)" }}
             role="status"
             aria-live="polite"
         >
-            <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-sm">
-                    <div className="text-zinc-400">
-                        <span className="font-medium text-white">{selectedNames}</span>
+            <div className="mx-auto flex max-w-[var(--max-width-container)] flex-col gap-4 px-8 py-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <div className="text-sm text-on-surface-variant/60">
+                        <span className="font-semibold text-on-surface">{selectedNames}</span>
                         {hasSlots && (
-                            <span className="text-zinc-500">
+                            <span>
                                 {" "}&middot; {slotCount} {slotCount === 1 ? "slot" : "slots"}
                                 {" "}&middot; {formatBookingDate(bookingDate)}
                             </span>
                         )}
                     </div>
-                    <div className="mt-0.5 text-lg font-bold text-white">
+                    <div className="mt-1 font-black tracking-tight text-on-surface" style={{ fontSize: "1.5rem" }}>
                         ₹{total.toLocaleString("en-IN")}
                         {!hasSlots && (
-                            <span className="ml-2 text-xs font-normal text-zinc-500">
+                            <span className="ml-3 text-xs font-normal text-on-surface-variant/40">
                                 Select a time slot to book
                             </span>
                         )}
                     </div>
                     {payState === "done" && verificationCode && (
                         <div className="mt-1 flex items-center gap-2 text-xs text-emerald-400">
-                            <span>
-                                Code: <span className="font-mono font-bold">{verificationCode}</span>
-                            </span>
+                            <span>Code: <span className="font-mono font-bold">{verificationCode}</span></span>
                             <Link
                                 href={`/bookings/${verificationCode}`}
-                                className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 px-2 py-0.5 text-[10px] font-medium text-emerald-400 transition-colors hover:bg-emerald-500/10"
+                                className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/20"
                             >
                                 <CalendarCheck className="h-3 w-3" />
                                 View Confirmation
@@ -132,45 +121,34 @@ export function CheckoutBar({
                         </div>
                     )}
                     {payState === "error" && errorMsg && (
-                        <div className="mt-1 flex items-center gap-1 text-xs text-red-400">
+                        <div className="mt-1 flex items-center gap-1 text-xs text-btn-red">
                             <AlertCircle className="h-3 w-3" />
                             {errorMsg}
                         </div>
                     )}
                 </div>
+
                 <button
                     disabled={!hasSlots || payState !== "idle"}
                     onClick={handlePay}
-                    className={`flex w-full items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-sm font-bold transition-all sm:w-auto ${
+                    className={`flex w-full items-center justify-center gap-2 rounded-full px-8 py-3.5 text-sm font-medium tracking-[-0.03em] transition-all duration-300 sm:w-auto ${
                         payState === "done"
-                            ? "bg-emerald-500 text-black"
+                            ? "bg-emerald-500 text-white"
                             : payState === "error"
-                                ? "bg-red-500/20 text-red-400"
+                                ? "bg-btn-red/20 text-btn-red"
                                 : hasSlots && payState === "idle"
-                                    ? "cursor-pointer bg-cyan-500 text-black hover:bg-cyan-400 active:scale-[0.98]"
-                                    : "cursor-not-allowed bg-zinc-800 text-zinc-500"
+                                    ? "cursor-pointer bg-btn-red text-white hover:bg-white hover:text-btn-red active:scale-[0.98]"
+                                    : "cursor-not-allowed bg-surface-container text-on-surface-variant/30"
                     }`}
                 >
                     {payState === "loading" ? (
-                        <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Booking…
-                        </>
+                        <><Loader2 className="h-4 w-4 animate-spin" />Booking…</>
                     ) : payState === "done" ? (
-                        <>
-                            <Check className="h-4 w-4" />
-                            Booking Confirmed!
-                        </>
+                        <><Check className="h-4 w-4" />Booking Confirmed!</>
                     ) : payState === "error" ? (
-                        <>
-                            <AlertCircle className="h-4 w-4" />
-                            Booking Failed
-                        </>
+                        <><AlertCircle className="h-4 w-4" />Booking Failed</>
                     ) : (
-                        <>
-                            <ShoppingCart className="h-4 w-4" />
-                            {hasSlots ? "Pay via UPI to Lock Slots" : "Select time slots first"}
-                        </>
+                        <><ShoppingCart className="h-4 w-4" />{hasSlots ? "Pay via UPI to Lock Slots" : "Select time slots first"}</>
                     )}
                 </button>
             </div>
