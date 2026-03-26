@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,17 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${outfit.variable} font-sans antialiased`}>
         <AuthProvider>{children}</AuthProvider>
+        <Toaster
+          theme="dark"
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: "#1f1f1f",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "#e2e2e2",
+            },
+          }}
+        />
       </body>
     </html>
   );

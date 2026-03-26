@@ -43,4 +43,12 @@ export const STATUS_CONFIG: Record<
         labelColor: "text-on-surface-variant/30",
         clickable: true,
     },
+    in_use: {
+        border: "border-sky-500/30",
+        bg: "bg-sky-500/5",
+        dot: "bg-sky-400",
+        label: "In Use",
+        labelColor: "text-sky-400",
+        clickable: false,
+    },
 };

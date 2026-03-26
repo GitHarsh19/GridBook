@@ -3,18 +3,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import QRCode from "qrcode";
 import {
     ArrowLeft, CalendarCheck, Clock, MapPin, Monitor,
-    Loader2, AlertCircle, Download, CalendarPlus, Copy, Check,
+    Loader2, AlertCircle, CalendarPlus, Copy, Check,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
+import { TicketQR } from "@/components/TicketQR";
 import { supabase } from "@/lib/supabase";
 import { getCustomerBookings, type CustomerBooking } from "@/lib/data";
 import { formatBookingDate } from "@/lib/utils";
 
 interface BookingGroup {
     verificationCode: string;
+    checkInToken: string | null;
     venueName: string;
     venueLocation: string;
     bookingDate: string;
@@ -29,6 +30,7 @@ function groupByCode(bookings: CustomerBooking[], code: string): BookingGroup | 
     const first = matching[0];
     return {
         verificationCode: first.verification_code,
+        checkInToken: first.check_in_token,
         venueName: first.venue_name,
         venueLocation: first.venue_location,
         bookingDate: first.booking_date,
@@ -73,7 +75,6 @@ export default function BookingConfirmationPage() {
     const [group, setGroup] = useState<BookingGroup | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
     const loadBooking = useCallback(async () => {
@@ -84,11 +85,6 @@ export default function BookingConfirmationPage() {
             const found = groupByCode(bookings, code);
             if (!found) { setError("Booking not found. It may have been cancelled."); setIsLoading(false); return; }
             setGroup(found);
-            const qr = await QRCode.toDataURL(found.verificationCode, {
-                width: 200, margin: 2,
-                color: { dark: "#ffb5a0", light: "#1f1f1f" },
-            });
-            setQrDataUrl(qr);
         } catch {
             setError("Failed to load booking details.");
         } finally {
@@ -114,11 +110,6 @@ export default function BookingConfirmationPage() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleDownloadQR = () => {
-        if (!qrDataUrl || !group) return;
-        const a = document.createElement("a");
-        a.href = qrDataUrl; a.download = `qr-${group.verificationCode}.png`; a.click();
-    };
 
     return (
         <div className="min-h-screen bg-surface font-outfit text-on-surface-variant antialiased">
@@ -156,28 +147,18 @@ export default function BookingConfirmationPage() {
                         </div>
 
                         {/* QR Code card */}
-                        <div className="rounded-2xl bg-surface-container p-6" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
-                            <div className="flex flex-col items-center gap-4">
-                                {qrDataUrl && (
-                                    <img
-                                        src={qrDataUrl}
-                                        alt={`QR code for ${group.verificationCode}`}
-                                        className="h-48 w-48 rounded-xl"
-                                    />
-                                )}
-                                <div className="flex items-center gap-2">
-                                    <span className="font-mono text-xl font-bold tracking-wider text-primary">
-                                        {group.verificationCode}
-                                    </span>
-                                    <button
-                                        onClick={handleCopyCode}
-                                        className="rounded-lg p-1.5 text-on-surface-variant/40 transition-colors hover:bg-surface-container-high hover:text-on-surface"
-                                        title="Copy code"
-                                    >
-                                        {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-                                    </button>
-                                </div>
-                            </div>
+                        <TicketQR checkInToken={group.checkInToken} />
+                        <div className="flex items-center justify-center gap-2">
+                            <span className="font-mono text-xl font-bold tracking-wider text-primary">
+                                {group.verificationCode}
+                            </span>
+                            <button
+                                onClick={handleCopyCode}
+                                className="rounded-lg p-1.5 text-on-surface-variant/40 transition-colors hover:bg-surface-container-high hover:text-on-surface"
+                                title="Copy code"
+                            >
+                                {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                            </button>
                         </div>
 
                         {/* Booking details */}
@@ -222,14 +203,6 @@ export default function BookingConfirmationPage() {
                             >
                                 <CalendarPlus className="h-4 w-4" />
                                 Add to Calendar
-                            </button>
-                            <button
-                                onClick={handleDownloadQR}
-                                disabled={!qrDataUrl}
-                                className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-full border border-on-surface bg-transparent py-3 text-sm font-medium text-on-surface-variant transition-all duration-300 hover:border-white hover:bg-surface-container hover:text-on-surface active:scale-[0.98] disabled:opacity-30"
-                            >
-                                <Download className="h-4 w-4" />
-                                Save QR Code
                             </button>
                         </div>
                     </div>

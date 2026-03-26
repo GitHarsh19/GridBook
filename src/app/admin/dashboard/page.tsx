@@ -18,6 +18,7 @@ import {
     Settings,
     Pencil,
     Building2,
+    ScanLine,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -42,6 +43,7 @@ import {
     deleteVenue,
 } from "@/lib/data";
 import { getTodayStr, getUpcomingDates, parseSlotStartHour, shortSlotLabel } from "@/lib/utils";
+import { ScannerModal } from "./ScannerModal";
 import {
     WalkInModal,
     AddRigModal,
@@ -68,6 +70,7 @@ export default function AdminDashboardPage() {
     const [editVenueTarget, setEditVenueTarget] = useState<VenueOption | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showScanner, setShowScanner] = useState(false);
 
     // Admin date/time slot selector state
     const [adminDate, setAdminDate] = useState<string>(getTodayStr);
@@ -626,6 +629,13 @@ export default function AdminDashboardPage() {
                                 <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
                             </p>
                             <button
+                                onClick={() => setShowScanner(true)}
+                                className="flex cursor-pointer items-center gap-1 rounded-full bg-sky-500 px-3 py-1 text-xs font-medium text-white transition-all duration-300 hover:bg-white hover:text-sky-600 active:scale-[0.98]"
+                            >
+                                <ScanLine className="h-3.5 w-3.5" />
+                                Scan QR
+                            </button>
+                            <button
                                 onClick={() => setShowAddRig(true)}
                                 className="flex cursor-pointer items-center gap-1 rounded-full bg-btn-red px-3 py-1 text-xs font-medium text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98]"
                             >
@@ -646,6 +656,10 @@ export default function AdminDashboardPage() {
                             <div className="flex items-center gap-1.5">
                                 <div className="h-2 w-2 rounded-full bg-amber-400" />
                                 Walk-In
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="h-2 w-2 rounded-full bg-sky-400" />
+                                In Use
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <div className="h-2 w-2 rounded-full bg-on-surface-variant/20" />
@@ -1051,6 +1065,13 @@ export default function AdminDashboardPage() {
             </main>
 
             {/* ── Modals ── */}
+            {showScanner && (
+                <ScannerModal
+                    onClose={() => setShowScanner(false)}
+                    onCheckIn={loadData}
+                />
+            )}
+
             {walkInTarget && (
                 <WalkInModal
                     rig={walkInTarget}

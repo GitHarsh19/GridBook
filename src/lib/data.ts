@@ -24,7 +24,7 @@ export interface Venue {
 
 /* ─── Dashboard types ──────────────────────────────────────────────── */
 
-export type RigStatus = "available" | "booked" | "blocked" | "out_of_order";
+export type RigStatus = "available" | "booked" | "blocked" | "out_of_order" | "in_use";
 
 export interface DashboardRig {
     id: number;
@@ -840,6 +840,7 @@ export interface CustomerBooking {
     time_slot: string;
     booking_date: string;
     verification_code: string;
+    check_in_token: string | null;
     source: "app" | "walk_in";
 }
 
@@ -857,6 +858,7 @@ export async function getCustomerBookings(userId: string): Promise<CustomerBooki
             time_slot,
             booking_date,
             verification_code,
+            check_in_token,
             source,
             rigs!inner(name, venue_id, venues!inner(name, location))
         `)
@@ -882,6 +884,7 @@ export async function getCustomerBookings(userId: string): Promise<CustomerBooki
         time_slot: row.time_slot,
         booking_date: row.booking_date,
         verification_code: row.verification_code,
+        check_in_token: row.check_in_token ?? null,
         source: row.source,
     }));
 }

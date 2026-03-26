@@ -73,16 +73,16 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* Hero image column scroll animation */
+/* Hero image column scroll animation — oscillates back and forth */
 .hero-imgcols-col {
-  animation: hero-scroll 40s linear infinite;
+  animation: hero-scroll 20s ease-in-out infinite alternate;
 }
 .hero-imgcols-col:nth-child(even) {
-  animation-direction: reverse;
+  animation-direction: alternate-reverse;
 }
 @keyframes hero-scroll {
   0% { transform: translateY(0); }
-  100% { transform: translateY(-50%); }
+  100% { transform: translateY(-30%); }
 }
 
 /* Hero overlay radial gradient */
