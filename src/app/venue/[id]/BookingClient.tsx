@@ -127,9 +127,9 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
                                 style={{ background: "linear-gradient(to top, rgba(31,31,31,0.95) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.05) 100%)" }}
                             />
                             {/* Availability badge on image */}
-                            <div className="absolute bottom-4 left-6">
+                            <div className="absolute bottom-4 left-3 sm:left-6">
                                 <span
-                                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
+                                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] sm:text-xs font-semibold ${
                                         venue.availableRigs > 0
                                             ? "bg-emerald-500/15 text-emerald-300"
                                             : "bg-red-500/15 text-red-300"
@@ -142,10 +142,10 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
                             </div>
                             {/* Price badge on image */}
                             <div
-                                className="absolute bottom-4 right-6 rounded-xl px-3 py-1.5 text-sm font-bold text-primary"
+                                className="absolute bottom-4 right-3 sm:right-6 rounded-xl px-3 py-1.5 text-xs sm:text-sm font-bold text-primary"
                                 style={{ background: "rgba(19,19,19,0.75)", backdropFilter: "blur(12px)" }}
                             >
-                                ₹{venue.price}<span className="text-xs font-normal text-on-surface-variant/60">/hr per rig</span>
+                                ₹{venue.price}<span className="text-[10px] sm:text-xs font-normal text-on-surface-variant/60">/hr per rig</span>
                             </div>
                         </div>
                     )}

@@ -254,7 +254,7 @@ export default function BookingsPage() {
                                         </div>
 
                                         {/* Footer */}
-                                        <div className="mt-5 flex items-center justify-between pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                                        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
                                             <div className="flex items-center gap-3">
                                                 <span className={`font-mono text-sm font-bold tracking-wider ${isPast ? "text-on-surface-variant/30" : "text-primary"}`}>
                                                     {group.verificationCode}

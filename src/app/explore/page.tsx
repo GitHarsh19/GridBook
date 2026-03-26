@@ -46,7 +46,7 @@ export default function ExplorePage() {
         <div className="min-h-screen bg-surface font-outfit text-on-surface-variant overflow-x-hidden antialiased">
             <Navbar floating />
 
-            <main className="mx-auto max-w-[var(--max-width-container)] px-8 pt-28 pb-14">
+            <main className="mx-auto max-w-[var(--max-width-container)] px-4 sm:px-8 pt-28 pb-14">
 
                 {/* Page header */}
                 <div className="mb-10">

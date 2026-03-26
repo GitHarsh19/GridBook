@@ -16,6 +16,7 @@ function AdminLoginForm() {
     const searchParams = useSearchParams();
     const { setLoggedIn } = useAuth();
     const showMessage = searchParams.get("message") === "sign_in";
+    const showCustomerMsg = searchParams.get("message") === "not_admin";
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -25,7 +26,24 @@ function AdminLoginForm() {
     const [demoLoading, setDemoLoading] = useState(false);
     const [messageRendered, setMessageRendered] = useState(showMessage);
     const [messageExpanded, setMessageExpanded] = useState(false);
+    const [customerMsgRendered, setCustomerMsgRendered] = useState(showCustomerMsg);
+    const [customerMsgExpanded, setCustomerMsgExpanded] = useState(false);
     const { blocked, cooldownSeconds, recordAttempt } = useRateLimit();
+
+    const triggerCustomerMsg = () => {
+        setCustomerMsgRendered(true);
+        setTimeout(() => setCustomerMsgExpanded(true), 16);
+        setTimeout(() => setCustomerMsgExpanded(false), 1200);
+        setTimeout(() => setCustomerMsgRendered(false), 1600);
+    };
+
+    useEffect(() => {
+        if (!showCustomerMsg) return;
+        const expandTimer = setTimeout(() => setCustomerMsgExpanded(true), 16);
+        const contractTimer = setTimeout(() => setCustomerMsgExpanded(false), 1200);
+        const removeTimer = setTimeout(() => setCustomerMsgRendered(false), 1600);
+        return () => { clearTimeout(expandTimer); clearTimeout(contractTimer); clearTimeout(removeTimer); };
+    }, [showCustomerMsg]);
 
     useEffect(() => {
         if (!showMessage) return;
@@ -46,7 +64,16 @@ function AdminLoginForm() {
         setError(""); setLoading(true); recordAttempt();
         const { data, error: authError } = await supabaseAdmin.auth.signInWithPassword({ email, password });
         if (authError) { setLoading(false); setError(authError.message); return; }
-        if (data.user) { await assignAdminRole(data.user.id); setLoggedIn(true, "admin"); }
+        if (data.user) {
+            const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("id", data.user.id).single();
+            if (!profile || profile.role !== "admin") {
+                await supabaseAdmin.auth.signOut();
+                setLoading(false);
+                triggerCustomerMsg();
+                return;
+            }
+            setLoggedIn(true, "admin");
+        }
         setLoading(false);
         router.push("/admin/dashboard");
     };
@@ -98,6 +125,13 @@ function AdminLoginForm() {
                     {messageRendered && (
                         <div className={`overflow-hidden transition-all duration-400 ease-in-out ${messageExpanded ? "max-h-10 opacity-100 mb-6" : "max-h-0 opacity-0 mb-0"}`}>
                             <p className="text-center text-sm text-btn-red">Sign in to continue</p>
+                        </div>
+                    )}
+
+                    {/* Customer account message */}
+                    {customerMsgRendered && (
+                        <div className={`overflow-hidden transition-all duration-400 ease-in-out ${customerMsgExpanded ? "max-h-10 opacity-100 mb-6" : "max-h-0 opacity-0 mb-0"}`}>
+                            <p className="text-center text-sm text-btn-red">Not registered as admin</p>
                         </div>
                     )}
 

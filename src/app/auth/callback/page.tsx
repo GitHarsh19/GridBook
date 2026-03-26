@@ -75,11 +75,7 @@ function AuthCallbackInner() {
     })();
   }, [router, redirectTo, requiredRole, setLoggedIn, searchParams]);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950">
-      <p className="text-sm text-zinc-400">Logging you in...</p>
-    </div>
-  );
+  return <div className="min-h-screen bg-zinc-950" />;
 }
 
 export default function AuthCallbackPage() {
