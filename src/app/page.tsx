@@ -140,6 +140,8 @@ export default function LandingPage() {
   const [animDir, setAnimDir] = useState<"left" | "right" | null>(null);
   const navRef = useRef<HTMLElement>(null);
   const footerLogoRef = useRef<HTMLDivElement>(null);
+  const logoSpanRef = useRef<HTMLSpanElement>(null);
+  const copyrightRowRef = useRef<HTMLDivElement>(null);
   const animLock = useRef(false);
 
   const totalVenues = venues.length;
@@ -219,6 +221,20 @@ export default function LandingPage() {
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* Sync copyright row width to actual rendered PitPass text width */
+  useEffect(() => {
+    function syncWidth() {
+      if (!logoSpanRef.current || !copyrightRowRef.current) return;
+      const range = document.createRange();
+      range.selectNodeContents(logoSpanRef.current);
+      const { width } = range.getBoundingClientRect();
+      copyrightRowRef.current.style.width = `${width}px`;
+    }
+    syncWidth();
+    window.addEventListener("resize", syncWidth);
+    return () => window.removeEventListener("resize", syncWidth);
   }, []);
 
   return (
@@ -572,6 +588,7 @@ export default function LandingPage() {
               style={{ width: "calc(100% + 4rem)", marginLeft: "-2rem" }}
             >
               <span
+                ref={logoSpanRef}
                 className="footer-logo-text block font-outfit font-black tracking-[-0.04em] leading-none text-white whitespace-nowrap w-full transition-colors duration-[0.8s] ease-in-out"
                 style={{ fontSize: "clamp(5rem, 12vw, 12rem)" }}
               >
@@ -580,8 +597,13 @@ export default function LandingPage() {
             </div>
 
             {/* Copyright */}
-            <div className="col-span-full font-outfit text-[0.8rem] text-on-surface ml-0 sm:ml-[-2rem]">
-              &copy;{new Date().getFullYear()} All Rights Reserved
+            <div
+              ref={copyrightRowRef}
+              className="col-span-full font-outfit text-[0.8rem] text-white flex items-center justify-between ml-0 sm:ml-[-2rem]"
+            >
+              <span>&copy;{new Date().getFullYear()} All Rights Reserved</span>
+              <Link href="/privacy-policy" className="text-white hover:text-on-surface/60 transition-colors duration-200 no-underline">Privacy Policy</Link>
+              <Link href="/terms" className="text-white hover:text-on-surface/60 transition-colors duration-200 no-underline">Terms of Service</Link>
             </div>
           </div>
         </div>
