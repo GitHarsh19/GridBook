@@ -209,7 +209,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <div className="mt-4 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 text-sm">
               <p className="text-white font-semibold mb-1">PitPass</p>
-              <p className="text-on-surface/60">privacy@pitpass.app</p>
+              <p className="text-on-surface/60">harshitagarwal.93@gmail.com</p>
             </div>
           </section>
 
