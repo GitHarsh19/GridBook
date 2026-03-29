@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ShoppingCart, Check, Loader2, AlertCircle, CalendarCheck } from "lucide-react";
 import type { Rig } from "@/lib/data";
-import { createAppBooking } from "@/lib/data";
+import { createAppBooking, getBookedRigIdsForSlots } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
 import { formatBookingDate } from "@/lib/utils";
 
@@ -15,7 +15,9 @@ export function CheckoutBar({
     rigs,
     price,
     bookingDate,
+    bookedRigIds,
     onBookingComplete,
+    onConflict,
 }: {
     venueId: number;
     selectedRigs: number[];
@@ -23,7 +25,9 @@ export function CheckoutBar({
     rigs: Rig[];
     price: number;
     bookingDate: string;
+    bookedRigIds: Set<number>;
     onBookingComplete: (code: string) => void;
+    onConflict: () => void;
 }) {
     const [payState, setPayState] = useState<"idle" | "loading" | "done" | "error">("idle");
     const [errorMsg, setErrorMsg] = useState("");
@@ -53,6 +57,21 @@ export function CheckoutBar({
                 return;
             }
 
+            // Re-validate availability right before booking to catch race conditions
+            const freshBooked = await getBookedRigIdsForSlots(venueId, selectedSlots, bookingDate);
+            const conflicted = selectedRigs.filter((id) => freshBooked.has(id));
+            if (conflicted.length > 0) {
+                const conflictedNames = conflicted
+                    .map((id) => rigs.find((r) => r.id === id)?.name)
+                    .filter(Boolean)
+                    .join(", ");
+                setErrorMsg(`${conflictedNames} just got booked. Please select a different rig.`);
+                setPayState("error");
+                onConflict();
+                setTimeout(() => setPayState("idle"), 4000);
+                return;
+            }
+
             let customerName = "Online User";
             const { data: profile } = await supabase
                 .from("profiles")
@@ -68,7 +87,8 @@ export function CheckoutBar({
             if (!result.success) {
                 setErrorMsg(result.error ?? "Booking failed.");
                 setPayState("error");
-                setTimeout(() => setPayState("idle"), 3000);
+                onConflict();
+                setTimeout(() => setPayState("idle"), 4000);
                 return;
             }
 

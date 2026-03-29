@@ -345,6 +345,7 @@ export async function createAppBooking(
     }
 
     const code = `APP-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const checkInToken = crypto.randomUUID();
 
     // Build booking rows: one per rig × slot
     const rows = rigIds.flatMap((rigId) =>
@@ -355,6 +356,7 @@ export async function createAppBooking(
             booking_date: bookingDate,
             verification_code: code,
             source: "app" as const,
+            check_in_token: checkInToken,
             ...(userId ? { user_id: userId } : {}),
         })),
     );
@@ -507,6 +509,9 @@ export async function blockRigForWalkIn(
 
     const { error: insertError } = await supabaseAdmin.from("bookings").insert(rows);
     if (insertError) {
+        if (insertError.code === "23505") {
+            return { success: false, error: "Some slots were just booked by another user. Please refresh and try again." };
+        }
         return { success: false, error: "Failed to create booking records." };
     }
 
@@ -552,6 +557,92 @@ export async function releaseRig(rigId: number): Promise<{ success: boolean }> {
         .eq("rig_id", rigId)
         .eq("source", "walk_in");
 
+    return { success: true };
+}
+
+/**
+ * Check in a rig — set its status to "in_use" (admin only).
+ * Works for both app-booked and walk-in blocked rigs.
+ * Only allows check-in if the current time falls within a booked slot for this rig today.
+ */
+export async function checkInRig(rigId: number): Promise<{ success: boolean; error?: string }> {
+    await requireAdminSession();
+
+    const { data: rig } = await supabaseAdmin
+        .from("rigs")
+        .select("status")
+        .eq("id", rigId)
+        .single();
+    if (!rig) return { success: false, error: "Rig not found." };
+    if (rig.status !== "available" && rig.status !== "blocked" && rig.status !== "booked") {
+        return { success: false, error: "Rig cannot be checked in from its current status." };
+    }
+
+    // Verify there is a booking for this rig right now
+    const today = getTodayStr();
+    const { data: bookings } = await supabaseAdmin
+        .from("bookings")
+        .select("time_slot")
+        .eq("rig_id", rigId)
+        .eq("booking_date", today);
+
+    if (!bookings || bookings.length === 0) {
+        return { success: false, error: "No booking found for this rig today." };
+    }
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const hasMatchingSlot = bookings.some((b) => {
+        const match = b.time_slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
+        if (!match) return false;
+        let slotHour = parseInt(match[1], 10);
+        const period = match[2].toUpperCase();
+        if (period === "PM" && slotHour !== 12) slotHour += 12;
+        if (period === "AM" && slotHour === 12) slotHour = 0;
+        return currentHour === slotHour;
+    });
+
+    if (!hasMatchingSlot) {
+        return { success: false, error: "Check-in is only allowed during the booked time slot." };
+    }
+
+    const { error } = await supabaseAdmin
+        .from("rigs")
+        .update({ status: "in_use" })
+        .eq("id", rigId);
+    if (error) return { success: false, error: "Failed to update rig status." };
+
+    return { success: true };
+}
+
+/**
+ * End a session — set a rig from "in_use" back to "available" (admin only).
+ */
+export async function completeSession(rigId: number): Promise<{ success: boolean }> {
+    await requireAdminSession();
+
+    const { error } = await supabaseAdmin
+        .from("rigs")
+        .update({ status: "available" })
+        .eq("id", rigId)
+        .eq("status", "in_use");
+    if (error) return { success: false };
+
+    return { success: true };
+}
+
+/**
+ * Admin-only: cancel a booking by its ID. Deletes the booking row.
+ */
+export async function adminCancelBooking(bookingId: number): Promise<{ success: boolean; error?: string }> {
+    await requireAdminSession();
+
+    const { error } = await supabaseAdmin
+        .from("bookings")
+        .delete()
+        .eq("id", bookingId);
+
+    if (error) return { success: false, error: "Failed to cancel booking." };
     return { success: true };
 }
 

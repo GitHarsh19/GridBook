@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, MapPin } from "lucide-react";
@@ -11,12 +11,18 @@ import { TimeSelector } from "@/components/TimeSelector";
 import { RigGrid } from "@/components/RigGrid";
 import { CheckoutBar } from "@/components/CheckoutBar";
 import { type Venue, TIME_SLOTS, getBookedRigIdsForSlots, getVenueById, releaseExpiredWalkIns } from "@/lib/data";
+import { supabase } from "@/lib/supabase";
 import { getTodayStr, parseSlotStartHour } from "@/lib/utils";
 
 export default function BookingClient({ venue: initialVenue }: { venue: Venue }) {
     const router = useRouter();
     const [venue, setVenue] = useState<Venue>(initialVenue);
     const [selectedDate, setSelectedDate] = useState<string>(getTodayStr);
+
+    // Sync venue state when parent passes fresh real-time data
+    useEffect(() => {
+        setVenue(initialVenue);
+    }, [initialVenue]);
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
     const [selectedRigs, setSelectedRigs] = useState<number[]>([]);
     const [bookedRigIds, setBookedRigIds] = useState<Set<number>>(new Set());
@@ -59,6 +65,21 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
         });
     }, [disabledSlots]);
 
+    // Refresh booked rig IDs for the currently selected slots
+    const slotsRef = useRef(selectedTimeSlots);
+    const dateRef = useRef(selectedDate);
+    slotsRef.current = selectedTimeSlots;
+    dateRef.current = selectedDate;
+
+    const refreshBookedRigs = useCallback(async () => {
+        if (slotsRef.current.length === 0) {
+            setBookedRigIds(new Set());
+            return;
+        }
+        const ids = await getBookedRigIdsForSlots(venue.id, slotsRef.current, dateRef.current);
+        setBookedRigIds(ids);
+    }, [venue.id]);
+
     useEffect(() => {
         if (selectedTimeSlots.length === 0) {
             setBookedRigIds(new Set()); // eslint-disable-line react-hooks/set-state-in-effect
@@ -70,6 +91,38 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
         });
         return () => { cancelled = true; };
     }, [venue.id, selectedTimeSlots, selectedDate]);
+
+    // Real-time subscription on bookings table to catch other users' bookings
+    useEffect(() => {
+        const rigIds = venue.rigs.map((r) => r.id);
+        if (rigIds.length === 0) return;
+
+        const channel = supabase
+            .channel(`booking-conflicts-${venue.id}`)
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "bookings" },
+                (payload) => {
+                    // Only refresh if the booking is for a rig in this venue
+                    const rigId = (payload.new as { rig_id?: number })?.rig_id
+                        ?? (payload.old as { rig_id?: number })?.rig_id;
+                    if (rigId && rigIds.includes(rigId)) {
+                        refreshBookedRigs();
+                    }
+                },
+            )
+            .subscribe();
+
+        // Polling fallback: refresh every 5s while slots are selected
+        const interval = setInterval(() => {
+            if (slotsRef.current.length > 0) refreshBookedRigs();
+        }, 5_000);
+
+        return () => {
+            supabase.removeChannel(channel);
+            clearInterval(interval);
+        };
+    }, [venue.id, venue.rigs, refreshBookedRigs]);
 
     useEffect(() => {
         const availableIds = new Set(venue.rigs.filter((r) => r.status === "available").map((r) => r.id));
@@ -193,7 +246,9 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
                 rigs={venue.rigs}
                 price={venue.price}
                 bookingDate={selectedDate}
+                bookedRigIds={bookedRigIds}
                 onBookingComplete={handleBookingComplete}
+                onConflict={refreshBookedRigs}
             />
         </div>
     );

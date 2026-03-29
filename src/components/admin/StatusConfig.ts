@@ -20,12 +20,12 @@ export const STATUS_CONFIG: Record<
         clickable: true,
     },
     booked: {
-        border: "border-btn-red/20",
+        border: "border-btn-red/20 hover:border-btn-red/40",
         bg: "bg-surface-container",
         dot: "bg-btn-red",
         label: "App Booked",
         labelColor: "text-btn-red",
-        clickable: false,
+        clickable: true,
     },
     blocked: {
         border: "border-amber-500/30 hover:border-amber-400/60",
@@ -44,11 +44,11 @@ export const STATUS_CONFIG: Record<
         clickable: true,
     },
     in_use: {
-        border: "border-sky-500/30",
+        border: "border-sky-500/30 hover:border-sky-400/60",
         bg: "bg-sky-500/5",
         dot: "bg-sky-400",
         label: "In Use",
         labelColor: "text-sky-400",
-        clickable: false,
+        clickable: true,
     },
 };

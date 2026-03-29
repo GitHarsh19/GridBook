@@ -15,6 +15,7 @@ import {
     ShieldCheck,
 } from "lucide-react";
 import { supabaseAdmin } from "@/lib/supabase";
+import { checkInRig } from "@/lib/data";
 import { toast } from "sonner";
 
 /* ─── UUID v4 validation ──────────────────────────────────────────── */
@@ -151,19 +152,20 @@ export function ScannerModal({ onClose, onCheckIn }: ScannerModalProps) {
         setConfirming(true);
 
         try {
+            // Use checkInRig which validates the time slot
+            const result = await checkInRig(scannedBooking.rig_id);
+            if (!result.success) {
+                toast.error(result.error || "Check-in failed.");
+                setConfirming(false);
+                return;
+            }
+
             const { error: updateError } = await supabaseAdmin
                 .from("bookings")
                 .update({ status: "checked_in" })
                 .eq("check_in_token", scannedBooking.token);
 
             if (updateError) throw updateError;
-
-            const { error: rigError } = await supabaseAdmin
-                .from("rigs")
-                .update({ status: "in_use" })
-                .eq("id", scannedBooking.rig_id);
-
-            if (rigError) throw rigError;
 
             toast.success(
                 `${scannedBooking.customer_name} checked in — ${scannedBooking.rig_name}`,

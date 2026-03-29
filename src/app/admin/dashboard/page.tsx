@@ -35,6 +35,9 @@ import {
     releaseRig,
     releaseExpiredWalkIns,
     toggleOutOfOrder,
+    checkInRig,
+    completeSession,
+    adminCancelBooking,
     addRig,
     updateRig,
     deleteRig,
@@ -50,6 +53,8 @@ import {
     EditRigModal,
     AddVenueModal,
     EditVenueModal,
+    RigStatusModal,
+    type RigStatusAction,
     STATUS_CONFIG,
 } from "@/components/admin";
 
@@ -71,10 +76,12 @@ export default function AdminDashboardPage() {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showScanner, setShowScanner] = useState(false);
+    const [rigStatusTarget, setRigStatusTarget] = useState<DashboardRig | null>(null);
 
     // Admin date/time slot selector state
     const [adminDate, setAdminDate] = useState<string>(getTodayStr);
     const [adminSlot, setAdminSlot] = useState<string | null>(null);
+    const [slotOverviewDate, setSlotOverviewDate] = useState<string>(getTodayStr);
 
     const loadVenues = useCallback(async () => {
         try {
@@ -154,34 +161,48 @@ export default function AdminDashboardPage() {
 
     // ── Actions ──
 
-    const handleRigClick = async (rig: DashboardRig) => {
+    const handleRigClick = (rig: DashboardRig) => {
         const effective = getEffectiveStatus(rig);
-        if (effective === "booked") {
-            return;
-        } else if (effective === "available") {
+        if (effective === "available") {
             setWalkInTarget(rig);
-        } else if (rig.status === "blocked") {
-            if (window.confirm(`Release ${rig.name} back to available?`)) {
-                try {
-                    await releaseRig(rig.id);
-                } catch (err) {
-                    console.error("Release rig failed:", err);
-                    setError("Failed to release rig.");
+        } else {
+            setRigStatusTarget(rig);
+        }
+    };
+
+    const handleRigStatusAction = async (action: RigStatusAction) => {
+        setActionLoading(true);
+        try {
+            if (action.type === "check_in" && rigStatusTarget) {
+                const result = await checkInRig(rigStatusTarget.id);
+                if (!result.success) {
+                    setError(result.error || "Failed to check in.");
                     setTimeout(() => setError(null), 4000);
+                    setActionLoading(false);
+                    setRigStatusTarget(null);
+                    return;
                 }
-                loadData();
-            }
-        } else if (rig.status === "out_of_order") {
-            if (window.confirm(`Restore ${rig.name} to available?`)) {
-                try {
-                    await toggleOutOfOrder(rig.id);
-                } catch (err) {
-                    console.error("Toggle OOO failed:", err);
-                    setError("Failed to update rig status.");
+            } else if (action.type === "end_session" && rigStatusTarget) {
+                await completeSession(rigStatusTarget.id);
+            } else if (action.type === "release" && rigStatusTarget) {
+                await releaseRig(rigStatusTarget.id);
+            } else if (action.type === "cancel_booking" && action.bookingId) {
+                const result = await adminCancelBooking(action.bookingId);
+                if (!result.success) {
+                    setError(result.error || "Failed to cancel booking.");
                     setTimeout(() => setError(null), 4000);
+                    setActionLoading(false);
+                    return;
                 }
-                loadData();
             }
+        } catch (err) {
+            console.error("Rig status action failed:", err);
+            setError("Action failed. Please try again.");
+            setTimeout(() => setError(null), 4000);
+        } finally {
+            setActionLoading(false);
+            setRigStatusTarget(null);
+            loadData();
         }
     };
 
@@ -365,6 +386,14 @@ export default function AdminDashboardPage() {
     for (const b of dateBookings) {
         if (!rigSlotMap.has(b.rig_id)) rigSlotMap.set(b.rig_id, new Set());
         rigSlotMap.get(b.rig_id)!.add(b.time_slot);
+    }
+
+    // Slot overview: bookings filtered for the slot overview date picker
+    const slotOverviewBookings = bookings.filter((b) => b.booking_date === slotOverviewDate);
+    const slotRigSlotMap = new Map<number, Set<string>>();
+    for (const b of slotOverviewBookings) {
+        if (!slotRigSlotMap.has(b.rig_id)) slotRigSlotMap.set(b.rig_id, new Set());
+        slotRigSlotMap.get(b.rig_id)!.add(b.time_slot);
     }
 
     // Rigs booked for the admin-selected slot (or current time if no slot selected)
@@ -796,16 +825,24 @@ export default function AdminDashboardPage() {
                 {/* ── Slot Timeline Heatmap ── */}
                 {rigs.length > 0 && (
                 <div className="mb-8">
-                    <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
-                        <Clock className="h-3.5 w-3.5" />
-                        Slot Overview
-                        <span className="text-[10px] font-normal normal-case tracking-normal text-on-surface-variant/40">
-                            &middot; {adminDate === todayStr ? "Today" : (() => {
-                                const d = new Date(adminDate + "T00:00:00");
-                                return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-                            })()}
-                        </span>
-                    </p>
+                    <div className="mb-3 flex items-center justify-between">
+                        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
+                            <Clock className="h-3.5 w-3.5" />
+                            Slot Overview
+                            <span className="text-[10px] font-normal normal-case tracking-normal text-on-surface-variant/40">
+                                &middot; {slotOverviewDate === todayStr ? "Today" : (() => {
+                                    const d = new Date(slotOverviewDate + "T00:00:00");
+                                    return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+                                })()}
+                            </span>
+                        </p>
+                        <input
+                            type="date"
+                            value={slotOverviewDate}
+                            onChange={(e) => setSlotOverviewDate(e.target.value)}
+                            className="rounded-lg border border-white/10 bg-surface-container-high px-3 py-1.5 text-[11px] text-on-surface-variant/70 outline-none transition-colors focus:border-btn-red/50 [color-scheme:dark]"
+                        />
+                    </div>
                     <div className="overflow-x-auto rounded-2xl bg-surface-container" style={ghostCard}>
                         <table className="w-full min-w-[640px] text-[10px]">
                             <thead>
@@ -815,17 +852,14 @@ export default function AdminDashboardPage() {
                                     </th>
                                     {TIME_SLOTS.map((slot) => {
                                         const h = parseSlotStartHour(slot);
-                                        const isCurrent = adminDate === todayStr && h === now.getHours();
+                                        const isCurrent = slotOverviewDate === todayStr && h === now.getHours();
                                         return (
                                             <th
                                                 key={slot}
-                                                onClick={() => setAdminSlot(adminSlot === slot ? null : slot)}
-                                                className={`cursor-pointer px-1 py-2.5 text-center font-medium transition-colors ${
-                                                    adminSlot === slot
-                                                        ? "bg-btn-red/10 text-btn-red"
-                                                        : isCurrent
-                                                            ? "text-emerald-400"
-                                                            : "text-on-surface-variant/30 hover:text-on-surface-variant/60"
+                                                className={`px-1 py-2.5 text-center font-medium transition-colors ${
+                                                    isCurrent
+                                                        ? "text-emerald-400"
+                                                        : "text-on-surface-variant/30"
                                                 }`}
                                             >
                                                 {shortSlotLabel(slot)}
@@ -836,7 +870,7 @@ export default function AdminDashboardPage() {
                             </thead>
                             <tbody>
                                 {rigs.map((rig) => {
-                                    const rigBookedSlots = rigSlotMap.get(rig.id);
+                                    const rigBookedSlots = slotRigSlotMap.get(rig.id);
                                     return (
                                         <tr key={rig.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }} className="last:border-0">
                                             <td className="sticky left-0 z-10 bg-surface-container px-3 py-1.5 font-medium text-on-surface-variant/70">
@@ -844,12 +878,12 @@ export default function AdminDashboardPage() {
                                             </td>
                                             {TIME_SLOTS.map((slot) => {
                                                 const booking = rigBookedSlots?.has(slot)
-                                                    ? dateBookings.find((b) => b.rig_id === rig.id && b.time_slot === slot)
+                                                    ? slotOverviewBookings.find((b) => b.rig_id === rig.id && b.time_slot === slot)
                                                     : null;
                                                 const isOOO = rig.status === "out_of_order";
                                                 const h = parseSlotStartHour(slot);
-                                                const isPast = adminDate === todayStr && h < now.getHours();
-                                                const isCurrent = adminDate === todayStr && h === now.getHours();
+                                                const isPast = slotOverviewDate === todayStr && h < now.getHours();
+                                                const isCurrent = slotOverviewDate === todayStr && h === now.getHours();
 
                                                 let cellBg = "";
                                                 let cellText = "";
@@ -878,10 +912,7 @@ export default function AdminDashboardPage() {
                                                     <td
                                                         key={slot}
                                                         title={tooltip}
-                                                        onClick={() => setAdminSlot(adminSlot === slot ? null : slot)}
-                                                        className={`cursor-pointer px-1 py-1.5 text-center transition-all ${cellBg} ${
-                                                            adminSlot === slot ? "ring-1 ring-inset ring-btn-red/20" : ""
-                                                        } ${isCurrent && !booking ? "ring-1 ring-inset ring-emerald-500/20" : ""}`}
+                                                        className={`px-1 py-1.5 text-center transition-all ${cellBg} ${isCurrent && !booking ? "ring-1 ring-inset ring-emerald-500/20" : ""}`}
                                                     >
                                                         {isOOO ? (
                                                             <span className={cellText}>&mdash;</span>
@@ -1065,6 +1096,18 @@ export default function AdminDashboardPage() {
             </main>
 
             {/* ── Modals ── */}
+            {rigStatusTarget && (
+                <RigStatusModal
+                    rig={rigStatusTarget}
+                    effectiveStatus={getEffectiveStatus(rigStatusTarget)}
+                    bookings={dateBookings}
+                    adminDate={adminDate}
+                    onAction={handleRigStatusAction}
+                    onClose={() => setRigStatusTarget(null)}
+                    loading={actionLoading}
+                />
+            )}
+
             {showScanner && (
                 <ScannerModal
                     onClose={() => setShowScanner(false)}
