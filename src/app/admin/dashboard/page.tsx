@@ -404,7 +404,7 @@ export default function AdminDashboardPage() {
             {/* ── Navbar ── */}
             <nav className="fixed top-0 left-0 right-0 z-50 pointer-events-none pt-4">
                 <div className="mx-auto max-w-5xl px-4">
-                    <div className="pointer-events-auto flex items-center justify-between rounded-full px-6 py-3.5 transition-all duration-300" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <div className="pointer-events-auto flex items-center justify-between rounded-full px-3 sm:px-6 py-3.5 transition-all duration-300" style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)" }}>
                         <Link href="/" className="flex flex-col items-start justify-center">
                             <span className="text-[1.5rem] font-black tracking-[-0.04em] text-on-surface leading-none">
                                 PitPass
@@ -414,7 +414,7 @@ export default function AdminDashboardPage() {
                             </span>
                         </Link>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                             {venues.length > 0 && (
                                 <>
                                     <select
@@ -423,7 +423,7 @@ export default function AdminDashboardPage() {
                                             setSelectedVenueId(Number(e.target.value));
                                             setLoading(true);
                                         }}
-                                        className="cursor-pointer max-w-[160px] truncate rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/70 outline-none focus:border-white/20"
+                                        className="cursor-pointer max-w-[100px] sm:max-w-[160px] truncate rounded-full border border-white/10 bg-white/5 px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm text-white/70 outline-none focus:border-white/20"
                                     >
                                         {venues.map((v) => (
                                             <option key={v.id} value={v.id} className="bg-surface-container">
@@ -434,7 +434,7 @@ export default function AdminDashboardPage() {
                                     <button
                                         onClick={() => selectedVenue && setEditVenueTarget(selectedVenue)}
                                         title="Edit venue"
-                                        className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white/70 transition-all hover:bg-white hover:text-[#131313] active:scale-[0.98]"
+                                        className="hidden sm:flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white/70 transition-all hover:bg-white hover:text-[#131313] active:scale-[0.98]"
                                     >
                                         <Pencil className="h-3.5 w-3.5" />
                                         <span className="hidden sm:inline">Edit</span>
@@ -444,14 +444,14 @@ export default function AdminDashboardPage() {
                             <button
                                 onClick={() => setShowAddVenue(true)}
                                 title="Add venue"
-                                className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white/70 transition-all hover:bg-white hover:text-[#131313] active:scale-[0.98]"
+                                className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/10 px-2.5 sm:px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white/70 transition-all hover:bg-white hover:text-[#131313] active:scale-[0.98]"
                             >
                                 <Plus className="h-3.5 w-3.5" />
                                 <span className="hidden sm:inline">Venue</span>
                             </button>
                             <button
                                 onClick={handleLogout}
-                                className="flex cursor-pointer items-center gap-1.5 rounded-full bg-btn-red px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white transition-all hover:bg-white hover:text-btn-red active:scale-[0.98]"
+                                className="flex cursor-pointer items-center gap-1.5 rounded-full bg-btn-red px-2.5 sm:px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white transition-all hover:bg-white hover:text-btn-red active:scale-[0.98]"
                             >
                                 <LogOut className="h-3.5 w-3.5" />
                                 <span className="hidden sm:inline">Logout</span>
@@ -690,10 +690,10 @@ export default function AdminDashboardPage() {
                                                 handleRigClick(rig);
                                             }
                                         }}
-                                        className={`group relative flex min-h-[130px] flex-col items-center justify-center rounded-2xl border p-4 text-center transition-all duration-200 ${cfg.border} ${cfg.bg} ${cfg.clickable ? "cursor-pointer" : "cursor-default"}`}
+                                        className={`group relative flex min-h-[140px] sm:min-h-[130px] flex-col items-center justify-center rounded-2xl border p-4 pt-8 sm:pt-4 text-center transition-all duration-200 ${cfg.border} ${cfg.bg} ${cfg.clickable ? "cursor-pointer active:scale-95" : "cursor-default"}`}
                                     >
                                         {/* Edit + OOO icons (top-right) */}
-                                        <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 transition-all group-hover:opacity-100">
+                                        <div className="absolute right-2 top-2 flex gap-0.5 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();

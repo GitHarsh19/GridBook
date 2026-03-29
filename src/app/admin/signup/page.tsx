@@ -68,7 +68,10 @@ export default function AdminSignUpPage() {
         const { data, error } = await supabaseAdmin.auth.signUp({
             email: formData.email,
             password: formData.password,
-            options: { data: { full_name: formData.name } },
+            options: {
+                data: { full_name: formData.name },
+                emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent("/admin/dashboard")}&role=admin`,
+            },
         });
         if (error) { setServerError(error.message); return; }
         if (data.session && data.user) {
