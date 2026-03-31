@@ -11,6 +11,7 @@ import {
     Trash2,
     Loader2,
     AlertTriangle,
+    CheckCircle2,
 } from "lucide-react";
 import type { DashboardRig, Booking, RigStatus } from "@/lib/data";
 import { getTodayStr, parseSlotStartHour } from "@/lib/utils";
@@ -19,8 +20,9 @@ import { STATUS_CONFIG } from "./StatusConfig";
 const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
 
 export interface RigStatusAction {
-    type: "check_in" | "end_session" | "release" | "cancel_booking";
+    type: "check_in" | "end_session" | "release" | "cancel_booking" | "set_status";
     bookingId?: number;
+    status?: "available" | "booked" | "blocked";
 }
 
 export function RigStatusModal({
@@ -93,17 +95,19 @@ export function RigStatusModal({
                         <div className="mb-4 flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-btn-red" />
                             <h3 className="text-sm font-bold text-on-surface">
-                                {confirmAction.type === "cancel_booking" ? "Cancel Booking" : "Confirm Action"}
+                                {confirmAction.type === "cancel_booking" ? "Cancel Booking" : confirmAction.type === "set_status" ? "Change Status" : "Confirm Action"}
                             </h3>
                         </div>
                         <p className="mb-6 text-sm text-on-surface-variant/60">
                             {confirmAction.type === "cancel_booking"
                                 ? "This will permanently cancel this booking. The customer will lose their slot."
-                                : confirmAction.type === "end_session"
-                                    ? `End the current session and mark ${rig.name} as available?`
-                                    : confirmAction.type === "release"
-                                        ? `Release ${rig.name} and remove the walk-in booking?`
-                                        : `Check in and mark ${rig.name} as In Use?`}
+                                : confirmAction.type === "set_status"
+                                    ? `Set ${rig.name} to "${confirmAction.status === "available" ? "Available" : confirmAction.status === "booked" ? "App Booked" : "Walk-In"}"? This updates live for all customers.`
+                                    : confirmAction.type === "end_session"
+                                        ? `End the current session and mark ${rig.name} as available?`
+                                        : confirmAction.type === "release"
+                                            ? `Release ${rig.name} and remove the walk-in booking?`
+                                            : `Check in and mark ${rig.name} as In Use?`}
                         </p>
                         <div className="flex gap-2">
                             <button
@@ -128,6 +132,36 @@ export function RigStatusModal({
                 {/* Main content */}
                 {!confirmAction && (
                     <div className="p-6">
+                        {/* Manual Status Override */}
+                        <div className="mb-5">
+                            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">
+                                Set Status
+                            </p>
+                            <div className="flex gap-2">
+                                {(
+                                    [
+                                        { status: "available" as const, label: "Available", dot: "bg-emerald-400", active: "bg-emerald-500/15 border-emerald-500/40 text-emerald-400", inactive: "border-white/[0.08] text-on-surface-variant/40 hover:border-white/20 hover:text-on-surface-variant/70" },
+                                        { status: "booked" as const, label: "App Booked", dot: "bg-btn-red", active: "bg-btn-red/10 border-btn-red/40 text-btn-red", inactive: "border-white/[0.08] text-on-surface-variant/40 hover:border-white/20 hover:text-on-surface-variant/70" },
+                                        { status: "blocked" as const, label: "Walk-In", dot: "bg-amber-400", active: "bg-amber-500/10 border-amber-500/40 text-amber-400", inactive: "border-white/[0.08] text-on-surface-variant/40 hover:border-white/20 hover:text-on-surface-variant/70" },
+                                    ] as const
+                                ).map(({ status, label, dot, active, inactive }) => {
+                                    const isCurrent = effectiveStatus === status;
+                                    return (
+                                        <button
+                                            key={status}
+                                            disabled={isCurrent || loading}
+                                            onClick={() => setConfirmAction({ type: "set_status", status })}
+                                            className={`relative flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all duration-150 active:scale-[0.97] disabled:cursor-default ${isCurrent ? active : inactive}`}
+                                        >
+                                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+                                            {label}
+                                            {isCurrent && <CheckCircle2 className="h-3 w-3 shrink-0" />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
                         {/* Status Actions */}
                         <div className="mb-5">
                             <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">

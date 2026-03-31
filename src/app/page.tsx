@@ -251,11 +251,9 @@ export default function LandingPage() {
                 <ArrowSvg />
               </span>
             </button>
-          </div>
-        </div>
 
-        {/* Sign-in dropdown */}
-        <div className="signin-dropdown max-w-container-lg ml-auto mr-4 mt-2 w-fit bg-white/[0.06] backdrop-blur-[20px] rounded-2xl p-1.5 opacity-0 invisible -translate-y-2 transition-all duration-200 ease-in-out pointer-events-none" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+            {/* Sign-in dropdown */}
+            <div className="signin-dropdown absolute right-0 mt-3 w-fit bg-white/[0.06] backdrop-blur-[20px] rounded-2xl p-1.5 opacity-0 invisible -translate-y-2 transition-all duration-200 ease-in-out pointer-events-none" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
           <Link
             href="/login"
             className="flex items-center gap-3 py-2.5 px-3.5 font-outfit text-[0.8rem] font-medium rounded-xl transition-all duration-200 ease-in-out text-on-surface hover:bg-white/[0.06] no-underline"
@@ -274,6 +272,8 @@ export default function LandingPage() {
             </svg>
             Venue Admin
           </Link>
+            </div>
+          </div>
         </div>
       </nav>
 

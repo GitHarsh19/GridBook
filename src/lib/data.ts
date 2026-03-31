@@ -632,6 +632,25 @@ export async function completeSession(rigId: number): Promise<{ success: boolean
 }
 
 /**
+ * Admin-only: manually override a rig's status to available, booked, or blocked (walk-in).
+ * Propagates live to all clients via Supabase Realtime.
+ */
+export async function setRigStatusManually(
+    rigId: number,
+    status: "available" | "booked" | "blocked",
+): Promise<{ success: boolean; error?: string }> {
+    await requireAdminSession();
+
+    const { error } = await supabaseAdmin
+        .from("rigs")
+        .update({ status })
+        .eq("id", rigId);
+
+    if (error) return { success: false, error: "Failed to update rig status." };
+    return { success: true };
+}
+
+/**
  * Admin-only: cancel a booking by its ID. Deletes the booking row.
  */
 export async function adminCancelBooking(bookingId: number): Promise<{ success: boolean; error?: string }> {

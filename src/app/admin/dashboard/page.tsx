@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     CalendarCheck,
-    CalendarDays,
     IndianRupee,
     Monitor,
     Wrench,
@@ -38,6 +37,7 @@ import {
     checkInRig,
     completeSession,
     adminCancelBooking,
+    setRigStatusManually,
     addRig,
     updateRig,
     deleteRig,
@@ -45,7 +45,7 @@ import {
     updateVenue,
     deleteVenue,
 } from "@/lib/data";
-import { getTodayStr, getUpcomingDates, parseSlotStartHour, shortSlotLabel } from "@/lib/utils";
+import { getTodayStr, parseSlotStartHour, shortSlotLabel } from "@/lib/utils";
 import { ScannerModal } from "./ScannerModal";
 import {
     WalkInModal,
@@ -77,11 +77,8 @@ export default function AdminDashboardPage() {
     const [error, setError] = useState<string | null>(null);
     const [showScanner, setShowScanner] = useState(false);
     const [rigStatusTarget, setRigStatusTarget] = useState<DashboardRig | null>(null);
-
-    // Admin date/time slot selector state
-    const [adminDate, setAdminDate] = useState<string>(getTodayStr);
-    const [adminSlot, setAdminSlot] = useState<string | null>(null);
     const [slotOverviewDate, setSlotOverviewDate] = useState<string>(getTodayStr);
+
 
     const loadVenues = useCallback(async () => {
         try {
@@ -192,6 +189,15 @@ export default function AdminDashboardPage() {
                     setError(result.error || "Failed to cancel booking.");
                     setTimeout(() => setError(null), 4000);
                     setActionLoading(false);
+                    return;
+                }
+            } else if (action.type === "set_status" && action.status && rigStatusTarget) {
+                const result = await setRigStatusManually(rigStatusTarget.id, action.status);
+                if (!result.success) {
+                    setError(result.error || "Failed to update status.");
+                    setTimeout(() => setError(null), 4000);
+                    setActionLoading(false);
+                    setRigStatusTarget(null);
                     return;
                 }
             }
@@ -377,31 +383,22 @@ export default function AdminDashboardPage() {
     const todayStr = getTodayStr();
     const venuePrice = selectedVenue?.price ?? 500;
 
-    // Bookings filtered for the admin-selected date
-    const dateBookings = bookings.filter((b) => b.booking_date === adminDate);
+    // Bookings filtered for today
+    const dateBookings = bookings.filter((b) => b.booking_date === todayStr);
     const dateAppBookings = dateBookings.filter((b) => b.source === "app");
 
-    // Build a lookup: rigId → Set of booked slot strings for the selected date
-    const rigSlotMap = new Map<number, Set<string>>();
-    for (const b of dateBookings) {
-        if (!rigSlotMap.has(b.rig_id)) rigSlotMap.set(b.rig_id, new Set());
-        rigSlotMap.get(b.rig_id)!.add(b.time_slot);
-    }
-
-    // Slot overview: bookings filtered for the slot overview date picker
-    const slotOverviewBookings = bookings.filter((b) => b.booking_date === slotOverviewDate);
+    // Slot overview: bookings filtered for today
+    const slotOverviewBookings = bookings.filter((b) => b.booking_date === todayStr);
     const slotRigSlotMap = new Map<number, Set<string>>();
     for (const b of slotOverviewBookings) {
         if (!slotRigSlotMap.has(b.rig_id)) slotRigSlotMap.set(b.rig_id, new Set());
         slotRigSlotMap.get(b.rig_id)!.add(b.time_slot);
     }
 
-    // Rigs booked for the admin-selected slot (or current time if no slot selected)
+    // Rigs booked in the current hour
     const activelyBookedRigIds = new Set(
         dateBookings
             .filter((b) => {
-                if (adminSlot) return b.time_slot === adminSlot;
-                if (adminDate !== todayStr) return false;
                 const currentHour = now.getHours();
                 const slotStart = parseSlotStartHour(b.time_slot);
                 if (slotStart < 0) return false;
@@ -413,20 +410,9 @@ export default function AdminDashboardPage() {
     // Compute effective rig status: overlay bookings onto DB status
     const getEffectiveStatus = (rig: DashboardRig): RigStatus => {
         if (rig.status === "out_of_order") return "out_of_order";
-        if (rig.status === "blocked" && adminDate === todayStr) return "blocked";
+        if (rig.status === "blocked") return "blocked";
         if (activelyBookedRigIds.has(rig.id)) return "booked";
-        if (rig.status === "blocked" && adminDate !== todayStr) return "available";
         return rig.status;
-    };
-
-    // Upcoming dates for the admin date picker
-    const adminDates = getUpcomingDates(7);
-
-    const formatAdminDate = (dateStr: string, i: number) => {
-        if (i === 0) return { day: "Today", date: new Date(dateStr + "T00:00:00").getDate() };
-        if (i === 1) return { day: "Tmrw", date: new Date(dateStr + "T00:00:00").getDate() };
-        const d = new Date(dateStr + "T00:00:00");
-        return { day: d.toLocaleDateString("en-IN", { weekday: "short" }), date: d.getDate() };
     };
 
     const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
@@ -524,10 +510,7 @@ export default function AdminDashboardPage() {
                 {selectedVenueId && (<><div className="mb-6 grid grid-cols-2 gap-3">
                     <div className="rounded-2xl bg-surface-container p-5" style={ghostCard}>
                         <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-btn-red">
-                            {adminDate === todayStr ? "Today\u2019s" : (() => {
-                                const d = new Date(adminDate + "T00:00:00");
-                                return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-                            })()} Bookings
+                            Today&apos;s Bookings
                         </p>
                         <p className="text-3xl font-black tracking-tight text-on-surface">
                             {dateAppBookings.length}
@@ -549,104 +532,6 @@ export default function AdminDashboardPage() {
                     </div>
                 </div>
 
-                {/* ── Date & Time Selector ── */}
-                <div className="mb-6 rounded-2xl bg-surface-container p-5" style={ghostCard}>
-                    {/* Date picker row */}
-                    <div className="mb-5">
-                        <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
-                            <CalendarDays className="h-3.5 w-3.5" />
-                            Date
-                        </p>
-                        <div className="hide-scrollbar flex gap-2 overflow-x-auto pb-1">
-                            {adminDates.map((dateStr, i) => {
-                                const isSelected = adminDate === dateStr;
-                                const { day, date } = formatAdminDate(dateStr, i);
-                                const hasBookings = bookings.some((b) => b.booking_date === dateStr);
-                                return (
-                                    <button
-                                        key={dateStr}
-                                        onClick={() => { setAdminDate(dateStr); setAdminSlot(null); }}
-                                        className={`relative flex shrink-0 cursor-pointer flex-col items-center rounded-2xl px-4 py-2.5 text-xs transition-all duration-150 active:scale-95 ${
-                                            isSelected
-                                                ? "bg-btn-red text-white"
-                                                : "bg-surface-container-high text-on-surface-variant/60 hover:bg-surface-container-highest hover:text-on-surface"
-                                        }`}
-                                        style={isSelected ? { boxShadow: "0 4px 16px rgba(217,51,29,0.25)" } : {}}
-                                    >
-                                        <span className="font-semibold uppercase tracking-wider opacity-70">{day}</span>
-                                        <span className="text-lg font-black leading-tight">{date}</span>
-                                        {hasBookings && (
-                                            <span className={`absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full ${isSelected ? "bg-white/70" : "bg-btn-red/60"}`} />
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Time slot row */}
-                    <div>
-                        <div className="mb-3 flex items-center justify-between">
-                            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
-                                <Clock className="h-3.5 w-3.5" />
-                                Time Slot
-                                {adminSlot && (
-                                    <span className="rounded-full bg-btn-red/10 px-2 py-0.5 text-[10px] text-btn-red normal-case tracking-normal">
-                                        {adminSlot}
-                                    </span>
-                                )}
-                            </p>
-                            {adminSlot && (
-                                <button
-                                    onClick={() => setAdminSlot(null)}
-                                    className="flex cursor-pointer items-center gap-1 text-[10px] text-on-surface-variant/40 transition-colors hover:text-on-surface"
-                                >
-                                    <X className="h-3 w-3" />
-                                    Clear
-                                </button>
-                            )}
-                        </div>
-                        <div className="hide-scrollbar flex gap-1.5 overflow-x-auto pb-1">
-                            {TIME_SLOTS.map((slot) => {
-                                const isSelected = adminSlot === slot;
-                                const slotHour = parseSlotStartHour(slot);
-                                const isPast = adminDate === todayStr && slotHour <= now.getHours();
-                                const isCurrent = adminDate === todayStr && slotHour === now.getHours();
-                                const slotBookingCount = dateBookings.filter((b) => b.time_slot === slot).length;
-                                return (
-                                    <button
-                                        key={slot}
-                                        onClick={() => setAdminSlot(isSelected ? null : slot)}
-                                        className={`relative shrink-0 cursor-pointer rounded-xl px-3 py-2 text-[11px] font-medium transition-all duration-150 ${
-                                            isSelected
-                                                ? "bg-btn-red text-white"
-                                                : isPast
-                                                    ? "bg-surface-container-high/40 text-on-surface-variant/20"
-                                                    : "bg-surface-container-high text-on-surface-variant/60 hover:bg-surface-container-highest hover:text-on-surface active:scale-95"
-                                        }`}
-                                        style={isSelected ? { boxShadow: "0 2px 12px rgba(217,51,29,0.2)" } : {}}
-                                    >
-                                        {isCurrent && (
-                                            <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 text-[8px] font-bold uppercase text-emerald-400">
-                                                now
-                                            </span>
-                                        )}
-                                        {shortSlotLabel(slot)}
-                                        {slotBookingCount > 0 && (
-                                            <span className={`ml-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${
-                                                isSelected
-                                                    ? "bg-white/20 text-white"
-                                                    : "bg-btn-red/20 text-btn-red"
-                                            }`}>
-                                                {slotBookingCount}
-                                            </span>
-                                        )}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
 
                 {/* ── Live Floor Grid ── */}
                 <div className="mb-8">
@@ -718,9 +603,7 @@ export default function AdminDashboardPage() {
                             {rigs.map((rig) => {
                                 const effectiveStatus = getEffectiveStatus(rig);
                                 const cfg = STATUS_CONFIG[effectiveStatus];
-                                const booking = adminSlot
-                                    ? dateBookings.find((b) => b.rig_id === rig.id && b.time_slot === adminSlot)
-                                    : dateBookings.find((b) => b.rig_id === rig.id);
+                                const booking = dateBookings.find((b) => b.rig_id === rig.id);
 
                                 return (
                                     <div
@@ -959,18 +842,12 @@ export default function AdminDashboardPage() {
                 {/* ── Bookings Schedule Ledger ── */}
                 <div>
                     {(() => {
-                        const ledgerBookings = adminSlot
-                            ? dateBookings.filter((b) => b.time_slot === adminSlot)
-                            : dateBookings;
-                        const ledgerLabel = adminDate === todayStr ? "Today" : (() => {
-                            const d = new Date(adminDate + "T00:00:00");
-                            return d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
-                        })();
+                        const ledgerBookings = dateBookings;
                         return (<>
                     <div className="mb-4 flex items-center gap-3">
                         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
                             <Users className="h-3.5 w-3.5" />
-                            {ledgerLabel}{adminSlot ? ` \u00b7 ${adminSlot}` : ""} Bookings
+                            Today&apos;s Bookings
                         </p>
                         <span className="rounded-full bg-surface-container-high px-2.5 py-0.5 text-[10px] font-semibold text-on-surface-variant/50">
                             {ledgerBookings.length}
@@ -981,7 +858,7 @@ export default function AdminDashboardPage() {
                         <div className="rounded-2xl bg-surface-container p-8 text-center" style={ghostCard}>
                             <CalendarCheck className="mx-auto mb-2 h-6 w-6 text-on-surface-variant/20" />
                             <p className="text-sm text-on-surface-variant/40">
-                                No bookings {adminSlot ? "for this slot" : "for this date"}
+                                No bookings for today
                             </p>
                         </div>
                     ) : (
@@ -1101,7 +978,7 @@ export default function AdminDashboardPage() {
                     rig={rigStatusTarget}
                     effectiveStatus={getEffectiveStatus(rigStatusTarget)}
                     bookings={dateBookings}
-                    adminDate={adminDate}
+                    adminDate={todayStr}
                     onAction={handleRigStatusAction}
                     onClose={() => setRigStatusTarget(null)}
                     loading={actionLoading}
@@ -1118,7 +995,7 @@ export default function AdminDashboardPage() {
             {walkInTarget && (
                 <WalkInModal
                     rig={walkInTarget}
-                    initialDate={adminDate}
+                    initialDate={todayStr}
                     existingBookings={bookings}
                     onConfirm={handleBlockWalkIn}
                     onClose={() => setWalkInTarget(null)}
