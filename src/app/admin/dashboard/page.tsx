@@ -30,14 +30,10 @@ import {
     getVenuesList,
     getDashboardRigs,
     getTodaysBookings,
-    blockRigForWalkIn,
-    releaseRig,
     releaseExpiredWalkIns,
     toggleOutOfOrder,
-    checkInRig,
-    completeSession,
     adminCancelBooking,
-    setRigStatusManually,
+    adminBookSlot,
     addRig,
     updateRig,
     deleteRig,
@@ -53,8 +49,6 @@ import {
     EditRigModal,
     AddVenueModal,
     EditVenueModal,
-    RigStatusModal,
-    type RigStatusAction,
     STATUS_CONFIG,
 } from "@/components/admin";
 
@@ -76,7 +70,7 @@ export default function AdminDashboardPage() {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showScanner, setShowScanner] = useState(false);
-    const [rigStatusTarget, setRigStatusTarget] = useState<DashboardRig | null>(null);
+    const [preSelectedSlots, setPreSelectedSlots] = useState<string[]>([]);
     const [slotOverviewDate, setSlotOverviewDate] = useState<string>(getTodayStr);
 
 
@@ -159,70 +153,33 @@ export default function AdminDashboardPage() {
     // ── Actions ──
 
     const handleRigClick = (rig: DashboardRig) => {
-        const effective = getEffectiveStatus(rig);
-        if (effective === "available") {
-            setWalkInTarget(rig);
-        } else {
-            setRigStatusTarget(rig);
-        }
+        setPreSelectedSlots([]);
+        setWalkInTarget(rig);
     };
 
-    const handleRigStatusAction = async (action: RigStatusAction) => {
-        setActionLoading(true);
-        try {
-            if (action.type === "check_in" && rigStatusTarget) {
-                const result = await checkInRig(rigStatusTarget.id);
-                if (!result.success) {
-                    setError(result.error || "Failed to check in.");
-                    setTimeout(() => setError(null), 4000);
-                    setActionLoading(false);
-                    setRigStatusTarget(null);
-                    return;
-                }
-            } else if (action.type === "end_session" && rigStatusTarget) {
-                await completeSession(rigStatusTarget.id);
-            } else if (action.type === "release" && rigStatusTarget) {
-                await releaseRig(rigStatusTarget.id);
-            } else if (action.type === "cancel_booking" && action.bookingId) {
-                const result = await adminCancelBooking(action.bookingId);
-                if (!result.success) {
-                    setError(result.error || "Failed to cancel booking.");
-                    setTimeout(() => setError(null), 4000);
-                    setActionLoading(false);
-                    return;
-                }
-            } else if (action.type === "set_status" && action.status && rigStatusTarget) {
-                const result = await setRigStatusManually(rigStatusTarget.id, action.status);
-                if (!result.success) {
-                    setError(result.error || "Failed to update status.");
-                    setTimeout(() => setError(null), 4000);
-                    setActionLoading(false);
-                    setRigStatusTarget(null);
-                    return;
-                }
-            }
-        } catch (err) {
-            console.error("Rig status action failed:", err);
-            setError("Action failed. Please try again.");
-            setTimeout(() => setError(null), 4000);
-        } finally {
-            setActionLoading(false);
-            setRigStatusTarget(null);
-            loadData();
-        }
-    };
 
-    const handleBlockWalkIn = async (slots: string[], date: string, customerName: string) => {
+    const handleBlockWalkIn = async (
+        slots: { slot: string; source: "app" | "walk_in"; inUse: boolean }[],
+        date: string,
+        customerName: string,
+    ) => {
         if (!walkInTarget) return;
         setActionLoading(true);
         try {
-            const result = await blockRigForWalkIn(walkInTarget.id, slots, date, customerName);
-            if (!result.success) {
-                setError(
-                    result.error ||
-                        "Slot just secured online. Select another rig.",
+            for (const { slot, source, inUse } of slots) {
+                const result = await adminBookSlot(
+                    walkInTarget.id,
+                    slot,
+                    date,
+                    source,
+                    inUse,
+                    customerName || undefined,
                 );
-                setTimeout(() => setError(null), 4000);
+                if (!result.success) {
+                    setError(result.error || "Slot just secured online. Select another rig.");
+                    setTimeout(() => setError(null), 4000);
+                    break;
+                }
             }
         } catch (err) {
             console.error("Block walk-in failed:", err);
@@ -231,6 +188,23 @@ export default function AdminDashboardPage() {
         } finally {
             setActionLoading(false);
             setWalkInTarget(null);
+            loadData();
+        }
+    };
+
+    const handleCancelBookingFromModal = async (bookingId: number) => {
+        setActionLoading(true);
+        try {
+            const result = await adminCancelBooking(bookingId);
+            if (!result.success) {
+                setError(result.error || "Failed to cancel booking.");
+                setTimeout(() => setError(null), 4000);
+            }
+        } catch {
+            setError("Failed to cancel booking.");
+            setTimeout(() => setError(null), 4000);
+        } finally {
+            setActionLoading(false);
             loadData();
         }
     };
@@ -270,11 +244,11 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const handleEditRig = async (name: string, specs: string) => {
+    const handleEditRig = async (name: string, specs: string, status?: import("@/lib/data").RigStatus) => {
         if (!editTarget) return;
         setActionLoading(true);
         try {
-            const result = await updateRig(editTarget.id, name, specs);
+            const result = await updateRig(editTarget.id, name, specs, status);
             if (!result.success) {
                 setError(result.error || "Failed to update rig.");
                 setTimeout(() => setError(null), 4000);
@@ -513,10 +487,10 @@ export default function AdminDashboardPage() {
                             Today&apos;s Bookings
                         </p>
                         <p className="text-3xl font-black tracking-tight text-on-surface">
-                            {dateAppBookings.length}
+                            {dateBookings.length}
                         </p>
                         <p className="mt-1 flex items-center gap-1 text-[10px] text-on-surface-variant/40">
-                            <CalendarCheck className="h-3 w-3" /> App only
+                            <CalendarCheck className="h-3 w-3" /> {dateAppBookings.length} App &middot; {dateBookings.length - dateAppBookings.length} Walk-In
                         </p>
                     </div>
                     <div className="rounded-2xl bg-surface-container p-5" style={ghostCard}>
@@ -524,7 +498,7 @@ export default function AdminDashboardPage() {
                             Est. Revenue
                         </p>
                         <p className="text-3xl font-black tracking-tight text-on-surface">
-                            ₹{(dateAppBookings.length * venuePrice).toLocaleString("en-IN")}
+                            ₹{(dateBookings.length * venuePrice).toLocaleString("en-IN")}
                         </p>
                         <p className="mt-1 flex items-center gap-1 text-[10px] text-on-surface-variant/40">
                             <IndianRupee className="h-3 w-3" /> ₹{venuePrice}/slot
@@ -791,11 +765,19 @@ export default function AdminDashboardPage() {
                                                     tooltip = "Past";
                                                 }
 
+                                                const isClickable = !isOOO && !booking && !isPast;
+
                                                 return (
                                                     <td
                                                         key={slot}
                                                         title={tooltip}
-                                                        className={`px-1 py-1.5 text-center transition-all ${cellBg} ${isCurrent && !booking ? "ring-1 ring-inset ring-emerald-500/20" : ""}`}
+                                                        onClick={() => {
+                                                            if (isClickable) {
+                                                                setPreSelectedSlots([slot]);
+                                                                setWalkInTarget(rig);
+                                                            }
+                                                        }}
+                                                        className={`px-1 py-1.5 text-center transition-all ${cellBg} ${isCurrent && !booking ? "ring-1 ring-inset ring-emerald-500/20" : ""} ${isClickable ? "cursor-pointer hover:bg-white/[0.04]" : ""}`}
                                                     >
                                                         {isOOO ? (
                                                             <span className={cellText}>&mdash;</span>
@@ -973,18 +955,6 @@ export default function AdminDashboardPage() {
             </main>
 
             {/* ── Modals ── */}
-            {rigStatusTarget && (
-                <RigStatusModal
-                    rig={rigStatusTarget}
-                    effectiveStatus={getEffectiveStatus(rigStatusTarget)}
-                    bookings={dateBookings}
-                    adminDate={todayStr}
-                    onAction={handleRigStatusAction}
-                    onClose={() => setRigStatusTarget(null)}
-                    loading={actionLoading}
-                />
-            )}
-
             {showScanner && (
                 <ScannerModal
                     onClose={() => setShowScanner(false)}
@@ -996,9 +966,11 @@ export default function AdminDashboardPage() {
                 <WalkInModal
                     rig={walkInTarget}
                     initialDate={todayStr}
+                    initialSlots={preSelectedSlots.length > 0 ? preSelectedSlots : undefined}
                     existingBookings={bookings}
                     onConfirm={handleBlockWalkIn}
-                    onClose={() => setWalkInTarget(null)}
+                    onCancelBooking={handleCancelBookingFromModal}
+                    onClose={() => { setWalkInTarget(null); setPreSelectedSlots([]); }}
                     loading={actionLoading}
                 />
             )}

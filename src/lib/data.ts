@@ -1,12 +1,12 @@
 import { supabase, supabaseAdmin } from "./supabase";
-import { getTodayStr, toDateStr } from "./utils";
+import { getTodayStr, toDateStr, parseSlotStartHour } from "./utils";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
 export interface Rig {
     id: number;
     name: string;
-    status: "available" | "booked";
+    status: RigStatus;
     specs: string;
 }
 
@@ -651,6 +651,96 @@ export async function setRigStatusManually(
 }
 
 /**
+ * Admin-only: book a single slot for a rig with a chosen source/status.
+ * source "app" → App Booked, "walk_in" → Walk-In.
+ * If markInUse is true the rig is also set to "in_use".
+ */
+export async function adminBookSlot(
+    rigId: number,
+    slot: string,
+    bookingDate: string,
+    source: "app" | "walk_in",
+    markInUse: boolean = false,
+    customerName?: string,
+): Promise<{ success: boolean; error?: string }> {
+    await requireAdminSession();
+
+    if (!TIME_SLOTS.includes(slot)) {
+        return { success: false, error: "Invalid time slot." };
+    }
+
+    const { data: rig } = await supabaseAdmin
+        .from("rigs")
+        .select("status")
+        .eq("id", rigId)
+        .single();
+    if (!rig) return { success: false, error: "Rig not found." };
+    if (rig.status === "out_of_order") {
+        return { success: false, error: "Rig is out of order." };
+    }
+
+    // Check for conflict
+    const { data: conflicts } = await supabaseAdmin
+        .from("bookings")
+        .select("id")
+        .eq("rig_id", rigId)
+        .eq("booking_date", bookingDate)
+        .eq("time_slot", slot);
+    if (conflicts && conflicts.length > 0) {
+        return { success: false, error: "Slot is already booked." };
+    }
+
+    const prefix = source === "app" ? "APP" : "WLK";
+    const code = `${prefix}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const name = customerName?.trim() || (source === "app" ? "App Booking" : "Walk-In");
+
+    // Compute blocked_until from slot end hour
+    const endMatch = slot.match(/–\s*(\d{1,2}):00\s*(AM|PM)/i);
+    let endHour = 0;
+    if (endMatch) {
+        endHour = parseInt(endMatch[1], 10);
+        const p = endMatch[2].toUpperCase();
+        if (p === "PM" && endHour !== 12) endHour += 12;
+        if (p === "AM" && endHour === 12) endHour = 0;
+    }
+    const blockedDate = new Date(bookingDate + "T00:00:00");
+    blockedDate.setHours(endHour, 0, 0, 0);
+
+    const { error: insertError } = await supabaseAdmin.from("bookings").insert({
+        rig_id: rigId,
+        customer_name: name,
+        time_slot: slot,
+        booking_date: bookingDate,
+        verification_code: code,
+        source,
+        blocked_until: blockedDate.toISOString(),
+    });
+    if (insertError) {
+        if (insertError.code === "23505") {
+            return { success: false, error: "Slot was just booked. Please refresh." };
+        }
+        return { success: false, error: "Failed to create booking." };
+    }
+
+    // Update rig status if needed
+    if (markInUse) {
+        await supabaseAdmin.from("rigs").update({ status: "in_use" }).eq("id", rigId);
+    } else {
+        const today = getTodayStr();
+        if (bookingDate === today) {
+            const currentHour = new Date().getHours();
+            const startHour = parseSlotStartHour(slot);
+            if (currentHour >= startHour && currentHour < startHour + 1 && rig.status === "available") {
+                const newStatus = source === "walk_in" ? "blocked" : "booked";
+                await supabaseAdmin.from("rigs").update({ status: newStatus }).eq("id", rigId);
+            }
+        }
+    }
+
+    return { success: true };
+}
+
+/**
  * Admin-only: cancel a booking by its ID. Deletes the booking row.
  */
 export async function adminCancelBooking(bookingId: number): Promise<{ success: boolean; error?: string }> {
@@ -757,6 +847,7 @@ export async function updateRig(
     rigId: number,
     name: string,
     specs: string,
+    status?: RigStatus,
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
 
@@ -778,9 +869,12 @@ export async function updateRig(
         return { success: false, error: "A rig with this name already exists in this venue." };
     }
 
+    const updatePayload: { name: string; specs: string; status?: RigStatus } = { name, specs };
+    if (status) updatePayload.status = status;
+
     const { error } = await supabaseAdmin
         .from("rigs")
-        .update({ name, specs })
+        .update(updatePayload)
         .eq("id", rigId);
 
     if (error) return { success: false, error: error.message };

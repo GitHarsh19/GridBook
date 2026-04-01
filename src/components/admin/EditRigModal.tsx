@@ -1,13 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, X } from "lucide-react";
-import type { DashboardRig } from "@/lib/data";
+import { AlertTriangle, CheckCircle2, X } from "lucide-react";
+import type { DashboardRig, RigStatus } from "@/lib/data";
 
 const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
 
 const inputClass =
     "w-full rounded-full border border-on-surface bg-transparent px-5 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/30 outline-none transition-colors focus:border-primary-container";
+
+const STATUS_OPTIONS: { value: RigStatus; label: string; dot: string; active: string; inactive: string }[] = [
+    { value: "available", label: "Available", dot: "bg-emerald-400", active: "bg-emerald-500/15 border-emerald-500/40 text-emerald-400", inactive: "border-white/[0.08] text-on-surface-variant/40 hover:border-white/20 hover:text-on-surface-variant/70" },
+    { value: "booked", label: "App Booked", dot: "bg-btn-red", active: "bg-btn-red/10 border-btn-red/40 text-btn-red", inactive: "border-white/[0.08] text-on-surface-variant/40 hover:border-white/20 hover:text-on-surface-variant/70" },
+    { value: "blocked", label: "Walk-In", dot: "bg-amber-400", active: "bg-amber-500/10 border-amber-500/40 text-amber-400", inactive: "border-white/[0.08] text-on-surface-variant/40 hover:border-white/20 hover:text-on-surface-variant/70" },
+    { value: "in_use", label: "In Use", dot: "bg-sky-400", active: "bg-sky-500/10 border-sky-500/40 text-sky-400", inactive: "border-white/[0.08] text-on-surface-variant/40 hover:border-white/20 hover:text-on-surface-variant/70" },
+    { value: "out_of_order", label: "Out of Order", dot: "bg-on-surface-variant/30", active: "bg-surface-container-high border-white/20 text-on-surface-variant/60", inactive: "border-white/[0.08] text-on-surface-variant/40 hover:border-white/20 hover:text-on-surface-variant/70" },
+];
 
 export function EditRigModal({
     rig,
@@ -17,13 +25,14 @@ export function EditRigModal({
     loading,
 }: {
     rig: DashboardRig;
-    onSave: (name: string, specs: string) => void;
+    onSave: (name: string, specs: string, status?: RigStatus) => void;
     onDelete: () => void;
     onClose: () => void;
     loading: boolean;
 }) {
     const [name, setName] = useState(rig.name);
     const [specs, setSpecs] = useState(rig.specs);
+    const [status, setStatus] = useState<RigStatus>(rig.status);
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     if (confirmingDelete) {
@@ -114,6 +123,27 @@ export function EditRigModal({
                             className={inputClass}
                         />
                     </div>
+                    <div>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
+                            Status
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {STATUS_OPTIONS.map(({ value, label, dot, active, inactive }) => {
+                                const isCurrent = status === value;
+                                return (
+                                    <button
+                                        key={value}
+                                        onClick={() => setStatus(value)}
+                                        className={`flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-semibold transition-all duration-150 active:scale-[0.97] ${isCurrent ? active : inactive}`}
+                                    >
+                                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+                                        {label}
+                                        {isCurrent && <CheckCircle2 className="h-3 w-3 shrink-0" />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
 
                 <div className="mt-6 flex items-center justify-between gap-2">
@@ -131,7 +161,7 @@ export function EditRigModal({
                             Cancel
                         </button>
                         <button
-                            onClick={() => onSave(name.trim(), specs.trim())}
+                            onClick={() => onSave(name.trim(), specs.trim(), status)}
                             disabled={loading || !name.trim()}
                             className="cursor-pointer rounded-full bg-btn-red px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                         >

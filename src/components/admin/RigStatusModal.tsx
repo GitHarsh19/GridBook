@@ -12,17 +12,22 @@ import {
     Loader2,
     AlertTriangle,
     CheckCircle2,
+    UserPlus,
 } from "lucide-react";
 import type { DashboardRig, Booking, RigStatus } from "@/lib/data";
-import { getTodayStr, parseSlotStartHour } from "@/lib/utils";
+import { TIME_SLOTS } from "@/lib/data";
+import { getTodayStr, parseSlotStartHour, shortSlotLabel } from "@/lib/utils";
 import { STATUS_CONFIG } from "./StatusConfig";
 
 const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
 
 export interface RigStatusAction {
-    type: "check_in" | "end_session" | "release" | "cancel_booking" | "set_status";
+    type: "check_in" | "end_session" | "release" | "cancel_booking" | "set_status" | "book_slot";
     bookingId?: number;
     status?: "available" | "booked" | "blocked";
+    slot?: string;
+    slotSource?: "app" | "walk_in";
+    markInUse?: boolean;
 }
 
 export function RigStatusModal({
@@ -32,6 +37,7 @@ export function RigStatusModal({
     adminDate,
     onAction,
     onClose,
+    onOpenWalkIn,
     loading,
 }: {
     rig: DashboardRig;
@@ -40,12 +46,18 @@ export function RigStatusModal({
     adminDate: string;
     onAction: (action: RigStatusAction) => void;
     onClose: () => void;
+    onOpenWalkIn: () => void;
     loading: boolean;
 }) {
     const [confirmAction, setConfirmAction] = useState<RigStatusAction | null>(null);
+    const [slotPickerSlot, setSlotPickerSlot] = useState<string | null>(null);
     const cfg = STATUS_CONFIG[effectiveStatus];
 
     const rigBookings = bookings.filter((b) => b.rig_id === rig.id);
+    const rigBookedSlotMap = new Map<string, Booking>();
+    for (const b of rigBookings) {
+        rigBookedSlotMap.set(b.time_slot, b);
+    }
 
     // Check if check-in is allowed: must be today and current hour must match a booked slot
     const isToday = adminDate === getTodayStr();
@@ -101,13 +113,15 @@ export function RigStatusModal({
                         <p className="mb-6 text-sm text-on-surface-variant/60">
                             {confirmAction.type === "cancel_booking"
                                 ? "This will permanently cancel this booking. The customer will lose their slot."
-                                : confirmAction.type === "set_status"
-                                    ? `Set ${rig.name} to "${confirmAction.status === "available" ? "Available" : confirmAction.status === "booked" ? "App Booked" : "Walk-In"}"? This updates live for all customers.`
-                                    : confirmAction.type === "end_session"
-                                        ? `End the current session and mark ${rig.name} as available?`
-                                        : confirmAction.type === "release"
-                                            ? `Release ${rig.name} and remove the walk-in booking?`
-                                            : `Check in and mark ${rig.name} as In Use?`}
+                                : confirmAction.type === "book_slot"
+                                    ? `Book ${shortSlotLabel(confirmAction.slot || "")} as "${confirmAction.markInUse ? "In Use" : confirmAction.slotSource === "app" ? "App Booked" : "Walk-In"}" for ${rig.name}?`
+                                    : confirmAction.type === "set_status"
+                                        ? `Set ${rig.name} to "${confirmAction.status === "available" ? "Available" : confirmAction.status === "booked" ? "App Booked" : "Walk-In"}"? This updates live for all customers.`
+                                        : confirmAction.type === "end_session"
+                                            ? `End the current session and mark ${rig.name} as available?`
+                                            : confirmAction.type === "release"
+                                                ? `Release ${rig.name} and remove the walk-in booking?`
+                                                : `Check in and mark ${rig.name} as In Use?`}
                         </p>
                         <div className="flex gap-2">
                             <button
@@ -160,6 +174,106 @@ export function RigStatusModal({
                                     );
                                 })}
                             </div>
+                        </div>
+
+                        {/* Time Slots */}
+                        <div className="mb-5">
+                            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/40">
+                                <span className="flex items-center gap-1.5">
+                                    <Clock className="h-3 w-3" />
+                                    Time Slots
+                                </span>
+                            </p>
+                            <div className="grid grid-cols-4 gap-1.5">
+                                {TIME_SLOTS.map((slot) => {
+                                    const booking = rigBookedSlotMap.get(slot);
+                                    const isBooked = !!booking;
+                                    const h = parseSlotStartHour(slot);
+                                    const now = new Date();
+                                    const isPast = adminDate === getTodayStr() && h < now.getHours();
+                                    const isOOO = rig.status === "out_of_order";
+                                    const isDisabled = isBooked || isPast || isOOO;
+                                    const isPickerOpen = slotPickerSlot === slot;
+
+                                    return (
+                                        <div key={slot} className="relative">
+                                            <button
+                                                disabled={isDisabled && !isBooked}
+                                                onClick={() => {
+                                                    if (isBooked) return;
+                                                    setSlotPickerSlot(isPickerOpen ? null : slot);
+                                                }}
+                                                className={`w-full rounded-lg px-1 py-2 text-[10px] font-medium transition-all ${
+                                                    isBooked
+                                                        ? booking.source === "app"
+                                                            ? "bg-btn-red/10 text-btn-red/60 cursor-default"
+                                                            : "bg-amber-500/10 text-amber-400/60 cursor-default"
+                                                        : isPast || isOOO
+                                                            ? "bg-surface-container-high/20 text-on-surface-variant/20 cursor-not-allowed"
+                                                            : isPickerOpen
+                                                                ? "bg-white/10 text-on-surface ring-1 ring-white/20 cursor-pointer"
+                                                                : "bg-surface-container-high/40 text-on-surface-variant/50 hover:bg-surface-container-highest hover:text-on-surface cursor-pointer"
+                                                }`}
+                                            >
+                                                {shortSlotLabel(slot)}
+                                                {isBooked && (
+                                                    <span className="block truncate text-[8px] opacity-60">
+                                                        {booking.source === "app" ? "App" : "WLK"}
+                                                    </span>
+                                                )}
+                                            </button>
+
+                                            {/* Status picker popover */}
+                                            {isPickerOpen && (
+                                                <div
+                                                    className="absolute left-1/2 z-20 mt-1 -translate-x-1/2 rounded-xl bg-surface-container-high p-2 shadow-xl"
+                                                    style={{ border: "1px solid rgba(255,255,255,0.1)", minWidth: "130px" }}
+                                                >
+                                                    <p className="mb-1.5 text-center text-[9px] font-semibold uppercase tracking-wider text-on-surface-variant/40">
+                                                        Set as
+                                                    </p>
+                                                    {([
+                                                        { label: "App Booked", source: "app" as const, inUse: false, dot: "bg-btn-red", hover: "hover:bg-btn-red/20 hover:text-btn-red" },
+                                                        { label: "Walk-In", source: "walk_in" as const, inUse: false, dot: "bg-amber-400", hover: "hover:bg-amber-500/20 hover:text-amber-400" },
+                                                        { label: "In Use", source: "walk_in" as const, inUse: true, dot: "bg-sky-400", hover: "hover:bg-sky-500/20 hover:text-sky-400" },
+                                                    ]).map(({ label, source, inUse, dot, hover }) => (
+                                                        <button
+                                                            key={label}
+                                                            onClick={() => {
+                                                                setSlotPickerSlot(null);
+                                                                setConfirmAction({
+                                                                    type: "book_slot",
+                                                                    slot,
+                                                                    slotSource: source,
+                                                                    markInUse: inUse,
+                                                                });
+                                                            }}
+                                                            className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-medium text-on-surface-variant/60 transition-all ${hover}`}
+                                                        >
+                                                            <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
+                                                            {label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Book Walk-In button */}
+                        <div className="mb-5">
+                            <button
+                                onClick={onOpenWalkIn}
+                                className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm font-semibold text-amber-400 transition-all duration-200 hover:bg-amber-500 hover:text-white active:scale-[0.98]"
+                            >
+                                <UserPlus className="h-4 w-4" />
+                                Book Walk-In
+                            </button>
+                            <p className="mt-1.5 text-center text-[10px] text-on-surface-variant/30">
+                                Full booking flow with customer name, date &amp; multi-slot selection
+                            </p>
                         </div>
 
                         {/* Status Actions */}
