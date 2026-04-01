@@ -366,3 +366,131 @@ html {
     flex-direction: column;
   }
 }
+
+/* ══════════════════════════════════════
+   Venue Map — Dark Leaflet Overrides
+   ══════════════════════════════════════ */
+
+/* Remove default Leaflet marker styling artifacts */
+.venue-marker,
+.user-location-marker {
+  background: none !important;
+  border: none !important;
+}
+
+/* Dark popup styling */
+.venue-map-popup .leaflet-popup-content-wrapper {
+  background: #1f1f1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+.venue-map-popup .leaflet-popup-tip {
+  background: #1f1f1f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: none;
+  border-right: none;
+}
+.venue-map-popup .leaflet-popup-close-button {
+  color: rgba(255, 255, 255, 0.5) !important;
+  font-size: 18px;
+  top: 6px !important;
+  right: 8px !important;
+}
+.venue-map-popup .leaflet-popup-close-button:hover {
+  color: #fff !important;
+}
+.venue-map-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+}
+
+/* Popup inner content */
+.venue-popup {
+  padding: 16px 18px;
+  font-family: var(--font-outfit-var), sans-serif;
+}
+.venue-popup-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 4px;
+  letter-spacing: -0.02em;
+}
+.venue-popup-location {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 10px;
+}
+.venue-popup-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.venue-popup-rigs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.venue-popup-rigs.available {
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+.venue-popup-rigs.full {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+.venue-popup-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.venue-popup-rigs.available .venue-popup-dot {
+  background: #4ade80;
+}
+.venue-popup-rigs.full .venue-popup-dot {
+  background: #f87171;
+}
+.venue-popup-price {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffb5a0;
+}
+.venue-popup-btn {
+  display: block;
+  width: 100%;
+  padding: 8px 0;
+  background: #d9331d;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-family: var(--font-outfit-var), sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  letter-spacing: -0.01em;
+}
+.venue-popup-btn:hover {
+  background: #e8432d;
+}
+.venue-popup-btn:active {
+  transform: scale(0.98);
+}
+
+/* User location pulse animation */
+.user-location-marker {
+  animation: user-pulse 2s ease-in-out infinite;
+}
+@keyframes user-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.15); }
+}
