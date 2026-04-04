@@ -1,5 +1,5 @@
 import { supabase, supabaseAdmin } from "./supabase";
-import { getTodayStr, toDateStr, parseSlotStartHour } from "./utils";
+import { getTodayStr, toDateStr, parseSlotStartHour, parseSlotEndHour, isSlotPast } from "./utils";
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
@@ -277,21 +277,10 @@ export async function createAppBooking(
         return { success: false, error: "Cannot book more than 7 days in advance." };
     }
 
-    // Validate time slots are not in the past (for today's bookings)
-    if (bookingDate === today) {
-        const currentHour = now.getHours();
-        for (const slot of slots) {
-            const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
-            if (!match) {
-                return { success: false, error: "Invalid time slot format." };
-            }
-            let slotHour = parseInt(match[1], 10);
-            const period = match[2].toUpperCase();
-            if (period === "PM" && slotHour !== 12) slotHour += 12;
-            if (period === "AM" && slotHour === 12) slotHour = 0;
-            if (slotHour < currentHour) {
-                return { success: false, error: "Cannot book a time slot that has already passed." };
-            }
+    // Validate time slots are not past the buffer cutoff (for today)
+    for (const slot of slots) {
+        if (isSlotPast(slot, bookingDate, now)) {
+            return { success: false, error: "Cannot book a time slot that has already passed." };
         }
     }
 
@@ -565,7 +554,12 @@ export async function releaseRig(rigId: number): Promise<{ success: boolean }> {
  * Works for both app-booked and walk-in blocked rigs.
  * Only allows check-in if the current time falls within a booked slot for this rig today.
  */
-export async function checkInRig(rigId: number): Promise<{ success: boolean; error?: string }> {
+export async function checkInRig(
+    rigId: number,
+    bookingId?: number,
+    timeSlot?: string,
+    bookingDate?: string,
+): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
 
     const { data: rig } = await supabaseAdmin
@@ -582,9 +576,9 @@ export async function checkInRig(rigId: number): Promise<{ success: boolean; err
     const today = getTodayStr();
     const { data: bookings } = await supabaseAdmin
         .from("bookings")
-        .select("time_slot")
+        .select("id, time_slot")
         .eq("rig_id", rigId)
-        .eq("booking_date", today);
+        .eq("booking_date", bookingDate ?? today);
 
     if (!bookings || bookings.length === 0) {
         return { success: false, error: "No booking found for this rig today." };
@@ -592,7 +586,7 @@ export async function checkInRig(rigId: number): Promise<{ success: boolean; err
 
     const now = new Date();
     const currentHour = now.getHours();
-    const hasMatchingSlot = bookings.some((b) => {
+    const matchingBooking = bookings.find((b) => {
         const match = b.time_slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
         if (!match) return false;
         let slotHour = parseInt(match[1], 10);
@@ -602,15 +596,38 @@ export async function checkInRig(rigId: number): Promise<{ success: boolean; err
         return currentHour === slotHour;
     });
 
-    if (!hasMatchingSlot) {
+    if (!matchingBooking) {
         return { success: false, error: "Check-in is only allowed during the booked time slot." };
     }
 
+    // Update rig status to "in_use"
     const { error } = await supabaseAdmin
         .from("rigs")
         .update({ status: "in_use" })
         .eq("id", rigId);
     if (error) return { success: false, error: "Failed to update rig status." };
+
+    // Compute blocked_until (end of the time slot) for auto-release
+    const slot = timeSlot ?? matchingBooking.time_slot;
+    const targetId = bookingId ?? matchingBooking.id;
+    const endHour = parseSlotEndHour(slot);
+
+    if (endHour >= 0) {
+        const blockedDate = new Date((bookingDate ?? today) + "T00:00:00");
+        blockedDate.setHours(endHour, 0, 0, 0);
+        const blockedUntil = blockedDate.toISOString();
+        await supabaseAdmin
+            .from("bookings")
+            .update({ status: "checked_in", blocked_until: blockedUntil })
+            .eq("id", targetId);
+    } else {
+        // Fallback: mark checked_in without blocked_until so rig isn't silently stuck
+        console.warn(`checkInRig: could not parse end hour from slot "${slot}"`);
+        await supabaseAdmin
+            .from("bookings")
+            .update({ status: "checked_in" })
+            .eq("id", targetId);
+    }
 
     return { success: true };
 }
@@ -741,10 +758,20 @@ export async function adminBookSlot(
 }
 
 /**
- * Admin-only: cancel a booking by its ID. Deletes the booking row.
+ * Admin-only: cancel a booking by its ID. Deletes the booking row
+ * and resets the rig status if needed.
  */
 export async function adminCancelBooking(bookingId: number): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
+
+    // Fetch booking details before deleting (needed for rig status reset)
+    const { data: booking } = await supabaseAdmin
+        .from("bookings")
+        .select("rig_id, source, time_slot, booking_date")
+        .eq("id", bookingId)
+        .single();
+
+    if (!booking) return { success: false, error: "Booking not found." };
 
     const { error } = await supabaseAdmin
         .from("bookings")
@@ -752,6 +779,57 @@ export async function adminCancelBooking(bookingId: number): Promise<{ success: 
         .eq("id", bookingId);
 
     if (error) return { success: false, error: "Failed to cancel booking." };
+
+    // Reset rig status if the rig is currently in_use or blocked
+    const { data: rig } = await supabaseAdmin
+        .from("rigs")
+        .select("status")
+        .eq("id", booking.rig_id)
+        .single();
+
+    if (rig && rig.status === "in_use") {
+        // Only reset if no other checked-in bookings remain for this rig
+        const { data: otherCheckedIn } = await supabaseAdmin
+            .from("bookings")
+            .select("id")
+            .eq("rig_id", booking.rig_id)
+            .eq("status", "checked_in")
+            .limit(1);
+
+        if (!otherCheckedIn || otherCheckedIn.length === 0) {
+            await supabaseAdmin
+                .from("rigs")
+                .update({ status: "available" })
+                .eq("id", booking.rig_id)
+                .eq("status", "in_use");
+        }
+    } else if (rig && rig.status === "blocked" && booking.source === "walk_in") {
+        // Only reset if no other walk-in bookings cover the current hour
+        const today = getTodayStr();
+        if (booking.booking_date === today) {
+            const currentHour = new Date().getHours();
+            const { data: remainingWalkIns } = await supabaseAdmin
+                .from("bookings")
+                .select("id, time_slot")
+                .eq("rig_id", booking.rig_id)
+                .eq("booking_date", today)
+                .eq("source", "walk_in");
+
+            const anyCoversNow = remainingWalkIns?.some((b) => {
+                const startHour = parseSlotStartHour(b.time_slot);
+                return startHour >= 0 && currentHour >= startHour && currentHour < startHour + 1;
+            });
+
+            if (!anyCoversNow) {
+                await supabaseAdmin
+                    .from("rigs")
+                    .update({ status: "available" })
+                    .eq("id", booking.rig_id)
+                    .eq("status", "blocked");
+            }
+        }
+    }
+
     return { success: true };
 }
 
@@ -1166,19 +1244,10 @@ export async function modifyBooking(
         }
     }
 
-    // Validate time slots not in the past (for today)
-    if (newDate === today) {
-        const currentHour = new Date().getHours();
-        for (const slot of newSlots) {
-            const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
-            if (!match) return { success: false, error: "Invalid time slot format." };
-            let slotHour = parseInt(match[1], 10);
-            const period = match[2].toUpperCase();
-            if (period === "PM" && slotHour !== 12) slotHour += 12;
-            if (period === "AM" && slotHour === 12) slotHour = 0;
-            if (slotHour < currentHour) {
-                return { success: false, error: "Cannot book a time slot that has already passed." };
-            }
+    // Validate time slots are not past the buffer cutoff (for today)
+    for (const slot of newSlots) {
+        if (isSlotPast(slot, newDate)) {
+            return { success: false, error: "Cannot book a time slot that has already passed." };
         }
     }
 

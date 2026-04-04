@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { X, Loader2, AlertCircle, CalendarCheck } from "lucide-react";
 import { TIME_SLOTS, modifyBooking } from "@/lib/data";
-import { getUpcomingDates, formatDateLabel, formatMonthYear, parseSlotStartHour, getTodayStr } from "@/lib/utils";
+import { getUpcomingDates, formatDateLabel, formatMonthYear, isSlotPast as checkSlotPast, getTodayStr } from "@/lib/utils";
 
 interface ModifyBookingModalProps {
     verificationCode: string;
@@ -23,18 +23,11 @@ export function ModifyBookingModal({
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const today = getTodayStr();
-    const currentHour = new Date().getHours();
-
     const toggleSlot = (slot: string) => {
         setSelectedSlots((prev) => prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]);
     };
 
-    const isSlotPast = (slot: string) => {
-        if (selectedDate !== today) return false;
-        const h = parseSlotStartHour(slot);
-        return h >= 0 && h < currentHour;
-    };
+    const isSlotPast = (slot: string) => checkSlotPast(slot, selectedDate);
 
     const hasChanges =
         selectedDate !== currentDate ||

@@ -1,7 +1,7 @@
 "use server";
 
 import { createServerSupabase } from "@/lib/supabase-server";
-import { getTodayStr, toDateStr } from "@/lib/utils";
+import { getTodayStr, toDateStr, isSlotPast } from "@/lib/utils";
 import { TIME_SLOTS } from "@/lib/data";
 
 /**
@@ -51,19 +51,10 @@ export async function createAppBookingAction(
         return { success: false, error: "Cannot book more than 7 days in advance." };
     }
 
-    // Validate time slots are not in the past (for today)
-    if (bookingDate === today) {
-        const currentHour = now.getHours();
-        for (const slot of slots) {
-            const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);
-            if (!match) return { success: false, error: "Invalid time slot format." };
-            let slotHour = parseInt(match[1], 10);
-            const period = match[2].toUpperCase();
-            if (period === "PM" && slotHour !== 12) slotHour += 12;
-            if (period === "AM" && slotHour === 12) slotHour = 0;
-            if (slotHour < currentHour) {
-                return { success: false, error: "Cannot book a time slot that has already passed." };
-            }
+    // Validate time slots are not past the buffer cutoff (for today)
+    for (const slot of slots) {
+        if (isSlotPast(slot, bookingDate, now)) {
+            return { success: false, error: "Cannot book a time slot that has already passed." };
         }
     }
 

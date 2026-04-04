@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { DashboardRig, Booking, RigStatus } from "@/lib/data";
 import { TIME_SLOTS } from "@/lib/data";
-import { getTodayStr, parseSlotStartHour, shortSlotLabel } from "@/lib/utils";
+import { getTodayStr, parseSlotStartHour, shortSlotLabel, isSlotPast } from "@/lib/utils";
 import { STATUS_CONFIG } from "./StatusConfig";
 
 const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
@@ -188,9 +188,7 @@ export function RigStatusModal({
                                 {TIME_SLOTS.map((slot) => {
                                     const booking = rigBookedSlotMap.get(slot);
                                     const isBooked = !!booking;
-                                    const h = parseSlotStartHour(slot);
-                                    const now = new Date();
-                                    const isPast = adminDate === getTodayStr() && h < now.getHours();
+                                    const isPast = isSlotPast(slot, adminDate);
                                     const isOOO = rig.status === "out_of_order";
                                     const isDisabled = isBooked || isPast || isOOO;
                                     const isPickerOpen = slotPickerSlot === slot;

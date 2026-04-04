@@ -9,7 +9,7 @@ import {
     X,
 } from "lucide-react";
 import { type DashboardRig, type Booking, TIME_SLOTS } from "@/lib/data";
-import { getUpcomingDates, parseSlotStartHour } from "@/lib/utils";
+import { getUpcomingDates, parseSlotStartHour, isSlotPast } from "@/lib/utils";
 
 const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
 
@@ -51,7 +51,7 @@ export function WalkInModal({
     });
     const [customerName, setCustomerName] = useState("");
     const [pickerSlot, setPickerSlot] = useState<string | null>(null);
-    const dates = getUpcomingDates(7);
+    const dates = getUpcomingDates(1); // Only today
 
     const rigDateBookings = existingBookings.filter(
         (b) => b.rig_id === rig.id && b.booking_date === selectedDate,
@@ -63,7 +63,6 @@ export function WalkInModal({
 
     const now = new Date();
     const todayStr = dates[0];
-    const currentHour = now.getHours();
 
     const handleDateChange = (d: string) => {
         setSelectedDate(d);
@@ -104,7 +103,7 @@ export function WalkInModal({
 
     const availableCount = TIME_SLOTS.filter((slot) => {
         if (bookedSlotMap.has(slot)) return false;
-        if (selectedDate === todayStr && parseSlotStartHour(slot) <= currentHour) return false;
+        if (isSlotPast(slot, selectedDate, now)) return false;
         return true;
     }).length;
 
@@ -222,7 +221,7 @@ export function WalkInModal({
                         {TIME_SLOTS.map((slot) => {
                             const booking = bookedSlotMap.get(slot);
                             const isBooked = !!booking;
-                            const isPast = selectedDate === todayStr && parseSlotStartHour(slot) <= currentHour;
+                            const isPast = isSlotPast(slot, selectedDate, now);
                             const isDisabled = isBooked || isPast;
                             const selection = selectedSlots.get(slot);
                             const isSelected = !!selection;
@@ -278,33 +277,56 @@ export function WalkInModal({
                                     </button>
 
                                     {/* Status picker popover */}
-                                    {isPickerOpen && (
-                                        <div
-                                            className="absolute left-1/2 z-20 mt-1 -translate-x-1/2 rounded-xl bg-surface-container-high p-2 shadow-xl"
-                                            style={{ border: "1px solid rgba(255,255,255,0.1)", minWidth: "130px" }}
-                                        >
-                                            <p className="mb-1.5 text-center text-[9px] font-semibold uppercase tracking-wider text-on-surface-variant/40">
-                                                Set as
-                                            </p>
-                                            {([
-                                                { label: "App Booked", source: "app" as const, inUse: false, dot: "bg-btn-red", hover: "hover:bg-btn-red/20 hover:text-btn-red" },
-                                                { label: "Walk-In", source: "walk_in" as const, inUse: false, dot: "bg-amber-400", hover: "hover:bg-amber-500/20 hover:text-amber-400" },
-                                                { label: "In Use", source: "walk_in" as const, inUse: true, dot: "bg-sky-400", hover: "hover:bg-sky-500/20 hover:text-sky-400" },
-                                            ]).map(({ label, source, inUse, dot, hover }) => (
-                                                <button
-                                                    key={label}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handlePickStatus(slot, source, inUse);
-                                                    }}
-                                                    className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-medium text-on-surface-variant/60 transition-all ${hover}`}
-                                                >
-                                                    <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
-                                                    {label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
+                                    {isPickerOpen && (() => {
+                                        const slotStartHour = parseSlotStartHour(slot);
+                                        const currentHour = now.getHours();
+                                        const isCurrentTimeSlot = selectedDate === todayStr && slotStartHour === currentHour;
+
+                                        const options = [
+                                            { label: "App Booked", source: "app" as const, inUse: false, dot: "bg-btn-red", hover: "hover:bg-btn-red/20 hover:text-btn-red" },
+                                            { label: "Walk-In", source: "walk_in" as const, inUse: false, dot: "bg-amber-400", hover: "hover:bg-amber-500/20 hover:text-amber-400" },
+                                        ];
+
+                                        return (
+                                            <div
+                                                className="absolute left-1/2 z-20 mt-1 -translate-x-1/2 rounded-xl bg-surface-container-high p-2 shadow-xl"
+                                                style={{ border: "1px solid rgba(255,255,255,0.1)", minWidth: "130px" }}
+                                            >
+                                                <p className="mb-1.5 text-center text-[9px] font-semibold uppercase tracking-wider text-on-surface-variant/40">
+                                                    Set as
+                                                </p>
+                                                {options.map(({ label, source, inUse, dot, hover }) => (
+                                                    <button
+                                                        key={label}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handlePickStatus(slot, source, inUse);
+                                                        }}
+                                                        className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-medium text-on-surface-variant/60 transition-all ${hover}`}
+                                                    >
+                                                        <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
+                                                        {label}
+                                                    </button>
+                                                ))}
+                                                {isCurrentTimeSlot ? (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handlePickStatus(slot, "walk_in", true);
+                                                        }}
+                                                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-medium text-on-surface-variant/60 transition-all hover:bg-sky-500/20 hover:text-sky-400"
+                                                    >
+                                                        <span className="h-2 w-2 shrink-0 rounded-full bg-sky-400" />
+                                                        In Use
+                                                    </button>
+                                                ) : (
+                                                    <div className="px-3 py-2 text-[10px] text-on-surface-variant/30 italic">
+                                                        In Use — only for current slot
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             );
                         })}

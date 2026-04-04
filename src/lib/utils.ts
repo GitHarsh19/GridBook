@@ -44,6 +44,45 @@ export function parseSlotStartHour(slot: string): number {
     return hour;
 }
 
+/**
+ * Parse the end hour from a time slot string like "2:00 PM – 3:00 PM".
+ * Handles en-dash, hyphen, and em-dash separators.
+ * Returns the hour in 24h format (0–23), or -1 on parse failure.
+ */
+export function parseSlotEndHour(slot: string): number {
+    const match = slot.match(/[–\-—]\s*(\d{1,2}):00\s*(AM|PM)/i);
+    if (match) {
+        let hour = parseInt(match[1], 10);
+        const period = match[2].toUpperCase();
+        if (period === "PM" && hour !== 12) hour += 12;
+        if (period === "AM" && hour === 12) hour = 0;
+        return hour;
+    }
+    // Fallback: all slots are 1-hour, so end = start + 1
+    const startHour = parseSlotStartHour(slot);
+    if (startHour >= 0) return startHour + 1;
+    return -1;
+}
+
+/**
+ * Whether a slot is past the booking cutoff for today.
+ * A slot is considered past once we are more than BUFFER_MINUTES into it.
+ * For non-today dates the slot is never past.
+ * @param slot       Time-slot string like "2:00 PM – 3:00 PM"
+ * @param dateStr    The date being viewed (YYYY-MM-DD)
+ * @param now        Current Date (defaults to new Date())
+ */
+const SLOT_BUFFER_MINUTES = 5;
+
+export function isSlotPast(slot: string, dateStr: string, now: Date = new Date()): boolean {
+    if (dateStr !== getTodayStr()) return false;
+    const startHour = parseSlotStartHour(slot);
+    if (startHour < 0) return false;
+    const cutoff = startHour * 60 + SLOT_BUFFER_MINUTES; // e.g. 17:05 for 5 PM slot
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    return currentMinutes >= cutoff;
+}
+
 /** Compact time label: "2:00 PM – 3:00 PM" → "2pm" */
 export function shortSlotLabel(slot: string): string {
     const match = slot.match(/^(\d{1,2}):00\s*(AM|PM)/i);

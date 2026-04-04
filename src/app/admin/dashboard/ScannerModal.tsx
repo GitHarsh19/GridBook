@@ -152,20 +152,19 @@ export function ScannerModal({ onClose, onCheckIn }: ScannerModalProps) {
         setConfirming(true);
 
         try {
-            // Use checkInRig which validates the time slot
-            const result = await checkInRig(scannedBooking.rig_id);
+            // Use checkInRig which validates the time slot, updates rig to "in_use",
+            // and sets booking status + blocked_until for auto-release
+            const result = await checkInRig(
+                scannedBooking.rig_id,
+                scannedBooking.id,
+                scannedBooking.time_slot,
+                scannedBooking.booking_date,
+            );
             if (!result.success) {
                 toast.error(result.error || "Check-in failed.");
                 setConfirming(false);
                 return;
             }
-
-            const { error: updateError } = await supabaseAdmin
-                .from("bookings")
-                .update({ status: "checked_in" })
-                .eq("check_in_token", scannedBooking.token);
-
-            if (updateError) throw updateError;
 
             toast.success(
                 `${scannedBooking.customer_name} checked in — ${scannedBooking.rig_name}`,

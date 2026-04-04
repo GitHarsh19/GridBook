@@ -41,7 +41,7 @@ import {
     updateVenue,
     deleteVenue,
 } from "@/lib/data";
-import { getTodayStr, parseSlotStartHour, shortSlotLabel } from "@/lib/utils";
+import { getTodayStr, parseSlotStartHour, shortSlotLabel, isSlotPast } from "@/lib/utils";
 import { ScannerModal } from "./ScannerModal";
 import {
     WalkInModal,
@@ -384,6 +384,7 @@ export default function AdminDashboardPage() {
     // Compute effective rig status: overlay bookings onto DB status
     const getEffectiveStatus = (rig: DashboardRig): RigStatus => {
         if (rig.status === "out_of_order") return "out_of_order";
+        if (rig.status === "in_use") return "in_use";
         if (rig.status === "blocked") return "blocked";
         if (activelyBookedRigIds.has(rig.id)) return "booked";
         return rig.status;
@@ -739,7 +740,7 @@ export default function AdminDashboardPage() {
                                                     : null;
                                                 const isOOO = rig.status === "out_of_order";
                                                 const h = parseSlotStartHour(slot);
-                                                const isPast = slotOverviewDate === todayStr && h < now.getHours();
+                                                const isPast = isSlotPast(slot, slotOverviewDate, now);
                                                 const isCurrent = slotOverviewDate === todayStr && h === now.getHours();
 
                                                 let cellBg = "";

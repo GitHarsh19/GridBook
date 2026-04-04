@@ -12,7 +12,7 @@ import { RigGrid } from "@/components/RigGrid";
 import { CheckoutBar } from "@/components/CheckoutBar";
 import { type Venue, TIME_SLOTS, getBookedRigIdsForSlots, getVenueById, releaseExpiredWalkIns } from "@/lib/data";
 import { supabase } from "@/lib/supabase";
-import { getTodayStr, parseSlotStartHour } from "@/lib/utils";
+import { getTodayStr, isSlotPast } from "@/lib/utils";
 
 export default function BookingClient({ venue: initialVenue }: { venue: Venue }) {
     const router = useRouter();
@@ -26,22 +26,21 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
     const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
     const [selectedRigs, setSelectedRigs] = useState<number[]>([]);
     const [bookedRigIds, setBookedRigIds] = useState<Set<number>>(new Set());
-    const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+    const [nowTick, setNowTick] = useState(() => Date.now());
 
     useEffect(() => {
-        const timer = setInterval(() => setCurrentHour(new Date().getHours()), 60_000);
+        const timer = setInterval(() => setNowTick(Date.now()), 30_000);
         return () => clearInterval(timer);
     }, []);
 
     const disabledSlots = useMemo(() => {
-        const todayStr = getTodayStr();
-        if (selectedDate !== todayStr) return new Set<string>();
+        const now = new Date(nowTick);
         const past = new Set<string>();
         for (const slot of TIME_SLOTS) {
-            if (parseSlotStartHour(slot) < currentHour) past.add(slot);
+            if (isSlotPast(slot, selectedDate, now)) past.add(slot);
         }
         return past;
-    }, [selectedDate, currentHour]);
+    }, [selectedDate, nowTick]);
 
     useEffect(() => {
         releaseExpiredWalkIns().catch(() => {});
