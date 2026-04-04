@@ -633,41 +633,6 @@ export async function checkInRig(
 }
 
 /**
- * End a session — set a rig from "in_use" back to "available" (admin only).
- */
-export async function completeSession(rigId: number): Promise<{ success: boolean }> {
-    await requireAdminSession();
-
-    const { error } = await supabaseAdmin
-        .from("rigs")
-        .update({ status: "available" })
-        .eq("id", rigId)
-        .eq("status", "in_use");
-    if (error) return { success: false };
-
-    return { success: true };
-}
-
-/**
- * Admin-only: manually override a rig's status to available, booked, or blocked (walk-in).
- * Propagates live to all clients via Supabase Realtime.
- */
-export async function setRigStatusManually(
-    rigId: number,
-    status: "available" | "booked" | "blocked",
-): Promise<{ success: boolean; error?: string }> {
-    await requireAdminSession();
-
-    const { error } = await supabaseAdmin
-        .from("rigs")
-        .update({ status })
-        .eq("id", rigId);
-
-    if (error) return { success: false, error: "Failed to update rig status." };
-    return { success: true };
-}
-
-/**
  * Admin-only: book a single slot for a rig with a chosen source/status.
  * source "app" → App Booked, "walk_in" → Walk-In.
  * If markInUse is true the rig is also set to "in_use".
