@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { SearchX, Search, X } from "lucide-react";
+import { SearchX, Search, X, LayoutGrid, Map } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { VenueCard } from "@/components/VenueCard";
 import { useRealtimeVenues } from "@/lib/hooks/useRealtimeVenues";
 import { useAuth } from "@/lib/auth";
+
+const VenueMap = lazy(() =>
+    import("@/components/VenueMap").then((m) => ({ default: m.VenueMap }))
+);
 
 function VenueCardSkeleton() {
     return (
@@ -20,11 +24,25 @@ function VenueCardSkeleton() {
     );
 }
 
+function MapSkeleton() {
+    return (
+        <div className="w-full rounded-2xl bg-surface-container border border-white/10 animate-pulse flex items-center justify-center" style={{ height: "calc(100vh - 280px)", minHeight: "400px" }}>
+            <div className="flex flex-col items-center gap-3">
+                <Map className="h-10 w-10 text-surface-container-highest" />
+                <p className="font-outfit text-sm text-on-surface-variant/50">Loading map…</p>
+            </div>
+        </div>
+    );
+}
+
+type ViewMode = "list" | "map";
+
 export default function ExplorePage() {
     const { isAdmin } = useAuth();
     const router = useRouter();
     const { venues, isLoading, error, refetch } = useRealtimeVenues();
     const [searchQuery, setSearchQuery] = useState("");
+    const [viewMode, setViewMode] = useState<ViewMode>("list");
 
     useEffect(() => {
         if (isAdmin) {
@@ -66,25 +84,56 @@ export default function ExplorePage() {
                     </p>
                 </div>
 
-                {/* Search bar */}
+                {/* Search bar + view toggle */}
                 {!isLoading && venues.length > 0 && (
-                    <div className="relative mb-10 max-w-lg">
-                        <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface/50" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search by venue or location\u2026"
-                            className="w-full rounded-full border border-on-surface bg-transparent py-3.5 pl-12 pr-12 font-outfit text-[0.9rem] text-white outline-none transition-colors duration-300 ease-in-out placeholder:text-white/40 focus:border-primary-container"
-                        />
-                        {searchQuery && (
+                    <div className="mb-10 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                        {/* Search */}
+                        <div className="relative flex-1 max-w-lg w-full">
+                            <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface/50" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search by venue or location\u2026"
+                                className="w-full rounded-full border border-on-surface bg-transparent py-3.5 pl-12 pr-12 font-outfit text-[0.9rem] text-white outline-none transition-colors duration-300 ease-in-out placeholder:text-white/40 focus:border-primary-container"
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery("")}
+                                    className="absolute right-5 top-1/2 -translate-y-1/2 rounded-lg p-0.5 text-white/40 transition-colors hover:text-white"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* View toggle */}
+                        <div className="flex rounded-xl border border-white/10 bg-surface-container-low p-1 shrink-0">
                             <button
-                                onClick={() => setSearchQuery("")}
-                                className="absolute right-5 top-1/2 -translate-y-1/2 rounded-lg p-0.5 text-white/40 transition-colors hover:text-white"
+                                onClick={() => setViewMode("list")}
+                                className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 ${
+                                    viewMode === "list"
+                                        ? "bg-btn-red text-white shadow-md"
+                                        : "text-on-surface-variant/60 hover:text-white"
+                                }`}
+                                title="Grid view"
                             >
-                                <X className="h-4 w-4" />
+                                <LayoutGrid className="h-4 w-4" />
+                                <span className="hidden sm:inline">List</span>
                             </button>
-                        )}
+                            <button
+                                onClick={() => setViewMode("map")}
+                                className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 ${
+                                    viewMode === "map"
+                                        ? "bg-btn-red text-white shadow-md"
+                                        : "text-on-surface-variant/60 hover:text-white"
+                                }`}
+                                title="Map view"
+                            >
+                                <Map className="h-4 w-4" />
+                                <span className="hidden sm:inline">Map</span>
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -101,16 +150,25 @@ export default function ExplorePage() {
                     </div>
                 )}
 
-                {/* Venue grid */}
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    {isLoading
-                        ? Array.from({ length: 6 }).map((_, i) => (
-                              <VenueCardSkeleton key={i} />
-                          ))
-                        : filteredVenues.map((venue) => (
-                              <VenueCard key={venue.id} venue={venue} />
-                          ))}
-                </div>
+                {/* List view */}
+                {viewMode === "list" && (
+                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        {isLoading
+                            ? Array.from({ length: 6 }).map((_, i) => (
+                                  <VenueCardSkeleton key={i} />
+                              ))
+                            : filteredVenues.map((venue) => (
+                                  <VenueCard key={venue.id} venue={venue} />
+                              ))}
+                    </div>
+                )}
+
+                {/* Map view */}
+                {viewMode === "map" && !isLoading && (
+                    <Suspense fallback={<MapSkeleton />}>
+                        <VenueMap venues={filteredVenues} />
+                    </Suspense>
+                )}
 
                 {/* No results from search */}
                 {!isLoading && !error && searchQuery && filteredVenues.length === 0 && venues.length > 0 && (
