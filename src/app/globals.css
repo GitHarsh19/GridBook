@@ -381,17 +381,17 @@ html {
   border: 2px solid rgba(255, 255, 255, 0.06);
   height: calc(100vh - 280px);
   min-height: 450px;
-  background: #0a0e0a;
+  background: #0a0c10;
 }
 
-/* ── GTA desaturated green-tint filter on tile images only ── */
+/* ── Dark desaturated blue-tint filter on tile images only ── */
 .gta-map-wrapper .leaflet-tile-pane img {
   filter:
-    brightness(0.75)
-    contrast(1.2)
-    saturate(0.15)
-    sepia(0.3)
-    hue-rotate(80deg) !important;
+    brightness(0.55)
+    contrast(1.3)
+    saturate(0.3)
+    sepia(0.15)
+    hue-rotate(180deg) !important;
   transition: filter 0.3s ease;
 }
 
@@ -403,8 +403,8 @@ html {
   z-index: 400;
   background: radial-gradient(
     ellipse 80% 70% at 50% 50%,
-    transparent 30%,
-    rgba(0, 0, 0, 0.5) 100%
+    transparent 40%,
+    rgba(0, 0, 0, 0.35) 100%
   );
 }
 
