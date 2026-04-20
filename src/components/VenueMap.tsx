@@ -164,17 +164,22 @@ export function VenueMap({ venues }: VenueMapProps) {
             markerZoomAnimation: true,
         });
 
-        /* GTA-style dark tiles (CartoDB Dark Matter — no API key needed) */
-        L.tileLayer(
-            "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        /* GTA-style dark tiles — try multiple providers for reliability */
+        const tileLayer = L.tileLayer(
+            "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png",
             {
                 maxZoom: 19,
-                subdomains: "abcd",
                 updateWhenZooming: false,
                 updateWhenIdle: true,
                 keepBuffer: 4,
             }
         ).addTo(map);
+
+        tileLayer.on("tileerror", () => {
+            tileLayer.setUrl(
+                "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            );
+        });
 
         L.control.zoom({ position: "bottomright" }).addTo(map);
 
