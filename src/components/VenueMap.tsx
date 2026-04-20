@@ -164,11 +164,12 @@ export function VenueMap({ venues }: VenueMapProps) {
             markerZoomAnimation: true,
         });
 
-        /* GTA-style dark desaturated tiles */
+        /* GTA-style dark tiles (CartoDB Dark Matter — no API key needed) */
         L.tileLayer(
-            "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png",
+            "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
             {
                 maxZoom: 19,
+                subdomains: "abcd",
                 updateWhenZooming: false,
                 updateWhenIdle: true,
                 keepBuffer: 4,
