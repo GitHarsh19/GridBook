@@ -19,6 +19,8 @@ export interface Venue {
     totalRigs: number;
     description: string;
     imageUrl: string | null;
+    latitude: number | null;
+    longitude: number | null;
     rigs: Rig[];
 }
 
@@ -51,6 +53,8 @@ export interface VenueOption {
     price: number;
     description: string;
     imageUrl: string | null;
+    latitude: number | null;
+    longitude: number | null;
     ownerId: string | null;
 }
 
@@ -81,6 +85,8 @@ interface DbVenue {
     description: string;
     owner_id: string | null;
     image_url: string | null;
+    latitude: number | null;
+    longitude: number | null;
 }
 
 interface DbRig {
@@ -94,6 +100,8 @@ interface DbRig {
 interface DbVenueWithCounts extends DbVenue {
     total_rigs: number;
     available_rigs: number;
+    latitude: number | null;
+    longitude: number | null;
 }
 
 /* ─── Data-fetching helpers ─────────────────────────────────────────── */
@@ -118,6 +126,8 @@ export async function getVenues(): Promise<Venue[]> {
             price: v.price,
             description: v.description,
             imageUrl: v.image_url ?? null,
+            latitude: v.latitude ?? null,
+            longitude: v.longitude ?? null,
             totalRigs: v.total_rigs,
             availableRigs: v.available_rigs,
             rigs: [], // Explore page doesn't need individual rigs
@@ -152,6 +162,8 @@ export async function getVenues(): Promise<Venue[]> {
             price: v.price,
             description: v.description,
             imageUrl: v.image_url ?? null,
+            latitude: v.latitude ?? null,
+            longitude: v.longitude ?? null,
             totalRigs: venueRigs.length,
             availableRigs: venueRigs.filter((r) => r.status === "available").length,
             rigs: venueRigs.map((r) => ({
@@ -198,6 +210,8 @@ export async function getVenueById(id: number): Promise<Venue | null> {
         price: v.price,
         description: v.description,
         imageUrl: v.image_url ?? null,
+        latitude: v.latitude ?? null,
+        longitude: v.longitude ?? null,
         totalRigs: venueRigs.length,
         availableRigs: venueRigs.filter((r) => r.status === "available").length,
         rigs: venueRigs.map((r) => ({
@@ -369,7 +383,7 @@ export async function getVenuesList(): Promise<VenueOption[]> {
 
     const { data, error } = await supabaseAdmin
         .from("venues")
-        .select("id, name, location, price, description, image_url, owner_id")
+        .select("id, name, location, price, description, image_url, owner_id, latitude, longitude")
         .eq("owner_id", adminId)
         .order("id");
     if (error || !data) throw new Error(error?.message ?? "Failed to fetch venues list");
@@ -380,6 +394,8 @@ export async function getVenuesList(): Promise<VenueOption[]> {
         price: v.price,
         description: v.description ?? "",
         imageUrl: v.image_url ?? null,
+        latitude: v.latitude ?? null,
+        longitude: v.longitude ?? null,
         ownerId: v.owner_id ?? null,
     }));
 }
