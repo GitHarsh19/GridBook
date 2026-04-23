@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { getVenues, type Venue } from "@/lib/data";
 
 /* ── Static data ── */
 
@@ -70,55 +71,13 @@ const aboutCards = [
   },
 ];
 
-const venues = [
-  {
-    name: "Apex Arena",
-    tags: ["Sim Racing", "Premium"],
-    description:
-      "Full-motion Fanatec DD rigs with triple-screen setups and VR pods \u2014 the ultimate sim racing experience in downtown. Premium memberships and walk-in sessions available.",
-    image:
-      "https://images.unsplash.com/photo-1511882150382-421056c89033?w=800&q=80",
-  },
-  {
-    name: "Grid House",
-    tags: ["Racing Lounge"],
-    description:
-      "Casual and competitive sim racing lounge with Logitech G Pro and Thrustmaster rigs \u2014 open late nights, walk-ins welcome.",
-    image:
-      "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80",
-  },
-  {
-    name: "Pit Lane Club",
-    tags: ["VR Esports"],
-    description:
-      "Esports-grade facility featuring motion platforms, direct-drive wheels, and dedicated VR racing booths for competitive sessions.",
-    image:
-      "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&q=80",
-  },
-  {
-    name: "Turbo Bay",
-    tags: ["Gaming Cafe"],
-    description:
-      "Gaming cafe meets racing hub \u2014 grab a drink, pick a rig, and race your friends on any track from F1 to rally cross.",
-    image:
-      "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80",
-  },
-  {
-    name: "DRS Zone",
-    tags: ["Premium Events"],
-    description:
-      "Private sim racing suites for corporate events, birthday parties, and league nights \u2014 bookable by the hour or full venue.",
-    image:
-      "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80",
-  },
-  {
-    name: "Chicane HQ",
-    tags: ["Academy"],
-    description:
-      "Sim racing academy with coaching sessions, telemetry analysis, and pro-grade equipment \u2014 from beginner to competitive driver.",
-    image:
-      "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=800&q=80",
-  },
+const fallbackImages = [
+  "https://images.unsplash.com/photo-1511882150382-421056c89033?w=800&q=80",
+  "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80",
+  "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&q=80",
+  "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80",
+  "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=800&q=80",
+  "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=800&q=80",
 ];
 
 /* ── Arrow SVG reused in nav & footer ── */
@@ -134,6 +93,7 @@ function ArrowSvg() {
 }
 
 export default function LandingPage() {
+  const [venues, setVenues] = useState<Venue[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeVenue, setActiveVenueRaw] = useState(0);
   const [prevVenue, setPrevVenue] = useState<number | null>(null);
@@ -141,6 +101,13 @@ export default function LandingPage() {
   const navRef = useRef<HTMLElement>(null);
   const footerLogoRef = useRef<HTMLDivElement>(null);
   const animLock = useRef(false);
+
+  useEffect(() => {
+    getVenues().then(setVenues).catch(() => {});
+  }, []);
+
+  const getVenueImage = (venue: Venue, index: number) =>
+    venue.imageUrl || fallbackImages[index % fallbackImages.length];
 
   const totalVenues = venues.length;
 
@@ -179,8 +146,8 @@ export default function LandingPage() {
     [activeVenue, totalVenues]
   );
 
-  const next1 = (activeVenue + 1) % totalVenues;
-  const next2 = (activeVenue + 2) % totalVenues;
+  const next1 = totalVenues > 0 ? (activeVenue + 1) % totalVenues : 0;
+  const next2 = totalVenues > 0 ? (activeVenue + 2) % totalVenues : 0;
 
   /* Close dropdown on outside click */
   useEffect(() => {
@@ -437,25 +404,20 @@ export default function LandingPage() {
                   else if (i === n1) sc = "venue-card--next1";
                   else if (i === n2) sc = "venue-card--next2";
                   return (
-                    <div key={venue.name} className={`venue-card rounded-[15px] overflow-hidden relative border border-white/25 ${sc}`}>
+                    <Link key={venue.name} href={"/explore"} className={`venue-card rounded-[15px] overflow-hidden relative border border-white/25 block no-underline ${sc}`}>
                       <div className="venue-card-media absolute inset-0 opacity-0">
-                        <img src={venue.image} className="w-full h-full object-cover" alt={venue.name} />
+                        <img src={getVenueImage(venue, i)} className="w-full h-full object-cover" alt={venue.name} />
                       </div>
                       <div className="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
                         <div className="venue-card-header flex justify-between items-start gap-3">
                           <div className="venue-card-title font-outfit text-2xl font-bold text-white tracking-[-0.02em]">{venue.name}</div>
-                          <div className="venue-card-tags hidden gap-2">
-                            {venue.tags.map((tag) => (
-                              <span key={tag} className="text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">{tag}</span>
-                            ))}
-                          </div>
                         </div>
                         <div className="venue-card-bottom hidden">
                           <p className="font-outfit text-[0.85rem] leading-[1.65] text-white max-w-[420px]">{venue.description}</p>
-                          <Link href="/explore" className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue</Link>
+                          <span className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue →</span>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
@@ -471,29 +433,30 @@ export default function LandingPage() {
                 if (i === activeVenue) sc = "venue-card--active";
                 else if (i === next1) sc = "venue-card--next1";
                 else if (i === next2) sc = "venue-card--next2";
-                return (
-                  <div
-                    key={venue.name}
-                    className={`venue-card rounded-[15px] overflow-hidden relative border border-white/25 cursor-pointer ${sc}`}
-                    onClick={() => jumpTo(i)}
-                  >
+                const cardClass = `venue-card rounded-[15px] overflow-hidden relative border border-white/25 cursor-pointer ${sc}`;
+                const cardContent = (
+                  <>
                     <div className="venue-card-media absolute inset-0 opacity-0">
-                      <img src={venue.image} className="w-full h-full object-cover" alt={venue.name} />
+                      <img src={getVenueImage(venue, i)} className="w-full h-full object-cover" alt={venue.name} />
                     </div>
                     <div className="venue-card-inner relative z-[2] p-6 w-full h-full flex flex-col justify-between">
                       <div className="venue-card-header flex justify-between items-start gap-3">
                         <div className="venue-card-title font-outfit text-2xl font-bold text-white tracking-[-0.02em]">{venue.name}</div>
-                        <div className="venue-card-tags hidden gap-2">
-                          {venue.tags.map((tag) => (
-                            <span key={tag} className="text-[0.7rem] py-[5px] px-3.5 whitespace-nowrap font-outfit font-medium text-white tracking-[-0.03em] border border-white/15 rounded-full">{tag}</span>
-                          ))}
-                        </div>
                       </div>
                       <div className="venue-card-bottom hidden">
                         <p className="font-outfit text-[0.85rem] leading-[1.65] text-white max-w-[420px]">{venue.description}</p>
-                        <Link href="/explore" className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue</Link>
+                        <span className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue →</span>
                       </div>
                     </div>
+                  </>
+                );
+                return i === activeVenue ? (
+                  <Link key={venue.name} href={"/explore"} className={`${cardClass} block no-underline`}>
+                    {cardContent}
+                  </Link>
+                ) : (
+                  <div key={venue.name} className={cardClass} onClick={() => jumpTo(i)}>
+                    {cardContent}
                   </div>
                 );
               })}
