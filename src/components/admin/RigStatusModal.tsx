@@ -4,6 +4,8 @@ import { useState } from "react";
 import {
     X,
     Monitor,
+    Gamepad2,
+    Glasses,
     Clock,
     UserCheck,
     LogOut as LogOutIcon,
@@ -14,8 +16,17 @@ import {
     CheckCircle2,
     UserPlus,
 } from "lucide-react";
-import type { DashboardRig, Booking, RigStatus } from "@/lib/data";
+import type { DashboardRig, Booking, RigStatus, RigType } from "@/lib/data";
 import { TIME_SLOTS } from "@/lib/data";
+
+const RIG_TYPE_LABEL: Record<RigType, string> = { pc: "PC", playstation: "PlayStation", xbox: "Xbox", vr: "VR" };
+const RIG_TYPE_COLOR: Record<RigType, string> = { pc: "text-orange-400", playstation: "text-blue-400", xbox: "text-green-400", vr: "text-purple-400" };
+
+function RigTypeIcon({ type, className }: { type: RigType; className?: string }) {
+    if (type === "pc") return <Monitor className={className} />;
+    if (type === "vr") return <Glasses className={className} />;
+    return <Gamepad2 className={className} />;
+}
 import { getTodayStr, parseSlotStartHour, shortSlotLabel, isSlotPast } from "@/lib/utils";
 import { STATUS_CONFIG } from "./StatusConfig";
 
@@ -81,10 +92,13 @@ export function RigStatusModal({
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <Monitor className="h-4.5 w-4.5 text-btn-red" />
+                        <RigTypeIcon type={rig.type} className={`h-4.5 w-4.5 ${RIG_TYPE_COLOR[rig.type]}`} />
                         <div>
                             <h3 className="text-sm font-bold text-on-surface">{rig.name}</h3>
-                            <p className="mt-0.5 text-[10px] text-on-surface-variant/40">{rig.specs}</p>
+                            <p className="mt-0.5 text-[10px] text-on-surface-variant/40">
+                                <span className={`font-semibold ${RIG_TYPE_COLOR[rig.type]}`}>{RIG_TYPE_LABEL[rig.type]}</span>
+                                {rig.specs && ` · ${rig.specs}`}
+                            </p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">

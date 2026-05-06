@@ -1,7 +1,20 @@
 "use client";
 
-import { Monitor, X } from "lucide-react";
-import type { Rig } from "@/lib/data";
+import { Monitor, Gamepad2, Glasses, X } from "lucide-react";
+import type { Rig, RigType } from "@/lib/data";
+
+const RIG_TYPE_META: Record<RigType, { label: string; color: string }> = {
+    pc: { label: "PC", color: "text-orange-400" },
+    playstation: { label: "PlayStation", color: "text-blue-400" },
+    xbox: { label: "Xbox", color: "text-green-400" },
+    vr: { label: "VR", color: "text-purple-400" },
+};
+
+function RigTypeIcon({ type, className }: { type: RigType; className?: string }) {
+    if (type === "pc") return <Monitor className={className} />;
+    if (type === "vr") return <Glasses className={className} />;
+    return <Gamepad2 className={className} />;
+}
 
 export function RigGrid({
     rigs,
@@ -80,7 +93,8 @@ export function RigGrid({
                                 </span>
                             )}
 
-                            <Monitor
+                            <RigTypeIcon
+                                type={rig.type}
                                 className={`mb-2 h-5 w-5 ${
                                     isUnavailable
                                         ? "text-on-surface-variant/15"
@@ -90,6 +104,17 @@ export function RigGrid({
                                 }`}
                             />
                             <span className="text-sm font-bold">{rig.name}</span>
+                            <span
+                                className={`mt-0.5 text-[10px] font-semibold ${
+                                    isUnavailable
+                                        ? "text-on-surface-variant/15"
+                                        : isSelected
+                                            ? "text-white/70"
+                                            : RIG_TYPE_META[rig.type].color
+                                }`}
+                            >
+                                {RIG_TYPE_META[rig.type].label}
+                            </span>
                             <span
                                 className={`mt-0.5 text-[10px] leading-tight ${
                                     isUnavailable

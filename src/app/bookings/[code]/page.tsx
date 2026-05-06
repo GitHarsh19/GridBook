@@ -4,13 +4,22 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-    ArrowLeft, CalendarCheck, Clock, MapPin, Monitor,
+    ArrowLeft, CalendarCheck, Clock, MapPin, Monitor, Gamepad2, Glasses,
     Loader2, AlertCircle, CalendarPlus, Copy, Check,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { TicketQR } from "@/components/TicketQR";
 import { supabase } from "@/lib/supabase";
-import { getCustomerBookings, type CustomerBooking } from "@/lib/data";
+import { getCustomerBookings, type CustomerBooking, type RigType } from "@/lib/data";
+
+const RIG_TYPE_LABEL: Record<RigType, string> = { pc: "PC", playstation: "PlayStation", xbox: "Xbox", vr: "VR" };
+const RIG_TYPE_COLOR: Record<RigType, string> = { pc: "text-orange-400", playstation: "text-blue-400", xbox: "text-green-400", vr: "text-purple-400" };
+
+function RigTypeIcon({ type, className }: { type: RigType; className?: string }) {
+    if (type === "pc") return <Monitor className={className} />;
+    if (type === "vr") return <Glasses className={className} />;
+    return <Gamepad2 className={className} />;
+}
 import { formatBookingDate } from "@/lib/utils";
 
 interface BookingGroup {
@@ -21,7 +30,7 @@ interface BookingGroup {
     bookingDate: string;
     customerName: string;
     source: "app" | "walk_in";
-    slots: { time_slot: string; rig_name: string; id: number }[];
+    slots: { time_slot: string; rig_name: string; rig_type: RigType; id: number }[];
 }
 
 function groupByCode(bookings: CustomerBooking[], code: string): BookingGroup | null {
@@ -36,7 +45,7 @@ function groupByCode(bookings: CustomerBooking[], code: string): BookingGroup | 
         bookingDate: first.booking_date,
         customerName: first.customer_name,
         source: first.source,
-        slots: matching.map((b) => ({ time_slot: b.time_slot, rig_name: b.rig_name, id: b.id })),
+        slots: matching.map((b) => ({ time_slot: b.time_slot, rig_name: b.rig_name, rig_type: b.rig_type, id: b.id })),
     };
 }
 
@@ -177,9 +186,17 @@ export default function BookingConfirmationPage() {
                                     <span>{formatBookingDate(group.bookingDate)}</span>
                                     <span className="text-on-surface-variant/30">({group.bookingDate})</span>
                                 </div>
-                                <div className="flex items-center gap-3 text-sm text-on-surface-variant/60">
-                                    <Monitor className="h-4 w-4 shrink-0 text-on-surface-variant/30" />
-                                    <span>{[...new Set(group.slots.map((s) => s.rig_name))].join(", ")}</span>
+                                <div className="flex items-start gap-3 text-sm text-on-surface-variant/60">
+                                    <Monitor className="mt-0.5 h-4 w-4 shrink-0 text-on-surface-variant/30" />
+                                    <div className="flex flex-wrap gap-2">
+                                        {[...new Map(group.slots.map((s) => [s.rig_name, s.rig_type])).entries()].map(([name, type]) => (
+                                            <span key={name} className="inline-flex items-center gap-1.5">
+                                                <RigTypeIcon type={type} className={`h-3.5 w-3.5 ${RIG_TYPE_COLOR[type]}`} />
+                                                <span>{name}</span>
+                                                <span className={`text-[10px] font-semibold ${RIG_TYPE_COLOR[type]}`}>{RIG_TYPE_LABEL[type]}</span>
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm text-on-surface-variant/60">
                                     <Clock className="h-4 w-4 shrink-0 text-on-surface-variant/30" />

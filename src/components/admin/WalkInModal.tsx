@@ -5,10 +5,21 @@ import {
     CalendarDays,
     Clock,
     Monitor,
+    Gamepad2,
+    Glasses,
     Trash2,
     X,
 } from "lucide-react";
-import { type DashboardRig, type Booking, TIME_SLOTS } from "@/lib/data";
+import { type DashboardRig, type Booking, type RigType, TIME_SLOTS } from "@/lib/data";
+
+const RIG_TYPE_LABEL: Record<RigType, string> = { pc: "PC", playstation: "PlayStation", xbox: "Xbox", vr: "VR" };
+const RIG_TYPE_COLOR: Record<RigType, string> = { pc: "text-orange-400", playstation: "text-blue-400", xbox: "text-green-400", vr: "text-purple-400" };
+
+function RigTypeIcon({ type, className }: { type: RigType; className?: string }) {
+    if (type === "pc") return <Monitor className={className} />;
+    if (type === "vr") return <Glasses className={className} />;
+    return <Gamepad2 className={className} />;
+}
 import { getUpcomingDates, parseSlotStartHour, isSlotPast } from "@/lib/utils";
 
 const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
@@ -143,10 +154,13 @@ export function WalkInModal({
 
                 {/* Rig info */}
                 <div className="mb-5 flex items-center gap-3 rounded-2xl bg-surface-container-high px-4 py-3">
-                    <Monitor className="h-4 w-4 shrink-0 text-amber-400" />
+                    <RigTypeIcon type={rig.type} className={`h-4 w-4 shrink-0 ${RIG_TYPE_COLOR[rig.type]}`} />
                     <div>
                         <p className="text-sm font-semibold text-on-surface">{rig.name}</p>
-                        <p className="text-[10px] text-on-surface-variant/40">{rig.specs}</p>
+                        <p className="text-[10px] text-on-surface-variant/40">
+                            <span className={`font-semibold ${RIG_TYPE_COLOR[rig.type]}`}>{RIG_TYPE_LABEL[rig.type]}</span>
+                            {rig.specs && ` · ${rig.specs}`}
+                        </p>
                     </div>
                 </div>
 

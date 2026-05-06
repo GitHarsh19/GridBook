@@ -414,7 +414,7 @@ export default function LandingPage() {
                         </div>
                         <div className="venue-card-bottom hidden">
                           <p className="font-outfit text-[0.85rem] leading-[1.65] text-white max-w-[420px]">{venue.description}</p>
-                          <span className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue →</span>
+                          <span className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue</span>
                         </div>
                       </div>
                     </Link>
@@ -445,7 +445,7 @@ export default function LandingPage() {
                       </div>
                       <div className="venue-card-bottom hidden">
                         <p className="font-outfit text-[0.85rem] leading-[1.65] text-white max-w-[420px]">{venue.description}</p>
-                        <span className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue →</span>
+                        <span className="venue-card-action inline-flex items-center gap-1.5 font-outfit text-[0.8rem] font-semibold text-white mt-4 transition-[gap] duration-300 ease-in-out hover:gap-2.5 no-underline">View Venue</span>
                       </div>
                     </div>
                   </>

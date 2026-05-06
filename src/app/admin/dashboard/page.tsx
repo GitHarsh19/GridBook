@@ -7,6 +7,8 @@ import {
     CalendarCheck,
     IndianRupee,
     Monitor,
+    Gamepad2,
+    Glasses,
     Wrench,
 
     Clock,
@@ -26,6 +28,7 @@ import {
     type Booking,
     type VenueOption,
     type RigStatus,
+    type RigType,
     TIME_SLOTS,
     getVenuesList,
     getDashboardRigs,
@@ -51,6 +54,15 @@ import {
     EditVenueModal,
     STATUS_CONFIG,
 } from "@/components/admin";
+
+const RIG_TYPE_LABEL: Record<RigType, string> = { pc: "PC", playstation: "PlayStation", xbox: "Xbox", vr: "VR" };
+const RIG_TYPE_COLOR: Record<RigType, string> = { pc: "text-orange-400", playstation: "text-blue-400", xbox: "text-green-400", vr: "text-purple-400" };
+
+function RigTypeIcon({ type, className }: { type: RigType; className?: string }) {
+    if (type === "pc") return <Monitor className={className} />;
+    if (type === "vr") return <Glasses className={className} />;
+    return <Gamepad2 className={className} />;
+}
 
 /* ─── Main Dashboard ───────────────────────────────────────────────── */
 
@@ -225,11 +237,11 @@ export default function AdminDashboardPage() {
         logout("admin");
     };
 
-    const handleAddRig = async (name: string, specs: string, status: "available" | "out_of_order") => {
+    const handleAddRig = async (name: string, specs: string, status: "available" | "out_of_order", type: import("@/lib/data").RigType = "pc") => {
         if (!selectedVenueId) return;
         setActionLoading(true);
         try {
-            const result = await addRig(selectedVenueId, name, specs, status);
+            const result = await addRig(selectedVenueId, name, specs, status, type);
             if (!result.success) {
                 setError(result.error || "Failed to add rig.");
                 setTimeout(() => setError(null), 4000);
@@ -244,11 +256,11 @@ export default function AdminDashboardPage() {
         }
     };
 
-    const handleEditRig = async (name: string, specs: string, status?: import("@/lib/data").RigStatus) => {
+    const handleEditRig = async (name: string, specs: string, status?: import("@/lib/data").RigStatus, type?: import("@/lib/data").RigType) => {
         if (!editTarget) return;
         setActionLoading(true);
         try {
-            const result = await updateRig(editTarget.id, name, specs, status);
+            const result = await updateRig(editTarget.id, name, specs, status, type);
             if (!result.success) {
                 setError(result.error || "Failed to update rig.");
                 setTimeout(() => setError(null), 4000);
@@ -623,6 +635,15 @@ export default function AdminDashboardPage() {
                                                 </button>
                                             )}
                                         </div>
+
+                                        {/* Platform icon + type */}
+                                        <RigTypeIcon
+                                            type={rig.type}
+                                            className={`mb-1 h-4 w-4 ${effectiveStatus === "out_of_order" ? "text-on-surface-variant/20" : RIG_TYPE_COLOR[rig.type]}`}
+                                        />
+                                        <span className={`mb-1 text-[9px] font-semibold ${effectiveStatus === "out_of_order" ? "text-on-surface-variant/20" : RIG_TYPE_COLOR[rig.type]}`}>
+                                            {RIG_TYPE_LABEL[rig.type]}
+                                        </span>
 
                                         {/* Status dot */}
                                         <div

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, X } from "lucide-react";
-import type { DashboardRig, RigStatus } from "@/lib/data";
+import type { DashboardRig, RigStatus, RigType } from "@/lib/data";
 
 const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
 
@@ -25,7 +25,7 @@ export function EditRigModal({
     loading,
 }: {
     rig: DashboardRig;
-    onSave: (name: string, specs: string, status?: RigStatus) => void;
+    onSave: (name: string, specs: string, status?: RigStatus, type?: RigType) => void;
     onDelete: () => void;
     onClose: () => void;
     loading: boolean;
@@ -33,6 +33,7 @@ export function EditRigModal({
     const [name, setName] = useState(rig.name);
     const [specs, setSpecs] = useState(rig.specs);
     const [status, setStatus] = useState<RigStatus>(rig.status);
+    const [rigType, setRigType] = useState<RigType>(rig.type ?? "pc");
     const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     if (confirmingDelete) {
@@ -144,6 +145,21 @@ export function EditRigModal({
                             })}
                         </div>
                     </div>
+                    <div>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
+                            Platform
+                        </p>
+                        <select
+                            value={rigType}
+                            onChange={(e) => setRigType(e.target.value as RigType)}
+                            className="w-full cursor-pointer rounded-full border border-on-surface bg-transparent px-5 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary-container"
+                        >
+                            <option value="pc" className="bg-surface-container">PC</option>
+                            <option value="playstation" className="bg-surface-container">PlayStation</option>
+                            <option value="xbox" className="bg-surface-container">Xbox</option>
+                            <option value="vr" className="bg-surface-container">VR</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div className="mt-6 flex items-center justify-between gap-2">
@@ -161,7 +177,7 @@ export function EditRigModal({
                             Cancel
                         </button>
                         <button
-                            onClick={() => onSave(name.trim(), specs.trim(), status)}
+                            onClick={() => onSave(name.trim(), specs.trim(), status, rigType)}
                             disabled={loading || !name.trim()}
                             className="cursor-pointer rounded-full bg-btn-red px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                         >

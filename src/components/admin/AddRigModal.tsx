@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
+import type { RigType } from "@/lib/data";
 
 const ghostCard = { border: "1px solid rgba(255,255,255,0.08)" };
 
@@ -13,13 +14,14 @@ export function AddRigModal({
     onClose,
     loading,
 }: {
-    onConfirm: (name: string, specs: string, status: "available" | "out_of_order") => void;
+    onConfirm: (name: string, specs: string, status: "available" | "out_of_order", type: RigType) => void;
     onClose: () => void;
     loading: boolean;
 }) {
     const [name, setName] = useState("");
     const [specs, setSpecs] = useState("");
     const [status, setStatus] = useState<"available" | "out_of_order">("available");
+    const [rigType, setRigType] = useState<RigType>("pc");
 
     return (
         <div
@@ -83,6 +85,21 @@ export function AddRigModal({
                             <option value="out_of_order" className="bg-surface-container">Out of Order</option>
                         </select>
                     </div>
+                    <div>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-btn-red">
+                            Platform
+                        </p>
+                        <select
+                            value={rigType}
+                            onChange={(e) => setRigType(e.target.value as RigType)}
+                            className="w-full cursor-pointer rounded-full border border-on-surface bg-transparent px-5 py-3 text-sm text-on-surface outline-none transition-colors focus:border-primary-container"
+                        >
+                            <option value="pc" className="bg-surface-container">PC</option>
+                            <option value="playstation" className="bg-surface-container">PlayStation</option>
+                            <option value="xbox" className="bg-surface-container">Xbox</option>
+                            <option value="vr" className="bg-surface-container">VR</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div className="mt-6 flex gap-2">
@@ -93,7 +110,7 @@ export function AddRigModal({
                         Cancel
                     </button>
                     <button
-                        onClick={() => onConfirm(name.trim(), specs.trim(), status)}
+                        onClick={() => onConfirm(name.trim(), specs.trim(), status, rigType)}
                         disabled={loading || !name.trim()}
                         className="flex-1 cursor-pointer rounded-full bg-btn-red py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-white hover:text-btn-red active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                     >
