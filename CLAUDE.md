@@ -33,7 +33,7 @@
 
 ## Project Context
 
-**PitPass** (`gridbook-app`) — a booking platform for sim racing rigs at gaming venues. Customers discover venues, select rigs, pick dates, and book time slots. Venue admins manage rigs, walk-ins, bookings, and check-ins via a real-time dashboard.
+**PitPass** (`gridbook-app`) — a booking platform for sim racing rigs at gaming venues. Customers discover venues, select rigs (PC, PlayStation, Xbox, VR), pick dates, and book time slots. Venue admins manage rigs, walk-ins, bookings, and check-ins via a real-time dashboard.
 
 ### Stack
 - **Framework:** Next.js 16.1.6 (App Router, Turbopack)
@@ -85,7 +85,8 @@ src/
 supabase/
 ├── seed.sql                            # Venues + rigs seed data
 ├── profiles.sql                        # User profiles table + trigger
-└── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
+├── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
+└── migration_rig_type.sql              # Rig platform type column (pc/playstation/xbox/vr)
 ```
 
 ### Conventions
@@ -100,6 +101,7 @@ supabase/
 - Real-time updates use Supabase subscriptions + 30s polling fallback (see `useRealtimeVenues`)
 - Role-based access: `customer` vs `admin` roles stored in Supabase `profiles` table
 - Admin components live in `components/admin/` and are barrel-exported via `admin/index.ts`
+- Rigs have a `type` field (`pc`, `playstation`, `xbox`, `vr`) — shown with platform-specific icons and colors throughout the UI
 
 ### Key Rules
 - Always handle loading and error states in UI components

@@ -11,7 +11,7 @@ PitPass is a booking platform for sim racing enthusiasts to find nearby venues, 
 ### Customer
 - **Landing Page** — Animated hero with tilted image grid, venue showcase carousel, and about section
 - **Venue Discovery** — Browse gaming cafes and sim racing lounges with real-time rig availability
-- **Rig & Date Selection** — Pick a date, choose rigs (with specs), and select multiple 1-hour time slots
+- **Rig & Date Selection** — Pick a date, choose rigs by platform (PC, PlayStation, Xbox, VR) with specs, and select multiple 1-hour time slots
 - **Instant Pricing** — Total cost calculated in real-time based on rigs × slots
 - **Booking Management** — `/bookings` page with upcoming/past tabs, cancel, and modify booking
 - **Booking Detail / QR Ticket** — `/bookings/[code]` page with a scannable QR check-in ticket
@@ -27,7 +27,7 @@ PitPass is a booking platform for sim racing enthusiasts to find nearby venues, 
 - **Bookings Ledger** — Today's bookings with customer names, time slots, and verification codes
 - **Out of Order Toggle** — Mark rigs as out of order and back to available
 - **QR Scanner** — Scan customer check-in QR codes to verify bookings in real time
-- **Rig Management** — Add, edit, and delete rigs per venue
+- **Rig Management** — Add, edit, and delete rigs per venue with platform type selection (PC, PlayStation, Xbox, VR)
 - **Venue Management** — Add, edit, and delete venues; multi-venue selector dropdown
 - **Admin Booking** — Manually create or cancel bookings from the dashboard
 - **Real-Time Updates** — Supabase real-time subscriptions + 30s polling fallback
@@ -77,6 +77,7 @@ Run the SQL files in the Supabase SQL Editor in this order:
 1. `supabase/seed.sql` — Base schema (venues, rigs)
 2. `supabase/profiles.sql` — Profiles table with role management and auto-create trigger
 3. `supabase/migration_dashboard.sql` — Bookings table, RLS policies, expanded rig statuses
+4. `supabase/migration_rig_type.sql` — Rig platform type column (pc/playstation/xbox/vr)
 
 ## Routes
 
@@ -163,7 +164,8 @@ src/
 supabase/
 ├── seed.sql                            # Venues + rigs seed data
 ├── profiles.sql                        # User profiles table + trigger
-└── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
+├── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
+└── migration_rig_type.sql              # Rig platform type column (pc/playstation/xbox/vr)
 ```
 
 ## License
