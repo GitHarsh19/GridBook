@@ -19,7 +19,7 @@ That's when I stopped thinking like a customer and started thinking like a PM.
 Before jumping to solutions, I tried to structure what I'd actually observed.
 
 **Two distinct user segments emerged:**
-- **Customers** — ranging from serious sim racing enthusiasts who care about rig specs, to casual groups who just want a fun evening out
+- **Customers** — ranging from dedicated gamers who care about rig specs and platform type, to casual groups who just want a fun evening out
 - **Venue operators** — small business owners running 4-10 rigs, juggling walk-ins, phone reservations, and equipment issues simultaneously
 
 I framed it using Jobs To Be Done:
@@ -68,7 +68,7 @@ I designed two parallel experiences — one for customers, one for operators —
 
 **Venue discovery with live availability signals.** The explore page shows venues with real-time rig counts — "4 of 6 rigs available" — so customers can make decisions before committing to a trip. This single data point eliminates the biggest pain point: showing up to a full venue.
 
-**Rig selection with specs.** This was a deliberate choice. Sim racing enthusiasts care deeply about what they're sitting in — the wheel model, the pedals, the screen setup. A generic "book a PC" interface wouldn't work for this audience. Showing specs builds confidence and reduces post-booking disappointment.
+**Rig selection with specs.** This was a deliberate choice. Gamers care about what they're sitting in — the platform (PC, PlayStation, Xbox, racing rig, VR), the hardware specs, the screen setup. A generic "book something" interface wouldn't work for this audience. Showing platform type and specs builds confidence and reduces post-booking disappointment.
 
 **Time slots with instant pricing.** Twelve one-hour slots from 10 AM to 10 PM, with the price visible upfront. No surprises, no hidden fees. Transparency before commitment reduces drop-off — if someone has to wonder "how much will this cost?", you've already lost them.
 

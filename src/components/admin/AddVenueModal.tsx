@@ -40,7 +40,7 @@ export function AddVenueModal({
                             <Building2 className="h-4 w-4 text-btn-red" />
                             Add Venue
                         </h3>
-                        <p className="mt-0.5 text-xs text-on-surface-variant/40">Create a new sim racing venue</p>
+                        <p className="mt-0.5 text-xs text-on-surface-variant/40">Create a new gaming cafe venue</p>
                     </div>
                     <button
                         onClick={onClose}

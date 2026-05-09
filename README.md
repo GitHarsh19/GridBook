@@ -1,8 +1,8 @@
 # PitPass
 
-**Discover and book sim racing rigs at gaming venues near you.**
+**Discover and book gaming rigs at cafes near you.**
 
-PitPass is a booking platform for sim racing enthusiasts to find nearby venues, browse available rigs, select time slots, and reserve their sessions. It also includes a full venue admin dashboard for managing rigs, walk-ins, and bookings in real time.
+PitPass is a booking platform for gamers to find nearby gaming cafes, browse available rigs (PC, PlayStation, Xbox, racing rigs, and VR devices), select time slots, and reserve their sessions. It also includes a full venue admin dashboard for managing rigs, walk-ins, and bookings in real time.
 
 > **Repo / package name:** `gridbook-app` — the consumer-facing brand is **PitPass**.
 
@@ -10,7 +10,7 @@ PitPass is a booking platform for sim racing enthusiasts to find nearby venues, 
 
 ### Customer
 - **Landing Page** — Animated hero with tilted image grid, venue showcase carousel, and about section
-- **Venue Discovery** — Browse gaming cafes and sim racing lounges with real-time rig availability
+- **Venue Discovery** — Browse gaming cafes with real-time rig availability across PC, PlayStation, Xbox, racing rigs, and VR devices
 - **Rig & Date Selection** — Pick a date, choose rigs by platform (PC, PlayStation, Xbox, VR) with specs, and select multiple 1-hour time slots
 - **Instant Pricing** — Total cost calculated in real-time based on rigs × slots
 - **Booking Management** — `/bookings` page with upcoming/past tabs, cancel, and modify booking

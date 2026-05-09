@@ -123,7 +123,7 @@ export default function BookingsPage() {
                         My Bookings
                     </h1>
                     <p className="mt-3 text-sm text-on-surface font-medium">
-                        View and manage your sim racing sessions
+                        View and manage your gaming sessions
                     </p>
                 </div>
 

@@ -80,7 +80,7 @@ export default function ExplorePage() {
                     <p className="mt-3 text-base text-on-surface font-medium max-w-lg">
                         {isLoading
                             ? "Scanning nearby venues\u2026"
-                            : `${venues.length} premium sim racing venues ready to book`}
+                            : `${venues.length} gaming cafes ready to book`}
                     </p>
                 </div>
 

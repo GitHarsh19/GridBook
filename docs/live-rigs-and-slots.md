@@ -2,13 +2,13 @@
 
 ## Overview
 
-PitPass shows customers which sim racing rigs are available right now — and keeps that view up to date in real time as other customers book, admins change rig status, or slots fill up. This document explains how that live data flows from the database all the way to what a customer sees on screen.
+PitPass shows customers which gaming rigs are available right now — and keeps that view up to date in real time as other customers book, admins change rig status, or slots fill up. This document explains how that live data flows from the database all the way to what a customer sees on screen.
 
 ---
 
 ## How PitPass Compares to Other Booking Platforms
 
-Most booking platforms were not built for environments where availability changes by the second. They were designed for hotels, restaurants, or appointment slots — contexts where a booking is made hours or days in advance and nothing changes between the customer browsing and the customer confirming. Sim racing venues operate completely differently: multiple rigs, hourly slots, walk-ins happening at the front desk while online customers are mid-booking. The existing solutions simply were not built for this.
+Most booking platforms were not built for environments where availability changes by the second. They were designed for hotels, restaurants, or appointment slots — contexts where a booking is made hours or days in advance and nothing changes between the customer browsing and the customer confirming. Gaming cafes operate completely differently: multiple rigs across PC, PlayStation, Xbox, racing setups, and VR — hourly slots, walk-ins happening at the front desk while online customers are mid-booking. The existing solutions simply were not built for this.
 
 ---
 

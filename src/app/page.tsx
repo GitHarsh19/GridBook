@@ -50,7 +50,7 @@ const aboutCards = [
     titleColor: "text-black",
     textColor: "text-black/80",
     title: "Discover",
-    text: "Find premium sim racing venues, gaming cafes, and esports facilities near you — all in one place, curated for serious drivers.",
+    text: "Find gaming cafes near you with PC rigs, PlayStation, Xbox, racing setups, and VR devices — all in one place, ready to book.",
     image: "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=600&q=80",
   },
   {
@@ -58,7 +58,7 @@ const aboutCards = [
     titleColor: "text-white",
     textColor: "text-white/80",
     title: "Race",
-    text: "Book a rig in seconds, join open sessions, and compete on world-class setups alongside a community of passionate sim racers.",
+    text: "Book a rig in seconds — PC, PlayStation, Xbox, racing setup, or VR — and game with friends at the best cafes in your city.",
     image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80",
   },
   {
@@ -66,7 +66,7 @@ const aboutCards = [
     titleColor: "text-white",
     textColor: "text-white/80",
     title: "Experience",
-    text: "From walk-in gaming slots to full-motion sim rigs and VR pods — every venue on PitPass is vetted for premium quality.",
+    text: "From casual PC sessions to racing rigs and full VR pods — every gaming cafe on PitPass is ready to book in minutes.",
     image: "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=600&q=80",
   },
 ];
@@ -278,11 +278,11 @@ export default function LandingPage() {
             className="font-outfit font-extrabold leading-[1.02] tracking-[-0.04em] text-white mb-6"
             style={{ fontSize: "clamp(2rem, 4vw, 3.2rem)" }}
           >
-            Book the Best Sim Racing Rigs in Your City
+            Book Gaming Rigs at the Best Cafes in Your City
           </h1>
           <p className="font-outfit text-[1.15rem] leading-[1.7] text-on-surface max-w-[560px] mx-auto mb-10">
-            Discover premium gaming venues, reserve a rig in minutes, and race
-            on world-class setups near you.
+            Discover gaming cafes near you, pick your rig — PC, PlayStation,
+            Xbox, racing setup, or VR — and book in minutes.
           </p>
           <div className="hero-buttons flex gap-4 flex-wrap justify-center">
             <a

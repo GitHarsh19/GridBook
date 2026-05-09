@@ -33,7 +33,7 @@
 
 ## Project Context
 
-**PitPass** (`gridbook-app`) — a booking platform for sim racing rigs at gaming venues. Customers discover venues, select rigs (PC, PlayStation, Xbox, VR), pick dates, and book time slots. Venue admins manage rigs, walk-ins, bookings, and check-ins via a real-time dashboard.
+**PitPass** (`gridbook-app`) — a booking platform for gaming cafes. Customers discover cafes, select rigs (PC, PlayStation, Xbox, racing rigs, VR), pick dates, and book time slots. Venue admins manage rigs, walk-ins, bookings, and check-ins via a real-time dashboard.
 
 ### Stack
 - **Framework:** Next.js 16.1.6 (App Router, Turbopack)

@@ -10,7 +10,7 @@ All controls are in one place: the admin dashboard. Each action goes directly to
 
 ## 1. Walk-In Booking
 
-The most common manual action at any sim racing venue is handling a customer who just walks through the door without a prior booking. Rather than turning them away or managing them off-system in a notebook, admins can book them directly.
+The most common manual action at any gaming cafe is handling a customer who just walks through the door without a prior booking. Rather than turning them away or managing them off-system in a notebook, admins can book them directly.
 
 Tapping any rig on the dashboard opens the **Walk-In Modal**. The admin selects a customer name (optional), picks the time slots, and for each slot chooses how to label it: Walk-In (standard), App Booked (if entering a booking made via a different channel), or In Use (if the customer is sitting down right now during the current hour).
 
