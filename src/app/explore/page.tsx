@@ -1,16 +1,46 @@
 "use client";
 
-import { useEffect, useState, useMemo, lazy, Suspense } from "react";
+import { useEffect, useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { SearchX, Search, X, LayoutGrid, Map } from "lucide-react";
+import { SearchX, Search, X, LayoutGrid, Map, Gamepad2, Zap, IndianRupee, ArrowUpDown, MapPin, TrendingDown, TrendingUp, Monitor } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { VenueCard } from "@/components/VenueCard";
 import { useRealtimeVenues } from "@/lib/hooks/useRealtimeVenues";
 import { useAuth } from "@/lib/auth";
+import { resolveCoords } from "@/lib/venueCoords";
+import type { Venue } from "@/lib/data";
 
 const VenueMap = lazy(() =>
     import("@/components/VenueMap").then((m) => ({ default: m.VenueMap }))
 );
+
+/* ── Sort options ── */
+type SortOption = "default" | "distance" | "price_low" | "price_high" | "available" | "seats";
+
+const SORT_OPTIONS: { value: SortOption; label: string; icon: typeof ArrowUpDown }[] = [
+    { value: "default", label: "Default", icon: ArrowUpDown },
+    { value: "distance", label: "Distance", icon: MapPin },
+    { value: "price_low", label: "Price ↑", icon: TrendingDown },
+    { value: "price_high", label: "Price ↓", icon: TrendingUp },
+    { value: "available", label: "Available", icon: Zap },
+    { value: "seats", label: "Seats", icon: Monitor },
+];
+
+/* ── Haversine distance (km) ── */
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function getDistanceLabel(km: number): string {
+    if (km < 1) return `${Math.round(km * 1000)}m`;
+    return `${km.toFixed(1)}km`;
+}
 
 function VenueCardSkeleton() {
     return (
@@ -43,6 +73,10 @@ export default function ExplorePage() {
     const { venues, isLoading, error, refetch } = useRealtimeVenues();
     const [searchQuery, setSearchQuery] = useState("");
     const [viewMode, setViewMode] = useState<ViewMode>("list");
+    const [flyToVenueFn, setFlyToVenueFn] = useState<((id: string) => void) | null>(null);
+    const [sortBy, setSortBy] = useState<SortOption>("default");
+    const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+    const [fetchingLocation, setFetchingLocation] = useState(false);
 
     useEffect(() => {
         if (isAdmin) {
@@ -59,6 +93,80 @@ export default function ExplorePage() {
                 v.location.toLowerCase().includes(q),
         );
     }, [venues, searchQuery]);
+
+    /* Stats derived from venues */
+    const totalVenues = filteredVenues.length;
+    const totalAvailableRigs = filteredVenues.reduce((sum, v) => sum + v.availableRigs, 0);
+    const totalRigs = filteredVenues.reduce((sum, v) => sum + v.totalRigs, 0);
+    const prices = filteredVenues.map((v) => v.price).filter((p) => p > 0);
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+
+    /* ── Sorted venues ── */
+    const sortedVenues = useMemo(() => {
+        const list = [...filteredVenues];
+        switch (sortBy) {
+            case "price_low":
+                return list.sort((a, b) => a.price - b.price);
+            case "price_high":
+                return list.sort((a, b) => b.price - a.price);
+            case "available":
+                return list.sort((a, b) => b.availableRigs - a.availableRigs);
+            case "seats":
+                return list.sort((a, b) => b.totalRigs - a.totalRigs);
+            case "distance":
+                if (!userLocation) return list;
+                return list.sort((a, b) => {
+                    const ca = resolveCoords(a);
+                    const cb = resolveCoords(b);
+                    const da = ca ? haversineKm(userLocation[0], userLocation[1], ca[0], ca[1]) : Infinity;
+                    const db = cb ? haversineKm(userLocation[0], userLocation[1], cb[0], cb[1]) : Infinity;
+                    return da - db;
+                });
+            default:
+                return list;
+        }
+    }, [filteredVenues, sortBy, userLocation]);
+
+    /* ── Get distance for a venue (for display) ── */
+    const getVenueDistance = useCallback((venue: Venue): string | null => {
+        if (!userLocation) return null;
+        const coords = resolveCoords(venue);
+        if (!coords) return null;
+        const km = haversineKm(userLocation[0], userLocation[1], coords[0], coords[1]);
+        return getDistanceLabel(km);
+    }, [userLocation]);
+
+    /* ── Request geolocation when sorting by distance ── */
+    const handleSortChange = useCallback((option: SortOption) => {
+        setSortBy(option);
+        if (option === "distance" && !userLocation && navigator.geolocation) {
+            setFetchingLocation(true);
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+                    setFetchingLocation(false);
+                },
+                () => setFetchingLocation(false),
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+    }, [userLocation]);
+
+    /* Callback from VenueMap to expose flyToVenue */
+    const handleFlyToReady = useCallback((fn: (id: string) => void) => {
+        setFlyToVenueFn(() => fn);
+    }, []);
+
+    const handleVenueCardClick = useCallback((venueId: number) => {
+        if (flyToVenueFn) {
+            flyToVenueFn(String(venueId));
+        }
+    }, [flyToVenueFn]);
+
+    /* Current time for sidebar */
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
 
     return (
         <div className="min-h-screen bg-surface font-outfit text-on-surface-variant overflow-x-hidden antialiased">
@@ -163,11 +271,140 @@ export default function ExplorePage() {
                     </div>
                 )}
 
-                {/* Map view */}
+                {/* ══════════════════════════════════════
+                   Map Dashboard View
+                   ══════════════════════════════════════ */}
                 {viewMode === "map" && !isLoading && (
-                    <Suspense fallback={<MapSkeleton />}>
-                        <VenueMap venues={filteredVenues} />
-                    </Suspense>
+                    <div className="map-dashboard">
+                        {/* ── Stats Row ── */}
+                        <div className="map-dashboard-stats">
+                            {/* Total Venues */}
+                            <div className="map-stat-card">
+                                <span className="map-stat-label">Total Venues</span>
+                                <span className="map-stat-value">{totalVenues}</span>
+                                <div className="map-stat-indicator">
+                                    <span className="map-stat-dot green" />
+                                    <span className="map-stat-indicator-text">
+                                        {totalVenues} online
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Available Rigs */}
+                            <div className="map-stat-card">
+                                <div className="flex items-center justify-between">
+                                    <span className="map-stat-label">Rigs Available</span>
+                                    <Gamepad2 className="h-4 w-4 text-white/20" />
+                                </div>
+                                <span className="map-stat-value">
+                                    {totalAvailableRigs}
+                                    <span className="text-base font-medium text-white/30 ml-1">/ {totalRigs}</span>
+                                </span>
+                                <div className="map-stat-indicator">
+                                    <span className={`map-stat-dot ${totalAvailableRigs > 0 ? "green" : "red"}`} />
+                                    <span className="map-stat-indicator-text">
+                                        {totalAvailableRigs > 0 ? "rigs open now" : "all booked"}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Price Range */}
+                            <div className="map-stat-card">
+                                <div className="flex items-center justify-between">
+                                    <span className="map-stat-label">Price Range</span>
+                                    <IndianRupee className="h-4 w-4 text-white/20" />
+                                </div>
+                                <span className="map-stat-value">
+                                    ₹{minPrice}
+                                    <span className="text-base font-medium text-white/30"> – ₹{maxPrice}</span>
+                                </span>
+                                <span className="map-stat-sub">per hour</span>
+                            </div>
+                        </div>
+
+                        {/* ── Map Panel ── */}
+                        <div className="map-dashboard-map">
+                            <Suspense fallback={<MapSkeleton />}>
+                                <VenueMap
+                                    venues={filteredVenues}
+                                    onFlyToReady={handleFlyToReady}
+                                />
+                            </Suspense>
+                        </div>
+
+                        {/* ── Venue Sidebar ── */}
+                        <div className="map-dashboard-sidebar">
+                            <div className="map-sidebar-header">
+                                <span className="map-sidebar-title">Nearby Venues</span>
+                                <span className="map-sidebar-count">{sortedVenues.length} found</span>
+                            </div>
+
+                            {/* ── Sort Filter Pills ── */}
+                            <div className="map-sort-bar">
+                                {SORT_OPTIONS.map(({ value, label, icon: Icon }) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => handleSortChange(value)}
+                                        className={`map-sort-pill ${sortBy === value ? "active" : ""}`}
+                                        title={`Sort by ${label}`}
+                                    >
+                                        <Icon className="h-3 w-3" />
+                                        {label}
+                                        {value === "distance" && fetchingLocation && sortBy === "distance" && (
+                                            <span className="map-sort-loading" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="map-sidebar-list">
+                                {sortedVenues.map((venue) => {
+                                    const hasAvailable = venue.availableRigs > 0;
+                                    const distance = getVenueDistance(venue);
+                                    return (
+                                        <div
+                                            key={venue.id}
+                                            className="map-venue-card"
+                                            onClick={() => handleVenueCardClick(venue.id)}
+                                            role="button"
+                                            tabIndex={0}
+                                        >
+                                            <div className={`map-venue-icon ${hasAvailable ? "available" : "full"}`}>
+                                                🎮
+                                            </div>
+                                            <div className="map-venue-info">
+                                                <div className="map-venue-name">{venue.name}</div>
+                                                <div className="map-venue-location">
+                                                    <span className={`map-venue-status-dot ${hasAvailable ? "available" : "full"}`} />
+                                                    {venue.location} • {hasAvailable ? (
+                                                        <span className="text-[#86efac]">Online</span>
+                                                    ) : (
+                                                        <span className="text-[#fca5a5]">Full</span>
+                                                    )}
+                                                </div>
+                                                <div className="map-venue-meta">
+                                                    <span className="map-venue-meta-item rigs">
+                                                        <Zap className="h-3 w-3" />
+                                                        {venue.availableRigs}/{venue.totalRigs} rigs
+                                                    </span>
+                                                    <span className="map-venue-meta-item price">
+                                                        ₹{venue.price}/hr
+                                                    </span>
+                                                    {distance && (
+                                                        <span className="map-venue-meta-item distance">
+                                                            <MapPin className="h-3 w-3" />
+                                                            {distance}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <span className="map-venue-time">{timeStr}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
                 )}
 
                 {/* No results from search */}

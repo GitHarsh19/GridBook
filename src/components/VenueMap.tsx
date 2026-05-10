@@ -7,6 +7,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { Venue } from "@/lib/data";
 import { useAuth } from "@/lib/auth";
+import { resolveCoords } from "@/lib/venueCoords";
 
 /* ── Bengaluru center fallback ── */
 const DEFAULT_CENTER: L.LatLngTuple = [12.9716, 77.5946];
@@ -65,79 +66,13 @@ function getDirectionsUrl(lat: number, lng: number, venueName: string): string {
     return `https://www.google.com/maps/dir/?api=1&destination=${destination}&destination_place_id=&travelmode=driving&dir_action=navigate&query=${label}`;
 }
 
-/* ── Fallback coordinates for known Bengaluru areas ── */
-const LOCATION_FALLBACKS: Record<string, [number, number]> = {
-    "hsr layout": [12.9116, 77.6474],
-    "hsr": [12.9116, 77.6474],
-    "koramangala": [12.9352, 77.6245],
-    "indiranagar": [12.9716, 77.6412],
-    "whitefield": [12.9698, 77.7500],
-    "jayanagar": [12.9250, 77.5938],
-    "jp nagar": [12.9063, 77.5857],
-    "marathahalli": [12.9591, 77.6974],
-    "electronic city": [12.8399, 77.6770],
-    "mg road": [12.9756, 77.6068],
-    "btm layout": [12.9166, 77.6101],
-    "hebbal": [13.0358, 77.5970],
-    "yelahanka": [13.1007, 77.5963],
-    "banashankari": [12.9255, 77.5468],
-    "rajajinagar": [12.9900, 77.5525],
-    "malleswaram": [13.0035, 77.5649],
-    "bengaluru": [12.9716, 77.5946],
-    "bangalore": [12.9716, 77.5946],
-};
-
-function resolveCoords(venue: Venue): [number, number] | null {
-    if (venue.latitude != null && venue.longitude != null) {
-        return [venue.latitude, venue.longitude];
-    }
-    const loc = venue.location.toLowerCase().trim();
-    if (LOCATION_FALLBACKS[loc]) return LOCATION_FALLBACKS[loc];
-    for (const [key, coords] of Object.entries(LOCATION_FALLBACKS)) {
-        if (loc.includes(key) || key.includes(loc)) return coords;
-    }
-    return null;
-}
-
-/* ── Reverse geocode area name from coordinates ── */
-const AREA_NAMES: Record<string, [number, number, number]> = {
-    // [lat, lng, radiusKm]
-    "INDIRANAGAR": [12.9716, 77.6412, 2],
-    "KORAMANGALA": [12.9352, 77.6245, 2],
-    "HSR LAYOUT": [12.9116, 77.6474, 2],
-    "WHITEFIELD": [12.9698, 77.7500, 3],
-    "JAYANAGAR": [12.9250, 77.5938, 2],
-    "JP NAGAR": [12.9063, 77.5857, 2],
-    "MARATHAHALLI": [12.9591, 77.6974, 2],
-    "ELECTRONIC CITY": [12.8399, 77.6770, 3],
-    "MG ROAD": [12.9756, 77.6068, 1.5],
-    "BTM LAYOUT": [12.9166, 77.6101, 2],
-    "HEBBAL": [13.0358, 77.5970, 2],
-    "MALLESWARAM": [13.0035, 77.5649, 2],
-    "RAJAJINAGAR": [12.9900, 77.5525, 2],
-    "BANASHANKARI": [12.9255, 77.5468, 2],
-    "BENGALURU": [12.9716, 77.5946, 20],
-};
-
-function getAreaName(lat: number, lng: number): string {
-    let closest = "BENGALURU";
-    let closestDist = Infinity;
-    for (const [name, [aLat, aLng, radius]] of Object.entries(AREA_NAMES)) {
-        if (name === "BENGALURU") continue;
-        const dist = Math.sqrt((lat - aLat) ** 2 + (lng - aLng) ** 2) * 111;
-        if (dist < radius && dist < closestDist) {
-            closest = name;
-            closestDist = dist;
-        }
-    }
-    return closest;
-}
-
 interface VenueMapProps {
     venues: Venue[];
+    /** Called once when the flyToVenue function is ready, so the parent can trigger it */
+    onFlyToReady?: (flyTo: (venueId: string) => void) => void;
 }
 
-export function VenueMap({ venues }: VenueMapProps) {
+export function VenueMap({ venues, onFlyToReady }: VenueMapProps) {
     const router = useRouter();
     const { isLoggedIn } = useAuth();
     const mapRef = useRef<L.Map | null>(null);
@@ -148,8 +83,6 @@ export function VenueMap({ venues }: VenueMapProps) {
     const userAccuracyRef = useRef<L.Circle | null>(null);
     const [locating, setLocating] = useState(false);
     const [locationError, setLocationError] = useState<string | null>(null);
-    const [areaName, setAreaName] = useState("BENGALURU");
-    const [showLegend, setShowLegend] = useState(true);
 
     /* ── Initialize map ── */
     useEffect(() => {
@@ -183,18 +116,9 @@ export function VenueMap({ venues }: VenueMapProps) {
 
         L.control.zoom({ position: "bottomright" }).addTo(map);
 
-        /* Track area name on move */
-        const updateArea = () => {
-            const c = map.getCenter();
-            setAreaName(getAreaName(c.lat, c.lng));
-        };
-        map.on("moveend", updateArea);
-        updateArea();
-
         mapRef.current = map;
 
         return () => {
-            map.off("moveend", updateArea);
             map.remove();
             mapRef.current = null;
         };
@@ -378,7 +302,7 @@ export function VenueMap({ venues }: VenueMapProps) {
         );
     }, []);
 
-    /* ── Fly to venue from legend ── */
+    /* ── Fly to venue (exposed to parent) ── */
     const flyToVenue = useCallback((venueId: string) => {
         const map = mapRef.current;
         const marker = markerMapRef.current.get(venueId);
@@ -388,66 +312,29 @@ export function VenueMap({ venues }: VenueMapProps) {
         setTimeout(() => marker.openPopup(), 600);
     }, []);
 
-    /* ── Mappable venues for legend ── */
+    /* ── Expose flyToVenue to parent via callback ── */
+    useEffect(() => {
+        if (onFlyToReady) {
+            onFlyToReady(flyToVenue);
+        }
+    }, [flyToVenue, onFlyToReady]);
+
+    /* ── Mappable venues for empty state ── */
     const mappableVenues = venues.filter((v) => resolveCoords(v) !== null);
 
     return (
         <div className="gta-map-wrapper">
-            {/* Map container — filter applied via CSS to tile images only */}
+            {/* Map container */}
             <div
                 ref={containerRef}
                 className="w-full h-full"
             />
 
-            {/* Vignette overlay — dark edges like GTA */}
+            {/* Edge fade overlay — map dissolves into page background */}
+            <div className="gta-map-fade" />
+
+            {/* Vignette overlay — tuned to page bg */}
             <div className="gta-vignette" />
-
-            {/* Scanlines subtle effect */}
-            <div className="gta-scanlines" />
-
-            {/* GTA-style area name — bottom left */}
-            <div className="gta-area-label">
-                <span className="gta-area-name">{areaName}</span>
-            </div>
-
-            {/* GTA-style legend panel — right side */}
-            {showLegend && mappableVenues.length > 0 && (
-                <div className="gta-legend">
-                    <button
-                        className="gta-legend-close"
-                        onClick={() => setShowLegend(false)}
-                        title="Hide legend"
-                    >
-                        ✕
-                    </button>
-                    {mappableVenues.map((v) => (
-                        <div
-                            key={v.id}
-                            className="gta-legend-item"
-                            onClick={() => flyToVenue(String(v.id))}
-                            role="button"
-                            tabIndex={0}
-                            title={`Fly to ${v.name}`}
-                        >
-                            <span className="gta-legend-text">{v.name}</span>
-                            <span className={`gta-legend-blip ${v.availableRigs > 0 ? "available" : "full"}`}>
-                                🎮
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Show legend button when hidden */}
-            {!showLegend && (
-                <button
-                    className="gta-legend-toggle"
-                    onClick={() => setShowLegend(true)}
-                    title="Show legend"
-                >
-                    ☰
-                </button>
-            )}
 
             {/* Locate me — GTA HUD style */}
             <button
