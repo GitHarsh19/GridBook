@@ -15,7 +15,6 @@ export function CheckoutBar({
     rigs,
     price,
     bookingDate,
-    bookedRigIds,
     onBookingComplete,
     onConflict,
 }: {
@@ -25,7 +24,6 @@ export function CheckoutBar({
     rigs: Rig[];
     price: number;
     bookingDate: string;
-    bookedRigIds: Set<number>;
     onBookingComplete: (code: string) => void;
     onConflict: () => void;
 }) {

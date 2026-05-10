@@ -247,7 +247,6 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
                 rigs={venue.rigs}
                 price={venue.price}
                 bookingDate={selectedDate}
-                bookedRigIds={bookedRigIds}
                 onBookingComplete={handleBookingComplete}
                 onConflict={refreshBookedRigs}
             />

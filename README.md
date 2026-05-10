@@ -10,7 +10,8 @@ PitPass is a booking platform for gamers to find nearby gaming cafes, browse ava
 
 ### Customer
 - **Landing Page** — Animated hero with tilted image grid, venue showcase carousel, and about section
-- **Venue Discovery** — Browse gaming cafes with real-time rig availability across PC, PlayStation, Xbox, racing rigs, and VR devices
+- **Venue Discovery** — Browse gaming cafes with real-time rig availability across PC, PlayStation, Xbox, racing rigs, and VR devices (list + map view)
+- **Interactive Map** — GTA 5-styled Leaflet map with venue blips, distance sorting, geolocation, and dashboard stats
 - **Rig & Date Selection** — Pick a date, choose rigs by platform (PC, PlayStation, Xbox, VR) with specs, and select multiple 1-hour time slots
 - **Instant Pricing** — Total cost calculated in real-time based on rigs × slots
 - **Booking Management** — `/bookings` page with upcoming/past tabs, cancel, and modify booking
@@ -44,6 +45,7 @@ PitPass is a booking platform for gamers to find nearby gaming cafes, browse ava
 | Forms | React Hook Form + Zod |
 | Icons | Lucide React |
 | Toasts | Sonner |
+| Maps | Leaflet + Stadia Maps (GTA 5-styled dark tiles) |
 | QR | qrcode / qrcode.react / @yudiel/react-qr-scanner |
 | Font | Geist + Outfit |
 
@@ -89,7 +91,7 @@ Run the SQL files in the Supabase SQL Editor in this order:
 | `/admin/login` | Public | Admin login |
 | `/admin/signup` | Public | Admin registration |
 | `/auth/callback` | Public | OAuth callback handler |
-| `/explore` | Customer | Venue discovery feed |
+| `/explore` | Customer | Venue discovery (list + map view) |
 | `/venue/[id]` | Customer | Rig selection & booking |
 | `/bookings` | Customer | My bookings (upcoming / past) |
 | `/bookings/[code]` | Customer | Booking detail + QR check-in ticket |
@@ -107,7 +109,7 @@ src/
 │   │   ├── booking.ts                  # Server actions — create/modify/cancel bookings
 │   │   └── admin.ts                    # Server actions — admin booking & rig ops
 │   ├── explore/
-│   │   ├── page.tsx                    # Venue discovery feed
+│   │   ├── page.tsx                    # Venue discovery (list + map view with sort/filter)
 │   │   └── layout.tsx                  # Auth-protected layout
 │   ├── (customer)/
 │   │   ├── login/page.tsx              # Customer login
@@ -143,6 +145,7 @@ src/
 │   ├── CheckoutBar.tsx                 # Booking checkout summary
 │   ├── ModifyBookingModal.tsx          # Modify existing booking modal
 │   ├── TicketQR.tsx                    # QR code ticket display
+│   ├── VenueMap.tsx                    # Interactive Leaflet map (GTA 5-styled)
 │   └── admin/
 │       ├── index.ts                    # Admin component barrel export
 │       ├── WalkInModal.tsx             # Block rig for walk-in
@@ -158,6 +161,7 @@ src/
     ├── supabase.ts                     # Supabase client (browser)
     ├── supabase-server.ts              # Supabase client (server / SSR)
     ├── utils.ts                        # Shared utility functions
+    ├── venueCoords.ts                  # Venue coordinate data for map
     └── hooks/
         ├── useRealtimeVenues.ts        # Real-time venue subscriptions
         └── useRateLimit.ts             # Client-side rate limiting hook
@@ -166,7 +170,20 @@ supabase/
 ├── profiles.sql                        # User profiles table + trigger
 ├── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
 └── migration_rig_type.sql              # Rig platform type column (pc/playstation/xbox/vr)
+docs/
+├── admin-manual-controls.md            # Admin manual controls documentation
+├── gridbook-article.md                 # PitPass article / overview
+├── live-rigs-and-slots.md              # Live rigs and slots documentation
+└── qr-checkin.md                       # QR check-in flow documentation
 ```
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key |
+| `NEXT_PUBLIC_STADIA_API_KEY` | Stadia Maps API key (free on localhost, required in production) |
 
 ## License
 

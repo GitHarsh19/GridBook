@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { X, Loader2, AlertCircle, CalendarCheck } from "lucide-react";
 import { TIME_SLOTS, modifyBooking } from "@/lib/data";
-import { getUpcomingDates, formatDateLabel, formatMonthYear, isSlotPast as checkSlotPast, getTodayStr } from "@/lib/utils";
+import { getUpcomingDates, formatDateLabel, formatMonthYear, isSlotPast as checkSlotPast } from "@/lib/utils";
 
 interface ModifyBookingModalProps {
     verificationCode: string;

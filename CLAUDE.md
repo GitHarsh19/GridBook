@@ -42,7 +42,7 @@
 - **Styling:** Tailwind CSS v4
 - **Database:** Supabase (PostgreSQL, Auth, Real-time subscriptions)
 - **Forms:** React Hook Form + Zod validation
-- **Maps:** Leaflet (interactive venue map)
+- **Maps:** Leaflet + Stadia Maps tiles (interactive venue map with GTA 5 styling)
 - **Icons:** Lucide React
 - **Toasts:** Sonner
 - **QR:** qrcode / qrcode.react / @yudiel/react-qr-scanner
@@ -99,6 +99,11 @@ supabase/
 ├── profiles.sql                        # User profiles table + trigger
 ├── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
 └── migration_rig_type.sql              # Rig platform type column (pc/playstation/xbox/vr)
+docs/                                   # Feature documentation
+├── admin-manual-controls.md
+├── gridbook-article.md
+├── live-rigs-and-slots.md
+└── qr-checkin.md
 ```
 
 ### Conventions
@@ -114,6 +119,10 @@ supabase/
 - Role-based access: `customer` vs `admin` roles stored in Supabase `profiles` table
 - Admin components live in `components/admin/` and are barrel-exported via `admin/index.ts`
 - Rigs have a `type` field (`pc`, `playstation`, `xbox`, `vr`) — shown with platform-specific icons and colors throughout the UI
+
+### Environment Variables
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase connection
+- `NEXT_PUBLIC_STADIA_API_KEY` — Stadia Maps tile API key (works without key on localhost, required in production)
 
 ### Key Rules
 - Always handle loading and error states in UI components

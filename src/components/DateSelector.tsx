@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays } from "lucide-react";
+
 import { getUpcomingDates, formatDateLabel, formatMonthYear } from "@/lib/utils";
 
 export function DateSelector({
