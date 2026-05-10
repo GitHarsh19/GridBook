@@ -19,7 +19,9 @@ create table if not exists rigs (
   name      text   not null,
   status    text   not null default 'available'
               check (status in ('available', 'booked', 'blocked', 'out_of_order')),
-  specs     text   not null default ''
+  specs     text   not null default '',
+  type      text   not null default 'pc'
+              check (type in ('pc', 'playstation', 'xbox', 'vr'))
 );
 
 -- 3. Bookings table
@@ -47,49 +49,49 @@ alter publication supabase_realtime add table bookings;
 insert into venues (name, location, price, description) values
   ('Apex Racing Lounge', 'HSR Layout', 500, 'Premium sim racing experience with Fanatec DD setups and triple-screen immersion.');
 
-insert into rigs (venue_id, name, status, specs) values
-  (1, 'Rig 1', 'available', 'Fanatec DD Pro · Triple 27"'),
-  (1, 'Rig 2', 'booked',    'Fanatec DD Pro · Triple 27"'),
-  (1, 'Rig 3', 'available', 'Fanatec CSL DD · Ultrawide 34"'),
-  (1, 'Rig 4', 'available', 'Fanatec CSL DD · Ultrawide 34"'),
-  (1, 'Rig 5', 'booked',    'Logitech G Pro · Single 32"'),
-  (1, 'Rig 6', 'booked',    'Logitech G Pro · Single 32"'),
-  (1, 'Rig 7', 'available', 'Thrustmaster T300 · VR Headset'),
-  (1, 'Rig 8', 'booked',    'Thrustmaster T300 · VR Headset');
+insert into rigs (venue_id, name, status, specs, type) values
+  (1, 'Rig 1', 'available', 'Fanatec DD Pro · Triple 27"',       'pc'),
+  (1, 'Rig 2', 'booked',    'Fanatec DD Pro · Triple 27"',       'pc'),
+  (1, 'Rig 3', 'available', 'Fanatec CSL DD · Ultrawide 34"',    'pc'),
+  (1, 'Rig 4', 'available', 'DualSense · 55" OLED',              'playstation'),
+  (1, 'Rig 5', 'booked',    'Xbox Controller · Single 32"',      'xbox'),
+  (1, 'Rig 6', 'booked',    'DualSense · Single 32"',            'playstation'),
+  (1, 'Rig 7', 'available', 'Thrustmaster T300 · VR Headset',    'vr'),
+  (1, 'Rig 8', 'booked',    'Meta Quest · VR Headset',           'vr');
 
 -- Clutch Gaming Arena (Koramangala)
 insert into venues (name, location, price, description) values
   ('Clutch Gaming Arena', 'Koramangala', 600, 'High-end gaming café with professional-grade sim rigs and VR setups.');
 
-insert into rigs (venue_id, name, status, specs) values
-  (2, 'Rig 1', 'available', 'Fanatec DD1 · Triple 32"'),
-  (2, 'Rig 2', 'available', 'Fanatec DD1 · Triple 32"'),
-  (2, 'Rig 3', 'available', 'Fanatec CSL DD · Ultrawide 34"'),
-  (2, 'Rig 4', 'booked',    'Logitech G923 · Single 27"'),
-  (2, 'Rig 5', 'available', 'Logitech G923 · Single 27"'),
-  (2, 'Rig 6', 'available', 'Thrustmaster T-GT II · VR');
+insert into rigs (venue_id, name, status, specs, type) values
+  (2, 'Rig 1', 'available', 'Fanatec DD1 · Triple 32"',          'pc'),
+  (2, 'Rig 2', 'available', 'Fanatec DD1 · Triple 32"',          'pc'),
+  (2, 'Rig 3', 'available', 'DualSense · Ultrawide 34"',         'playstation'),
+  (2, 'Rig 4', 'booked',    'Xbox Controller · Single 27"',      'xbox'),
+  (2, 'Rig 5', 'available', 'Logitech G923 · Single 27"',        'pc'),
+  (2, 'Rig 6', 'available', 'Thrustmaster T-GT II · VR',         'playstation');
 
 -- Pole Position Hub (Indiranagar)
 insert into venues (name, location, price, description) values
   ('Pole Position Hub', 'Indiranagar', 450, 'Neighbourhood sim racing spot with solid mid-range setups and AC gaming.');
 
-insert into rigs (venue_id, name, status, specs) values
-  (3, 'Rig 1', 'available', 'Logitech G Pro · Triple 24"'),
-  (3, 'Rig 2', 'booked',    'Logitech G Pro · Triple 24"'),
-  (3, 'Rig 3', 'booked',    'Logitech G923 · Single 27"'),
-  (3, 'Rig 4', 'booked',    'Logitech G923 · Single 27"'),
-  (3, 'Rig 5', 'available', 'Thrustmaster T300 · Ultrawide'),
-  (3, 'Rig 6', 'booked',    'Thrustmaster T300 · Ultrawide');
+insert into rigs (venue_id, name, status, specs, type) values
+  (3, 'Rig 1', 'available', 'Logitech G Pro · Triple 24"',       'pc'),
+  (3, 'Rig 2', 'booked',    'DualSense · Triple 24"',            'playstation'),
+  (3, 'Rig 3', 'booked',    'Xbox Controller · Single 27"',      'xbox'),
+  (3, 'Rig 4', 'booked',    'Logitech G923 · Single 27"',        'pc'),
+  (3, 'Rig 5', 'available', 'Thrustmaster T300 · Ultrawide',     'pc'),
+  (3, 'Rig 6', 'booked',    'DualSense · Ultrawide',             'playstation');
 
 -- DRS Zone Lounge (Whitefield)
 insert into venues (name, location, price, description) values
   ('DRS Zone Lounge', 'Whitefield', 550, 'Modern racing lounge with motion rigs and competitive league nights.');
 
-insert into rigs (venue_id, name, status, specs) values
-  (4, 'Rig 1', 'available', 'Fanatec DD Pro · Motion Rig'),
-  (4, 'Rig 2', 'available', 'Fanatec DD Pro · Motion Rig'),
-  (4, 'Rig 3', 'booked',    'Fanatec CSL DD · Triple 27"'),
-  (4, 'Rig 4', 'available', 'Fanatec CSL DD · Triple 27"'),
-  (4, 'Rig 5', 'booked',    'Logitech G Pro · Single 32"'),
-  (4, 'Rig 6', 'available', 'Logitech G Pro · Single 32"'),
-  (4, 'Rig 7', 'booked',    'Thrustmaster T818 · VR Headset');
+insert into rigs (venue_id, name, status, specs, type) values
+  (4, 'Rig 1', 'available', 'Fanatec DD Pro · Motion Rig',       'pc'),
+  (4, 'Rig 2', 'available', 'Fanatec DD Pro · Motion Rig',       'pc'),
+  (4, 'Rig 3', 'booked',    'Xbox Controller · Triple 27"',      'xbox'),
+  (4, 'Rig 4', 'available', 'DualSense · Triple 27"',            'playstation'),
+  (4, 'Rig 5', 'booked',    'Logitech G Pro · Single 32"',       'pc'),
+  (4, 'Rig 6', 'available', 'Xbox Controller · Single 32"',      'xbox'),
+  (4, 'Rig 7', 'booked',    'Thrustmaster T818 · VR Headset',    'vr');

@@ -9,6 +9,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
+const Logo = () => (
+    <Link href="/" className="mb-10 flex items-center justify-center">
+        <span className="text-[2rem] font-black tracking-[-0.04em] text-on-surface">
+            PitPass
+        </span>
+    </Link>
+);
+
 const signUpSchema = z
     .object({
         name: z
@@ -97,14 +105,6 @@ export default function SignUpPage() {
 
     const inputClass =
         "w-full rounded-full border border-on-surface bg-transparent px-5 py-3.5 font-outfit text-[0.9rem] text-white placeholder:text-white/40 outline-none transition-colors duration-300 ease-in-out focus:border-primary-container";
-
-    const Logo = () => (
-        <Link href="/" className="mb-10 flex items-center justify-center">
-            <span className="text-[2rem] font-black tracking-[-0.04em] text-on-surface">
-                PitPass
-            </span>
-        </Link>
-    );
 
     // Success state
     if (signUpSuccess) {

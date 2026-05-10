@@ -33,7 +33,7 @@
 
 ## Project Context
 
-**PitPass** (`gridbook-app`) — a booking platform for sim racing rigs at gaming venues. Customers discover venues, select rigs, pick dates, and book time slots. Venue admins manage rigs, walk-ins, bookings, and check-ins via a real-time dashboard.
+**PitPass** (`gridbook-app`) — a booking platform for gaming cafes. Customers discover cafes, select rigs (PC, PlayStation, Xbox, racing rigs, VR), pick dates, and book time slots. Venue admins manage rigs, walk-ins, bookings, and check-ins via a real-time dashboard.
 
 ### Stack
 - **Framework:** Next.js 16.1.6 (App Router, Turbopack)
@@ -42,6 +42,7 @@
 - **Styling:** Tailwind CSS v4
 - **Database:** Supabase (PostgreSQL, Auth, Real-time subscriptions)
 - **Forms:** React Hook Form + Zod validation
+- **Maps:** Leaflet (interactive venue map)
 - **Icons:** Lucide React
 - **Toasts:** Sonner
 - **QR:** qrcode / qrcode.react / @yudiel/react-qr-scanner
@@ -55,23 +56,33 @@ src/
 │   ├── actions/
 │   │   ├── booking.ts                  # Server actions — create/modify/cancel bookings
 │   │   └── admin.ts                    # Server actions — admin booking & rig ops
-│   ├── explore/                        # Venue discovery (auth-protected)
-│   ├── (customer)/                     # Login + signup pages
-│   ├── admin/dashboard/
-│   │   ├── page.tsx                    # Admin dashboard
-│   │   ├── layout.tsx                  # Admin auth guard
-│   │   └── ScannerModal.tsx            # QR check-in scanner
+│   ├── explore/                        # Venue discovery + map view (auth-protected)
+│   ├── (customer)/                     # Customer login + signup pages
+│   ├── admin/
+│   │   ├── login/page.tsx              # Admin login
+│   │   ├── signup/page.tsx             # Admin signup
+│   │   └── dashboard/
+│   │       ├── page.tsx                # Admin dashboard
+│   │       ├── layout.tsx              # Admin auth guard
+│   │       └── ScannerModal.tsx        # QR check-in scanner
 │   ├── auth/callback/                  # OAuth callback handler
 │   ├── bookings/
+│   │   ├── layout.tsx                  # Bookings auth guard
 │   │   ├── page.tsx                    # My bookings (upcoming/past, cancel, modify)
 │   │   └── [code]/page.tsx             # Booking detail + QR ticket
-│   ├── profile/page.tsx                # Edit name, change password
-│   └── venue/[id]/                     # Venue detail + booking UI
+│   ├── profile/
+│   │   ├── layout.tsx                  # Profile auth guard
+│   │   └── page.tsx                    # Edit name, change password
+│   └── venue/
+│       ├── layout.tsx                  # Venue auth guard
+│       ├── page.tsx                    # Venue index redirect
+│       └── [id]/                       # Venue detail + booking UI
 ├── components/
 │   ├── admin/                          # Admin-specific modals (Walk-in, Add/Edit Rig & Venue, Status)
 │   ├── DateSelector.tsx                # Date picker for bookings
 │   ├── ModifyBookingModal.tsx          # Modify existing booking
 │   ├── TicketQR.tsx                    # QR code ticket display
+│   ├── VenueMap.tsx                    # Interactive Leaflet map of venues
 │   └── ...                            # Navbar, VenueCard, RigGrid, TimeSelector, CheckoutBar, ProtectedRoute
 └── lib/
     ├── auth.tsx                        # Auth context + Supabase session bridge
@@ -79,13 +90,15 @@ src/
     ├── supabase.ts                     # Supabase client (browser)
     ├── supabase-server.ts              # Supabase client (server / SSR)
     ├── utils.ts                        # Shared utility functions
+    ├── venueCoords.ts                  # Venue coordinate data for map
     └── hooks/
         ├── useRealtimeVenues.ts        # Real-time venue subscriptions
         └── useRateLimit.ts             # Client-side rate limiting
 supabase/
 ├── seed.sql                            # Venues + rigs seed data
 ├── profiles.sql                        # User profiles table + trigger
-└── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
+├── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
+└── migration_rig_type.sql              # Rig platform type column (pc/playstation/xbox/vr)
 ```
 
 ### Conventions
@@ -100,6 +113,7 @@ supabase/
 - Real-time updates use Supabase subscriptions + 30s polling fallback (see `useRealtimeVenues`)
 - Role-based access: `customer` vs `admin` roles stored in Supabase `profiles` table
 - Admin components live in `components/admin/` and are barrel-exported via `admin/index.ts`
+- Rigs have a `type` field (`pc`, `playstation`, `xbox`, `vr`) — shown with platform-specific icons and colors throughout the UI
 
 ### Key Rules
 - Always handle loading and error states in UI components

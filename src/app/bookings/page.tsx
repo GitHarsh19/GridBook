@@ -3,13 +3,21 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
-    CalendarCheck, Clock, MapPin, Monitor, AlertCircle,
+    CalendarCheck, Clock, MapPin, Monitor, Gamepad2, Glasses, AlertCircle,
     Loader2, X, ArrowLeft, CalendarX, ExternalLink, Pencil,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { ModifyBookingModal } from "@/components/ModifyBookingModal";
 import { supabase } from "@/lib/supabase";
-import { getCustomerBookings, cancelBooking, type CustomerBooking } from "@/lib/data";
+import { getCustomerBookings, cancelBooking, type CustomerBooking, type RigType } from "@/lib/data";
+
+const RIG_TYPE_COLOR: Record<RigType, string> = { pc: "text-orange-400", playstation: "text-blue-400", xbox: "text-green-400", vr: "text-purple-400" };
+
+function RigTypeIcon({ type, className }: { type: RigType; className?: string }) {
+    if (type === "pc") return <Monitor className={className} />;
+    if (type === "vr") return <Glasses className={className} />;
+    return <Gamepad2 className={className} />;
+}
 import { getTodayStr, formatBookingDate } from "@/lib/utils";
 
 interface BookingGroup {
@@ -19,7 +27,7 @@ interface BookingGroup {
     bookingDate: string;
     customerName: string;
     source: "app" | "walk_in";
-    slots: { time_slot: string; rig_name: string; id: number }[];
+    slots: { time_slot: string; rig_name: string; rig_type: RigType; id: number }[];
 }
 
 function groupBookings(bookings: CustomerBooking[]): BookingGroup[] {
@@ -37,7 +45,7 @@ function groupBookings(bookings: CustomerBooking[]): BookingGroup[] {
                 slots: [],
             });
         }
-        map.get(key)!.slots.push({ time_slot: b.time_slot, rig_name: b.rig_name, id: b.id });
+        map.get(key)!.slots.push({ time_slot: b.time_slot, rig_name: b.rig_name, rig_type: b.rig_type, id: b.id });
     }
     return Array.from(map.values());
 }
@@ -115,7 +123,7 @@ export default function BookingsPage() {
                         My Bookings
                     </h1>
                     <p className="mt-3 text-sm text-on-surface font-medium">
-                        View and manage your sim racing sessions
+                        View and manage your gaming sessions
                     </p>
                 </div>
 
@@ -191,7 +199,6 @@ export default function BookingsPage() {
                         {displayed.map((group) => {
                             const isPast = group.bookingDate < today;
                             const isCancelling = cancelling === group.verificationCode;
-                            const uniqueRigs = [...new Set(group.slots.map((s) => s.rig_name))];
                             const uniqueSlots = [...new Set(group.slots.map((s) => s.time_slot))];
 
                             return (
@@ -232,8 +239,15 @@ export default function BookingsPage() {
                                                 {uniqueSlots.length} {uniqueSlots.length === 1 ? "slot" : "slots"}
                                             </span>
                                             <span className="flex items-center gap-1.5">
-                                                <Monitor className="h-3.5 w-3.5" />
-                                                {uniqueRigs.join(", ")}
+                                                {(() => {
+                                                    const rigMap = new Map(group.slots.map((s) => [s.rig_name, s.rig_type]));
+                                                    return [...rigMap.entries()].map(([name, type]) => (
+                                                        <span key={name} className="inline-flex items-center gap-1">
+                                                            <RigTypeIcon type={type} className={`h-3.5 w-3.5 ${RIG_TYPE_COLOR[type]}`} />
+                                                            {name}
+                                                        </span>
+                                                    ));
+                                                })()}
                                             </span>
                                         </div>
 

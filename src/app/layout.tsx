@@ -16,9 +16,9 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "PitPass — Book Sim Racing Rigs",
+  title: "PitPass — Book Gaming Rigs at Cafes Near You",
   description:
-    "Discover and book sim racing rigs and gaming cafe slots in your city.",
+    "Discover and book PC, PlayStation, Xbox, racing rigs, and VR devices at gaming cafes in your city.",
 };
 
 export default function RootLayout({

@@ -67,8 +67,10 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
     // Refresh booked rig IDs for the currently selected slots
     const slotsRef = useRef(selectedTimeSlots);
     const dateRef = useRef(selectedDate);
-    slotsRef.current = selectedTimeSlots;
-    dateRef.current = selectedDate;
+    useEffect(() => {
+        slotsRef.current = selectedTimeSlots;
+        dateRef.current = selectedDate;
+    }, [selectedTimeSlots, selectedDate]);
 
     const refreshBookedRigs = useCallback(async () => {
         if (slotsRef.current.length === 0) {

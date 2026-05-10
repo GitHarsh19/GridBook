@@ -3,11 +3,14 @@ import { getTodayStr, toDateStr, parseSlotStartHour, parseSlotEndHour, isSlotPas
 
 /* ─── Types ─────────────────────────────────────────────────────────── */
 
+export type RigType = "pc" | "playstation" | "xbox" | "vr";
+
 export interface Rig {
     id: number;
     name: string;
     status: RigStatus;
     specs: string;
+    type: RigType;
 }
 
 export interface Venue {
@@ -33,6 +36,7 @@ export interface DashboardRig {
     name: string;
     status: RigStatus;
     specs: string;
+    type: RigType;
 }
 
 export interface Booking {
@@ -95,6 +99,7 @@ interface DbRig {
     name: string;
     status: RigStatus;
     specs: string;
+    type: RigType;
 }
 
 interface DbVenueWithCounts extends DbVenue {
@@ -171,6 +176,7 @@ export async function getVenues(): Promise<Venue[]> {
                 name: r.name,
                 status: r.status === "available" ? "available" as const : "booked" as const,
                 specs: r.specs,
+                type: r.type ?? "pc",
             })),
         };
     });
@@ -219,6 +225,7 @@ export async function getVenueById(id: number): Promise<Venue | null> {
             name: r.name,
             status: r.status === "available" ? "available" as const : "booked" as const,
             specs: r.specs,
+            type: r.type ?? "pc",
         })),
     };
 }
@@ -403,11 +410,14 @@ export async function getVenuesList(): Promise<VenueOption[]> {
 export async function getDashboardRigs(venueId: number): Promise<DashboardRig[]> {
     const { data, error } = await supabaseAdmin
         .from("rigs")
-        .select("id, name, status, specs")
+        .select("id, name, status, specs, type")
         .eq("venue_id", venueId)
         .order("id");
     if (error || !data) throw new Error(error?.message ?? "Failed to fetch rigs");
-    return data as DashboardRig[];
+    return (data as (DashboardRig & { type?: RigType })[]).map((r) => ({
+        ...r,
+        type: r.type ?? "pc",
+    }));
 }
 
 export async function getTodaysBookings(venueId: number): Promise<Booking[]> {
@@ -881,6 +891,7 @@ export async function addRig(
     name: string,
     specs: string,
     status: "available" | "out_of_order",
+    type: RigType = "pc",
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
 
@@ -896,7 +907,7 @@ export async function addRig(
 
     const { error } = await supabaseAdmin
         .from("rigs")
-        .insert({ venue_id: venueId, name, specs, status });
+        .insert({ venue_id: venueId, name, specs, status, type });
 
     if (error) return { success: false, error: error.message };
     return { success: true };
@@ -907,6 +918,7 @@ export async function updateRig(
     name: string,
     specs: string,
     status?: RigStatus,
+    type?: RigType,
 ): Promise<{ success: boolean; error?: string }> {
     await requireAdminSession();
 
@@ -928,8 +940,9 @@ export async function updateRig(
         return { success: false, error: "A rig with this name already exists in this venue." };
     }
 
-    const updatePayload: { name: string; specs: string; status?: RigStatus } = { name, specs };
+    const updatePayload: { name: string; specs: string; status?: RigStatus; type?: RigType } = { name, specs };
     if (status) updatePayload.status = status;
+    if (type) updatePayload.type = type;
 
     const { error } = await supabaseAdmin
         .from("rigs")
@@ -1097,6 +1110,7 @@ export interface CustomerBooking {
     id: number;
     rig_id: number;
     rig_name: string;
+    rig_type: RigType;
     venue_name: string;
     venue_location: string;
     customer_name: string;
@@ -1123,7 +1137,7 @@ export async function getCustomerBookings(userId: string): Promise<CustomerBooki
             verification_code,
             check_in_token,
             source,
-            rigs!inner(name, venue_id, venues!inner(name, location))
+            rigs!inner(name, type, venue_id, venues!inner(name, location))
         `)
         .eq("user_id", userId)
         .order("booking_date", { ascending: false })
@@ -1141,6 +1155,7 @@ export async function getCustomerBookings(userId: string): Promise<CustomerBooki
         id: row.id,
         rig_id: row.rig_id,
         rig_name: row.rigs?.name ?? `Rig ${row.rig_id}`,
+        rig_type: (row.rigs?.type as RigType) ?? "pc",
         venue_name: row.rigs?.venues?.name ?? "Unknown Venue",
         venue_location: row.rigs?.venues?.location ?? "",
         customer_name: row.customer_name,
