@@ -97,16 +97,18 @@ export function VenueMap({ venues, onFlyToReady }: VenueMapProps) {
             markerZoomAnimation: true,
         });
 
-        /* GTA-style dark tiles — try multiple providers for reliability */
-        const tileLayer = L.tileLayer(
-            "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png",
-            {
-                maxZoom: 19,
-                updateWhenZooming: false,
-                updateWhenIdle: true,
-                keepBuffer: 4,
-            }
-        ).addTo(map);
+        /* GTA-style dark tiles — Stadia Maps with env key, CartoDB fallback */
+        const stadiaKey = process.env.NEXT_PUBLIC_STADIA_API_KEY;
+        const tileUrl = stadiaKey
+            ? `https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${stadiaKey}`
+            : "https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png";
+
+        const tileLayer = L.tileLayer(tileUrl, {
+            maxZoom: 19,
+            updateWhenZooming: false,
+            updateWhenIdle: true,
+            keepBuffer: 4,
+        }).addTo(map);
 
         tileLayer.on("tileerror", () => {
             tileLayer.setUrl(
