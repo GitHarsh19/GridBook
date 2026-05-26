@@ -71,8 +71,10 @@ export default function AdminSignUpPage() {
             options: { data: { full_name: formData.name } },
         });
         if (error) { setServerError(error.message); return; }
-        if (data.session && data.user) {
+        if (data.user) {
             await supabaseAdmin.from("profiles").update({ role: "admin", full_name: formData.name }).eq("id", data.user.id);
+        }
+        if (data.session) {
             router.push("/admin/dashboard");
         } else {
             setSignUpSuccess(true);
