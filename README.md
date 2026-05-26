@@ -78,8 +78,20 @@ Run the SQL files in the Supabase SQL Editor in this order:
 
 1. `supabase/seed.sql` — Base schema (venues, rigs)
 2. `supabase/profiles.sql` — Profiles table with role management and auto-create trigger
-3. `supabase/migration_dashboard.sql` — Bookings table, RLS policies, expanded rig statuses
-4. `supabase/migration_rig_type.sql` — Rig platform type column (pc/playstation/xbox/vr)
+3. `supabase/setup_demo_admin.sql` — Demo admin account
+4. `supabase/migration_dashboard.sql` — Bookings table, RLS policies, expanded rig statuses
+5. `supabase/migration_rig_type.sql` — Rig platform type column (pc/playstation/xbox/vr)
+6. `supabase/migration_booking_user_id.sql` — Booking user ID column
+7. `supabase/migration_booking_unique_constraint.sql` — Unique booking constraint
+8. `supabase/migration_modify_booking_rpc.sql` — Modify booking RPC function
+9. `supabase/migration_checkin_fixes.sql` — Check-in flow fixes
+10. `supabase/migration_auto_release.sql` — Auto-release expired bookings
+11. `supabase/migration_auto_release_fn.sql` — Auto-release function
+12. `supabase/migration_rls_security.sql` — Row-level security policies
+13. `supabase/migration_public_explore_access.sql` — Public access for explore page
+14. `supabase/migration_venue_coordinates.sql` — Venue coordinate data for map
+15. `supabase/migration_venue_ownership_images.sql` — Venue ownership and images
+16. `supabase/migration_venue_rig_counts.sql` — Venue rig count aggregates
 
 ## Routes
 
@@ -109,8 +121,7 @@ src/
 │   │   ├── booking.ts                  # Server actions — create/modify/cancel bookings
 │   │   └── admin.ts                    # Server actions — admin booking & rig ops
 │   ├── explore/
-│   │   ├── page.tsx                    # Venue discovery (list + map view with sort/filter)
-│   │   └── layout.tsx                  # Auth-protected layout
+│   │   └── page.tsx                    # Venue discovery (list + map view with sort/filter)
 │   ├── (customer)/
 │   │   ├── login/page.tsx              # Customer login
 │   │   └── signup/page.tsx             # Customer registration
@@ -168,8 +179,20 @@ src/
 supabase/
 ├── seed.sql                            # Venues + rigs seed data
 ├── profiles.sql                        # User profiles table + trigger
+├── setup_demo_admin.sql                # Demo admin account setup
 ├── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
-└── migration_rig_type.sql              # Rig platform type column (pc/playstation/xbox/vr)
+├── migration_rig_type.sql              # Rig platform type column (pc/playstation/xbox/vr)
+├── migration_booking_user_id.sql       # Booking user ID column
+├── migration_booking_unique_constraint.sql # Unique booking constraint
+├── migration_modify_booking_rpc.sql    # Modify booking RPC function
+├── migration_checkin_fixes.sql         # Check-in flow fixes
+├── migration_auto_release.sql          # Auto-release expired bookings
+├── migration_auto_release_fn.sql       # Auto-release function
+├── migration_rls_security.sql          # Row-level security policies
+├── migration_public_explore_access.sql # Public access for explore page
+├── migration_venue_coordinates.sql     # Venue coordinate data for map
+├── migration_venue_ownership_images.sql # Venue ownership and images
+└── migration_venue_rig_counts.sql      # Venue rig count aggregates
 docs/
 ├── admin-manual-controls.md            # Admin manual controls documentation
 ├── gridbook-article.md                 # PitPass article / overview
