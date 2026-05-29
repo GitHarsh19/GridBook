@@ -57,7 +57,6 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
 
     useEffect(() => {
         if (disabledSlots.size === 0) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedTimeSlots((prev) => {
             const filtered = prev.filter((s) => !disabledSlots.has(s));
             return filtered.length !== prev.length ? filtered : prev;
@@ -83,7 +82,7 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
 
     useEffect(() => {
         if (selectedTimeSlots.length === 0) {
-            setBookedRigIds(new Set()); // eslint-disable-line react-hooks/set-state-in-effect
+            setBookedRigIds(new Set());
             return;
         }
         let cancelled = false;
@@ -127,7 +126,6 @@ export default function BookingClient({ venue: initialVenue }: { venue: Venue })
 
     useEffect(() => {
         const availableIds = new Set(venue.rigs.filter((r) => r.status === "available").map((r) => r.id));
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedRigs((prev) => prev.filter((id) => availableIds.has(id) && !bookedRigIds.has(id)));
     }, [venue.rigs, bookedRigIds]);
 

@@ -33,7 +33,7 @@ PitPass is a booking platform for gamers to find nearby gaming cafes, browse ava
 - **Admin Booking** — Manually create or cancel bookings from the dashboard
 - **Real-Time Updates** — Supabase real-time subscriptions + 30s polling fallback
 - **Supabase Auth** — Admin login via email/password with role verification from profiles table
-- **Super Admin (Invite-Only)** — Super admins (a hardcoded email allowlist) invite venue admins by email and manage/remove them via `/admin/invite`; they're routed there on login and cannot open the venue dashboard
+- **Super Admin (Invite-Only)** — Super admins (a hardcoded email allowlist) invite venue admins by email and manage/remove them via `/admin/invite`; they're routed there on login and redirected away from the venue dashboard
 - **Invited Admin Onboarding** — Invited venue admins land on `/admin/setup` to set their password, name, and first venue before reaching the dashboard
 - **Role Security** — Roles are locked server-side: signups are always `customer`, the `role` column is writable only by the service-role key, and elevation happens only through invite server actions
 
@@ -82,21 +82,22 @@ Run the SQL files in the Supabase SQL Editor in this order:
 
 1. `supabase/seed.sql` — Base schema (venues, rigs)
 2. `supabase/profiles.sql` — Profiles table with role management and auto-create trigger
-3. `supabase/setup_demo_admin.sql` — (Legacy) Demo admin account — no longer needed
-4. `supabase/migration_dashboard.sql` — Bookings table, RLS policies, expanded rig statuses
-5. `supabase/migration_rig_type.sql` — Rig platform type column (pc/playstation/xbox/vr)
-6. `supabase/migration_booking_user_id.sql` — Booking user ID column
-7. `supabase/migration_booking_unique_constraint.sql` — Unique booking constraint
-8. `supabase/migration_modify_booking_rpc.sql` — Modify booking RPC function
-9. `supabase/migration_checkin_fixes.sql` — Check-in flow fixes
-10. `supabase/migration_auto_release.sql` — Auto-release expired bookings
-11. `supabase/migration_auto_release_fn.sql` — Auto-release function
-12. `supabase/migration_rls_security.sql` — Row-level security policies
-13. `supabase/migration_public_explore_access.sql` — Public access for explore page
-14. `supabase/migration_venue_coordinates.sql` — Venue coordinate data for map
-15. `supabase/migration_venue_ownership_images.sql` — Venue ownership and images
-16. `supabase/migration_venue_rig_counts.sql` — Venue rig count aggregates
-17. `supabase/migration_role_security.sql` — Hardens role assignment (signups always `customer`; `role` column locked to the service-role key)
+3. `supabase/migration_dashboard.sql` — Bookings table, RLS policies, expanded rig statuses
+4. `supabase/migration_rig_type.sql` — Rig platform type column (pc/playstation/xbox/vr)
+5. `supabase/migration_booking_user_id.sql` — Booking user ID column
+6. `supabase/migration_booking_unique_constraint.sql` — Unique booking constraint
+7. `supabase/migration_modify_booking_rpc.sql` — Modify booking RPC function
+8. `supabase/migration_checkin_fixes.sql` — Check-in flow fixes
+9. `supabase/migration_auto_release.sql` — Auto-release expired bookings
+10. `supabase/migration_auto_release_fn.sql` — Auto-release function
+11. `supabase/migration_rls_security.sql` — Row-level security policies
+12. `supabase/migration_public_explore_access.sql` — Public access for explore page
+13. `supabase/migration_venue_coordinates.sql` — Venue coordinate data for map
+14. `supabase/migration_venue_ownership_images.sql` — Venue ownership and images
+15. `supabase/migration_venue_rig_counts.sql` — Venue rig count aggregates
+16. `supabase/migration_role_security.sql` — Hardens role assignment (signups always `customer`; `role` column locked to the service-role key)
+
+> `supabase/setup_demo_admin.sql` is **legacy** and no longer used — admin access is now invite-only. It is kept for reference only; do not run it.
 
 ## Routes
 
@@ -191,7 +192,7 @@ src/
 supabase/
 ├── seed.sql                            # Venues + rigs seed data
 ├── profiles.sql                        # User profiles table + trigger
-├── setup_demo_admin.sql                # Demo admin account setup
+├── setup_demo_admin.sql                # (Legacy, unused) Demo admin account setup
 ├── migration_dashboard.sql             # Bookings, RLS, expanded rig statuses
 ├── migration_rig_type.sql              # Rig platform type column (pc/playstation/xbox/vr)
 ├── migration_booking_user_id.sql       # Booking user ID column

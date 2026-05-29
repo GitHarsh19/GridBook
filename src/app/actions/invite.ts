@@ -28,7 +28,7 @@ export async function inviteAdminAction(
     .from("profiles")
     .select("id, role")
     .eq("email", trimmed)
-    .single();
+    .maybeSingle();
 
   if (existing?.role === "admin") {
     return { success: false, error: "This user is already an admin." };

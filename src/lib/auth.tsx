@@ -12,7 +12,7 @@ import { supabase, supabaseAdmin } from "@/lib/supabase";
 type Role = "customer" | "admin";
 
 interface AuthState {
-  /** Customer is logged in (Supabase or demo) */
+  /** Customer is logged in */
   isLoggedIn: boolean;
   /** Admin is logged in (independent from customer) */
   isAdmin: boolean;
@@ -26,10 +26,9 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-/* ─── Separate storage for admin vs customer demo auth ─────────────── */
+/* ─── Persisted admin auth flag (admin session lives in its own key) ── */
 
 const ADMIN_AUTH_KEY = "gridbook_admin_auth";
-const CUSTOMER_DEMO_KEY = "gridbook_demo_auth";
 
 function saveAdminAuth() {
   localStorage.setItem(ADMIN_AUTH_KEY, "true");
@@ -39,16 +38,6 @@ function loadAdminAuth(): boolean {
 }
 function clearAdminAuth() {
   localStorage.removeItem(ADMIN_AUTH_KEY);
-}
-
-function saveCustomerDemo() {
-  localStorage.setItem(CUSTOMER_DEMO_KEY, "true");
-}
-function loadCustomerDemo(): boolean {
-  return localStorage.getItem(CUSTOMER_DEMO_KEY) === "true";
-}
-function clearCustomerDemo() {
-  localStorage.removeItem(CUSTOMER_DEMO_KEY);
 }
 
 /* ─── Provider ─────────────────────────────────────────────────────── */
@@ -77,12 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (session) {
             setRole("customer");
             setIsLoggedIn(true);
-            clearCustomerDemo();
-          } else if (event === "INITIAL_SESSION") {
-            if (loadCustomerDemo()) {
-              setIsLoggedIn(true);
-              setRole("customer");
-            }
           }
           setIsLoading(false);
         } else if (event === "SIGNED_OUT") {
@@ -124,13 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       else clearAdminAuth();
     } else {
       setIsLoggedIn(loggedIn);
-      if (loggedIn) {
-        setRole("customer");
-        saveCustomerDemo();
-      } else {
-        setRole("customer");
-        clearCustomerDemo();
-      }
+      setRole("customer");
     }
   };
 
@@ -141,14 +118,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false);
       await supabaseAdmin.auth.signOut();
     } else if (logoutRole === "customer") {
-      clearCustomerDemo();
       await supabase.auth.signOut();
       setIsLoggedIn(false);
       setRole("customer");
     } else {
       // Logout all
       clearAdminAuth();
-      clearCustomerDemo();
       await supabaseAdmin.auth.signOut();
       await supabase.auth.signOut();
       setIsLoggedIn(false);

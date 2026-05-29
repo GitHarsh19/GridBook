@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, UserPlus, Trash2, CheckCircle2, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -36,10 +36,19 @@ export default function InviteAdminPage() {
   const [removing, setRemoving] = useState<string | null>(null);
   const [checkingAccess, setCheckingAccess] = useState(true);
 
-  const getToken = async () => {
+  const getToken = useCallback(async () => {
     const { data } = await supabaseAdmin.auth.getSession();
     return data.session?.access_token || "";
-  };
+  }, []);
+
+  const loadAdmins = useCallback(async () => {
+    setAdminsLoading(true);
+    const token = await getToken();
+    const result = await listAdminsAction(token);
+    if (result.error) setError(result.error);
+    else setAdmins(result.admins);
+    setAdminsLoading(false);
+  }, [getToken]);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -56,16 +65,7 @@ export default function InviteAdminPage() {
       setCheckingAccess(false);
       loadAdmins();
     })();
-  }, [isAdmin, router]);
-
-  const loadAdmins = async () => {
-    setAdminsLoading(true);
-    const token = await getToken();
-    const result = await listAdminsAction(token);
-    if (result.error) setError(result.error);
-    else setAdmins(result.admins);
-    setAdminsLoading(false);
-  };
+  }, [isAdmin, router, loadAdmins]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
