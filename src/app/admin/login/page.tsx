@@ -23,7 +23,7 @@ function AdminLoginForm() {
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [demoLoading, setDemoLoading] = useState(false);
+
     const [messageRendered, setMessageRendered] = useState(showMessage);
     const [messageExpanded, setMessageExpanded] = useState(false);
     const [customerMsgRendered, setCustomerMsgRendered] = useState(showCustomerMsg);
@@ -53,10 +53,6 @@ function AdminLoginForm() {
         return () => { clearTimeout(expandTimer); clearTimeout(contractTimer); clearTimeout(removeTimer); };
     }, [showMessage]);
 
-    const assignAdminRole = async (userId: string) => {
-        const { error } = await supabaseAdmin.from("profiles").update({ role: "admin" }).eq("id", userId);
-        if (error) console.error("Failed to assign admin role:", error);
-    };
 
     const handleSupabaseLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -87,24 +83,6 @@ function AdminLoginForm() {
         if (oauthError) setError(oauthError.message);
     };
 
-    const handleDemoLogin = async () => {
-        const demoEmail = process.env.NEXT_PUBLIC_DEMO_ADMIN_EMAIL;
-        const demoPassword = process.env.NEXT_PUBLIC_DEMO_ADMIN_PASSWORD;
-        if (!demoEmail || !demoPassword) { setError("Demo account not configured."); return; }
-        setDemoLoading(true); setError("");
-
-        let { data, error: authError } = await supabaseAdmin.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
-        if (authError) {
-            const { error: signUpError } = await supabaseAdmin.auth.signUp({ email: demoEmail, password: demoPassword, options: { data: { full_name: "Demo Admin" } } });
-            if (signUpError) { setDemoLoading(false); setError("Demo setup failed: " + signUpError.message); return; }
-            const result = await supabaseAdmin.auth.signInWithPassword({ email: demoEmail, password: demoPassword });
-            data = result.data; authError = result.error;
-            if (authError) { setDemoLoading(false); setError("Demo login failed: " + authError.message); return; }
-        }
-        if (data?.user) { await assignAdminRole(data.user.id); setLoggedIn(true, "admin"); }
-        setDemoLoading(false);
-        router.push("/admin/dashboard");
-    };
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-surface font-outfit px-4 overflow-x-hidden antialiased">
@@ -204,32 +182,14 @@ function AdminLoginForm() {
                         </button>
                     </form>
 
-                    {/* Sign up link */}
                     <p className="mt-8 text-center text-xs text-on-surface-variant/50">
-                        Don&apos;t have an account?{" "}
-                        <Link href="/admin/signup" className="text-on-surface transition-colors hover:text-primary">
-                            Sign Up
-                        </Link>{" "}
-                        first, then log in here.
+                        Admin accounts are invite-only.{" "}
+                        <a href="mailto:harshitagarwalsmt@gmail.com" className="text-btn-red hover:underline">
+                            Contact the platform owner
+                        </a>{" "}
+                        for access.
                     </p>
 
-                    {/* Demo divider */}
-                    <div className="mt-6 flex items-center gap-4">
-                        <div className="h-px flex-1 bg-on-surface/10" />
-                        <span className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/30">Demo</span>
-                        <div className="h-px flex-1 bg-on-surface/10" />
-                    </div>
-
-                    {/* Demo login */}
-                    <button
-                        type="button"
-                        onClick={handleDemoLogin}
-                        disabled={demoLoading}
-                        className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-on-surface/20 py-2.5 text-xs font-medium text-on-surface-variant/40 transition-all hover:border-on-surface/40 hover:text-on-surface-variant/70 disabled:opacity-50"
-                    >
-                        {demoLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-                        {demoLoading ? "Signing into demo\u2026" : "Try demo account"}
-                    </button>
                 </div>
             </div>
         </div>

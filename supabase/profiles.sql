@@ -24,14 +24,16 @@ create policy "Users can update own profile"
   using (auth.uid() = id);
 
 -- Auto-create a profile when a new user signs up
+-- Reads 'role' from user metadata if set (safe because only service-role can set it via inviteUserByEmail)
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email, full_name)
+  insert into public.profiles (id, email, full_name, role)
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', '')
+    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', ''),
+    coalesce(new.raw_user_meta_data ->> 'role', 'customer')
   );
   return new;
 end;

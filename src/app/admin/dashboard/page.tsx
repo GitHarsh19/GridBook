@@ -20,9 +20,12 @@ import {
     Pencil,
     Building2,
     ScanLine,
+    ShieldCheck,
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+
+const SUPER_ADMIN_EMAIL = "harshitagarwalsmt@gmail.com";
 import {
     type DashboardRig,
     type Booking,
@@ -84,6 +87,13 @@ export default function AdminDashboardPage() {
     const [showScanner, setShowScanner] = useState(false);
     const [preSelectedSlots, setPreSelectedSlots] = useState<string[]>([]);
     const [slotOverviewDate, setSlotOverviewDate] = useState<string>(getTodayStr);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+    useEffect(() => {
+        supabaseAdmin.auth.getUser().then(({ data }) => {
+            if (data.user?.email === SUPER_ADMIN_EMAIL) setIsSuperAdmin(true);
+        });
+    }, []);
 
 
     const loadVenues = useCallback(async () => {
@@ -454,6 +464,15 @@ export default function AdminDashboardPage() {
                                 <Plus className="h-3.5 w-3.5" />
                                 <span className="hidden sm:inline">Venue</span>
                             </button>
+                            {isSuperAdmin && (
+                                <Link
+                                    href="/admin/invite"
+                                    className="flex items-center gap-1.5 rounded-full bg-white/10 px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white/70 transition-all hover:bg-white hover:text-[#131313] active:scale-[0.98]"
+                                >
+                                    <ShieldCheck className="h-3.5 w-3.5" />
+                                    <span className="hidden sm:inline">Admins</span>
+                                </Link>
+                            )}
                             <button
                                 onClick={handleLogout}
                                 className="flex cursor-pointer items-center gap-1.5 rounded-full bg-btn-red px-5 py-2 text-sm font-medium tracking-[-0.03em] text-white transition-all hover:bg-white hover:text-btn-red active:scale-[0.98]"
