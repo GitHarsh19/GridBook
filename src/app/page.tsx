@@ -220,10 +220,10 @@ export default function LandingPage() {
             </button>
 
             {/* Sign-in dropdown */}
-            <div className="signin-dropdown absolute right-0 mt-3 w-fit bg-white/[0.06] backdrop-blur-[20px] rounded-2xl p-1.5 opacity-0 invisible -translate-y-2 transition-all duration-200 ease-in-out pointer-events-none" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+            <div className="signin-dropdown absolute right-0 top-full mt-5 w-fit bg-white/[0.06] backdrop-blur-[20px] rounded-2xl p-1.5 opacity-0 invisible -translate-y-2 transition-all duration-200 ease-in-out pointer-events-none" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
           <Link
             href="/login"
-            className="flex items-center gap-3 py-2.5 px-3.5 font-outfit text-[0.8rem] font-medium rounded-xl transition-all duration-200 ease-in-out text-on-surface hover:bg-white/[0.06] no-underline"
+            className="flex items-center gap-3 py-2.5 px-3.5 font-outfit text-[0.8rem] font-medium rounded-xl transition-all duration-200 ease-in-out text-on-surface hover:bg-white/[0.06] no-underline whitespace-nowrap"
           >
             <svg className="w-4 h-4 shrink-0 text-btn-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
@@ -232,7 +232,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/admin/login"
-            className="flex items-center gap-3 py-2.5 px-3.5 font-outfit text-[0.8rem] font-medium rounded-xl transition-all duration-200 ease-in-out text-on-surface-variant/60 hover:bg-white/[0.06] hover:text-on-surface no-underline"
+            className="flex items-center gap-3 py-2.5 px-3.5 font-outfit text-[0.8rem] font-medium rounded-xl transition-all duration-200 ease-in-out text-on-surface-variant/60 hover:bg-white/[0.06] hover:text-on-surface no-underline whitespace-nowrap"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
