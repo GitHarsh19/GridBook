@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isSuperAdminEmail } from "@/lib/superAdmin";
 import { useRateLimit } from "@/lib/hooks/useRateLimit";
 
 const inputClass =
@@ -61,14 +62,18 @@ function AdminLoginForm() {
         const { data, error: authError } = await supabaseAdmin.auth.signInWithPassword({ email, password });
         if (authError) { setLoading(false); setError(authError.message); return; }
         if (data.user) {
+            const superAdmin = isSuperAdminEmail(data.user.email);
             const { data: profile } = await supabaseAdmin.from("profiles").select("role").eq("id", data.user.id).single();
-            if (!profile || profile.role !== "admin") {
+            if (!superAdmin && (!profile || profile.role !== "admin")) {
                 await supabaseAdmin.auth.signOut();
                 setLoading(false);
                 triggerCustomerMsg();
                 return;
             }
             setLoggedIn(true, "admin");
+            setLoading(false);
+            router.push(superAdmin ? "/admin/invite" : "/admin/dashboard");
+            return;
         }
         setLoading(false);
         router.push("/admin/dashboard");

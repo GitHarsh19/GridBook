@@ -1,14 +1,13 @@
 "use server";
 
 import { supabaseService } from "@/lib/supabase-service";
-
-const SUPER_ADMIN_EMAIL = "harshitagarwalsmt@gmail.com";
+import { isSuperAdminEmail } from "@/lib/superAdmin";
 
 async function requireSuperAdmin(accessToken: string) {
   const { data: { user }, error } = await supabaseService.auth.getUser(accessToken);
   if (error || !user) throw new Error("Unauthorized");
-  if (user.email !== SUPER_ADMIN_EMAIL) {
-    throw new Error("Forbidden: only the super admin can invite admins.");
+  if (!isSuperAdminEmail(user.email)) {
+    throw new Error("Forbidden: only a super admin can invite admins.");
   }
   return user;
 }
@@ -16,7 +15,8 @@ async function requireSuperAdmin(accessToken: string) {
 export async function inviteAdminAction(
   accessToken: string,
   email: string,
-): Promise<{ success: boolean; error?: string }> {
+  origin: string,
+): Promise<{ success: boolean; error?: string; promoted?: boolean }> {
   await requireSuperAdmin(accessToken);
 
   const trimmed = email.trim().toLowerCase();
@@ -40,14 +40,26 @@ export async function inviteAdminAction(
       .update({ role: "admin" })
       .eq("id", existing.id);
     if (error) return { success: false, error: error.message };
-    return { success: true };
+    return { success: true, promoted: true };
   }
 
-  const { error } = await supabaseService.auth.admin.inviteUserByEmail(trimmed, {
-    data: { role: "admin" },
+  const { data, error } = await supabaseService.auth.admin.inviteUserByEmail(trimmed, {
+    redirectTo: `${origin}/admin/setup`,
   });
 
   if (error) return { success: false, error: error.message };
+
+  // The handle_new_user trigger creates the profile as 'customer' (it ignores
+  // client-supplied roles). Elevate to admin here via the service-role client —
+  // the only place role changes are allowed.
+  if (data?.user) {
+    const { error: roleErr } = await supabaseService
+      .from("profiles")
+      .update({ role: "admin" })
+      .eq("id", data.user.id);
+    if (roleErr) return { success: false, error: roleErr.message };
+  }
+
   return { success: true };
 }
 
@@ -80,8 +92,8 @@ export async function removeAdminAction(
     .single();
 
   if (!profile) return { success: false, error: "User not found." };
-  if (profile.email === SUPER_ADMIN_EMAIL) {
-    return { success: false, error: "Cannot remove the super admin." };
+  if (isSuperAdminEmail(profile.email)) {
+    return { success: false, error: "Cannot remove a super admin." };
   }
 
   const { error } = await supabaseService

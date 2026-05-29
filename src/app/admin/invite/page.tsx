@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Loader2, UserPlus, Trash2, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, UserPlus, Trash2, CheckCircle2, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
+import { isSuperAdminEmail } from "@/lib/superAdmin";
 import { inviteAdminAction, listAdminsAction, removeAdminAction } from "@/app/actions/invite";
 
 const inputClass =
@@ -21,7 +21,12 @@ interface Admin {
 
 export default function InviteAdminPage() {
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { isAdmin, logout } = useAuth();
+
+  const handleLogout = () => {
+    router.push("/admin/login");
+    logout("admin");
+  };
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
@@ -29,6 +34,7 @@ export default function InviteAdminPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [adminsLoading, setAdminsLoading] = useState(true);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [checkingAccess, setCheckingAccess] = useState(true);
 
   const getToken = async () => {
     const { data } = await supabaseAdmin.auth.getSession();
@@ -40,7 +46,16 @@ export default function InviteAdminPage() {
       router.push("/admin/login?message=sign_in");
       return;
     }
-    loadAdmins();
+    // This page is super-admin only — venue admins go back to their dashboard.
+    (async () => {
+      const { data } = await supabaseAdmin.auth.getUser();
+      if (!isSuperAdminEmail(data.user?.email)) {
+        router.replace("/admin/dashboard");
+        return;
+      }
+      setCheckingAccess(false);
+      loadAdmins();
+    })();
   }, [isAdmin, router]);
 
   const loadAdmins = async () => {
@@ -59,11 +74,15 @@ export default function InviteAdminPage() {
     setLoading(true);
 
     const token = await getToken();
-    const result = await inviteAdminAction(token, email);
+    const result = await inviteAdminAction(token, email, window.location.origin);
     setLoading(false);
 
     if (result.success) {
-      setSuccess(`Invite sent to ${email}`);
+      setSuccess(
+        result.promoted
+          ? `${email} already had an account and was granted admin access.`
+          : `Invite email sent to ${email}.`,
+      );
       setEmail("");
       loadAdmins();
     } else {
@@ -88,22 +107,23 @@ export default function InviteAdminPage() {
     }
   };
 
-  if (!isAdmin) return null;
+  if (!isAdmin || checkingAccess) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface font-outfit px-4 py-12 antialiased">
       <div className="w-full max-w-md">
-        <Link
-          href="/admin/dashboard"
-          className="mb-6 inline-flex items-center gap-2 text-sm text-on-surface-variant/60 transition-colors hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
-        </Link>
-
-        <h1 className="mb-2 text-2xl font-bold tracking-tight text-on-surface">
-          Manage Admins
-        </h1>
+        <div className="mb-2 flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight text-on-surface">
+            Manage Admins
+          </h1>
+          <button
+            onClick={handleLogout}
+            className="flex cursor-pointer items-center gap-1.5 rounded-full bg-btn-red px-4 py-2 text-sm font-medium tracking-[-0.03em] text-white transition-all hover:bg-white hover:text-btn-red active:scale-[0.98]"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Sign out</span>
+          </button>
+        </div>
         <p className="mb-8 text-sm text-on-surface-variant/60">
           Invite venue owners by email. They&apos;ll receive a link to set up their account.
         </p>
@@ -174,18 +194,24 @@ export default function InviteAdminPage() {
                     </p>
                     <p className="text-xs text-on-surface-variant/60">{admin.email}</p>
                   </div>
-                  <button
-                    onClick={() => handleRemove(admin.id)}
-                    disabled={removing === admin.id}
-                    className="cursor-pointer rounded-full p-2 text-on-surface-variant/40 transition-colors hover:bg-btn-red/10 hover:text-btn-red disabled:opacity-40"
-                    title="Remove admin access"
-                  >
-                    {removing === admin.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </button>
+                  {isSuperAdminEmail(admin.email) ? (
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/60">
+                      Super admin
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleRemove(admin.id)}
+                      disabled={removing === admin.id}
+                      className="cursor-pointer rounded-full p-2 text-on-surface-variant/40 transition-colors hover:bg-btn-red/10 hover:text-btn-red disabled:opacity-40"
+                      title="Remove admin access"
+                    >
+                      {removing === admin.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

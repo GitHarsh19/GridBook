@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { supabase, supabaseAdmin } from "@/lib/supabase";
+import { isSuperAdminEmail } from "@/lib/superAdmin";
 
 function AuthCallbackInner() {
   const router = useRouter();
@@ -52,14 +53,16 @@ function AuthCallbackInner() {
       }
 
       if (requiredRole === "admin") {
-        // Verify user is already an admin — do NOT auto-promote
+        const superAdmin = isSuperAdminEmail(session.user.email);
+
+        // Verify user is already an admin (or a super admin) — do NOT auto-promote
         const { data: profile } = await supabaseAdmin
           .from("profiles")
           .select("role")
           .eq("id", session.user.id)
           .single();
 
-        if (!profile || profile.role !== "admin") {
+        if (!superAdmin && (!profile || profile.role !== "admin")) {
           // Not an admin — sign out the admin client and redirect
           await supabaseAdmin.auth.signOut();
           router.push("/admin/login?message=not_admin");
@@ -67,7 +70,7 @@ function AuthCallbackInner() {
         }
 
         setLoggedIn(true, "admin");
-        router.push("/admin/dashboard");
+        router.push(superAdmin ? "/admin/invite" : "/admin/dashboard");
       } else {
         setLoggedIn(true, "customer");
         router.push(redirectTo);

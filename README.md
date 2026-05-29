@@ -33,8 +33,9 @@ PitPass is a booking platform for gamers to find nearby gaming cafes, browse ava
 - **Admin Booking** — Manually create or cancel bookings from the dashboard
 - **Real-Time Updates** — Supabase real-time subscriptions + 30s polling fallback
 - **Supabase Auth** — Admin login via email/password with role verification from profiles table
-- **Super Admin Invite System** — Only the platform owner (super admin) can invite venue admins by email; invite-only access with manage/remove controls
-- **Role Enforcement** — Super admin gated by email; regular admins cannot access admin management
+- **Super Admin (Invite-Only)** — Super admins (a hardcoded email allowlist) invite venue admins by email and manage/remove them via `/admin/invite`; they're routed there on login and cannot open the venue dashboard
+- **Invited Admin Onboarding** — Invited venue admins land on `/admin/setup` to set their password, name, and first venue before reaching the dashboard
+- **Role Security** — Roles are locked server-side: signups are always `customer`, the `role` column is writable only by the service-role key, and elevation happens only through invite server actions
 
 ## Tech Stack
 
@@ -72,8 +73,8 @@ Open [http://localhost:3000](http://localhost:3000)
 | Role | How to get access |
 |------|-------------------|
 | Customer | Google OAuth or Supabase email/password signup |
-| Venue Admin | Invite-only — the super admin sends an invite via `/admin/invite` |
-| Super Admin | Platform owner (hardcoded email in server actions) |
+| Venue Admin | Invite-only — a super admin sends an invite via `/admin/invite`; the invitee sets up their account + first venue at `/admin/setup` |
+| Super Admin | Hardcoded email allowlist in `src/lib/superAdmin.ts` (changing it requires a redeploy) |
 
 ### Database Setup
 
@@ -95,6 +96,7 @@ Run the SQL files in the Supabase SQL Editor in this order:
 14. `supabase/migration_venue_coordinates.sql` — Venue coordinate data for map
 15. `supabase/migration_venue_ownership_images.sql` — Venue ownership and images
 16. `supabase/migration_venue_rig_counts.sql` — Venue rig count aggregates
+17. `supabase/migration_role_security.sql` — Hardens role assignment (signups always `customer`; `role` column locked to the service-role key)
 
 ## Routes
 
@@ -105,14 +107,15 @@ Run the SQL files in the Supabase SQL Editor in this order:
 | `/signup` | Public | Customer registration |
 | `/admin/login` | Public | Admin login |
 | `/admin/signup` | Public | Redirects to login (invite-only) |
-| `/admin/invite` | Super Admin | Manage admin invites & list |
+| `/admin/setup` | Invited Admin | Accept invite — set password, name & first venue |
+| `/admin/invite` | Super Admin | Manage admin invites & list (super admins only) |
 | `/auth/callback` | Public | OAuth callback handler |
 | `/explore` | Customer | Venue discovery (list + map view) |
 | `/venue/[id]` | Customer | Rig selection & booking |
 | `/bookings` | Customer | My bookings (upcoming / past) |
 | `/bookings/[code]` | Customer | Booking detail + QR check-in ticket |
 | `/profile` | Customer | Edit name, change password |
-| `/admin/dashboard` | Admin | Live rig status, bookings, QR scanner & management |
+| `/admin/dashboard` | Venue Admin | Live rig status, bookings, QR scanner & management (super admins are redirected to `/admin/invite`) |
 
 ## Project Structure
 
@@ -133,6 +136,7 @@ src/
 │   ├── admin/
 │   │   ├── login/page.tsx              # Admin login
 │   │   ├── signup/page.tsx             # Redirect to login (invite-only)
+│   │   ├── setup/page.tsx              # Invited admin onboarding (password + first venue)
 │   │   ├── invite/page.tsx             # Super admin — manage admin invites
 │   │   └── dashboard/
 │   │       ├── page.tsx                # Admin dashboard
@@ -178,6 +182,7 @@ src/
     ├── supabase.ts                     # Supabase client (browser)
     ├── supabase-server.ts              # Supabase client (server / SSR)
     ├── supabase-service.ts             # Supabase service-role client (server-only, bypasses RLS)
+    ├── superAdmin.ts                   # Super-admin email allowlist (single source of truth)
     ├── utils.ts                        # Shared utility functions
     ├── venueCoords.ts                  # Venue coordinate data for map
     └── hooks/
@@ -199,7 +204,8 @@ supabase/
 ├── migration_public_explore_access.sql # Public access for explore page
 ├── migration_venue_coordinates.sql     # Venue coordinate data for map
 ├── migration_venue_ownership_images.sql # Venue ownership and images
-└── migration_venue_rig_counts.sql      # Venue rig count aggregates
+├── migration_venue_rig_counts.sql      # Venue rig count aggregates
+└── migration_role_security.sql         # Role assignment hardening (trigger + role column lock)
 docs/
 ├── admin-manual-controls.md            # Admin manual controls documentation
 ├── gridbook-article.md                 # PitPass article / overview
