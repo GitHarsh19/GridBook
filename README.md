@@ -33,6 +33,8 @@ PitPass is a booking platform for gamers to find nearby gaming cafes, browse ava
 - **Admin Booking** — Manually create or cancel bookings from the dashboard
 - **Real-Time Updates** — Supabase real-time subscriptions + 30s polling fallback
 - **Supabase Auth** — Admin login via email/password with role verification from profiles table
+- **Super Admin Invite System** — Only the platform owner (super admin) can invite venue admins by email; invite-only access with manage/remove controls
+- **Role Enforcement** — Super admin gated by email; regular admins cannot access admin management
 
 ## Tech Stack
 
@@ -65,12 +67,13 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-### Demo Credentials
+### Access
 
-| Role | Login |
-|------|-------|
-| Customer | Google OAuth or Supabase email/password |
-| Venue Admin | `admin` / `password` (Supabase auth) |
+| Role | How to get access |
+|------|-------------------|
+| Customer | Google OAuth or Supabase email/password signup |
+| Venue Admin | Invite-only — the super admin sends an invite via `/admin/invite` |
+| Super Admin | Platform owner (hardcoded email in server actions) |
 
 ### Database Setup
 
@@ -78,7 +81,7 @@ Run the SQL files in the Supabase SQL Editor in this order:
 
 1. `supabase/seed.sql` — Base schema (venues, rigs)
 2. `supabase/profiles.sql` — Profiles table with role management and auto-create trigger
-3. `supabase/setup_demo_admin.sql` — Demo admin account
+3. `supabase/setup_demo_admin.sql` — (Legacy) Demo admin account — no longer needed
 4. `supabase/migration_dashboard.sql` — Bookings table, RLS policies, expanded rig statuses
 5. `supabase/migration_rig_type.sql` — Rig platform type column (pc/playstation/xbox/vr)
 6. `supabase/migration_booking_user_id.sql` — Booking user ID column
@@ -101,7 +104,8 @@ Run the SQL files in the Supabase SQL Editor in this order:
 | `/login` | Public | Customer login |
 | `/signup` | Public | Customer registration |
 | `/admin/login` | Public | Admin login |
-| `/admin/signup` | Public | Admin registration |
+| `/admin/signup` | Public | Redirects to login (invite-only) |
+| `/admin/invite` | Super Admin | Manage admin invites & list |
 | `/auth/callback` | Public | OAuth callback handler |
 | `/explore` | Customer | Venue discovery (list + map view) |
 | `/venue/[id]` | Customer | Rig selection & booking |
@@ -119,7 +123,8 @@ src/
 │   ├── layout.tsx                      # Root layout + AuthProvider
 │   ├── actions/
 │   │   ├── booking.ts                  # Server actions — create/modify/cancel bookings
-│   │   └── admin.ts                    # Server actions — admin booking & rig ops
+│   │   ├── admin.ts                    # Server actions — admin booking & rig ops
+│   │   └── invite.ts                   # Server actions — super admin invite system
 │   ├── explore/
 │   │   └── page.tsx                    # Venue discovery (list + map view with sort/filter)
 │   ├── (customer)/
@@ -127,7 +132,8 @@ src/
 │   │   └── signup/page.tsx             # Customer registration
 │   ├── admin/
 │   │   ├── login/page.tsx              # Admin login
-│   │   ├── signup/page.tsx             # Admin registration
+│   │   ├── signup/page.tsx             # Redirect to login (invite-only)
+│   │   ├── invite/page.tsx             # Super admin — manage admin invites
 │   │   └── dashboard/
 │   │       ├── page.tsx                # Admin dashboard
 │   │       ├── layout.tsx              # Admin auth guard
@@ -171,6 +177,7 @@ src/
     ├── data.ts                         # Types + Supabase queries
     ├── supabase.ts                     # Supabase client (browser)
     ├── supabase-server.ts              # Supabase client (server / SSR)
+    ├── supabase-service.ts             # Supabase service-role client (server-only, bypasses RLS)
     ├── utils.ts                        # Shared utility functions
     ├── venueCoords.ts                  # Venue coordinate data for map
     └── hooks/
@@ -207,6 +214,7 @@ docs/
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key |
 | `NEXT_PUBLIC_STADIA_API_KEY` | Stadia Maps API key (free on localhost, required in production) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key (server-only, bypasses RLS — never expose to client) |
 
 ## License
 
