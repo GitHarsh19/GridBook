@@ -4,3 +4,4 @@ export { EditRigModal } from "./EditRigModal";
 export { AddVenueModal } from "./AddVenueModal";
 export { EditVenueModal } from "./EditVenueModal";
 export { STATUS_CONFIG } from "./StatusConfig";
+export { PayoutAccountBanner } from "./PayoutAccountBanner";

@@ -54,6 +54,7 @@ import {
     AddVenueModal,
     EditVenueModal,
     STATUS_CONFIG,
+    PayoutAccountBanner,
 } from "@/components/admin";
 
 const RIG_TYPE_LABEL: Record<RigType, string> = { pc: "PC", playstation: "PlayStation", xbox: "Xbox", vr: "VR" };
@@ -489,6 +490,9 @@ export default function AdminDashboardPage() {
                         {error}
                     </div>
                 )}
+
+                {/* ── Payout account onboarding ── */}
+                <PayoutAccountBanner />
 
                 {/* ── No venues empty state ── */}
                 {!loading && venues.length === 0 && (

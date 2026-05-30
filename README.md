@@ -96,6 +96,7 @@ Run the SQL files in the Supabase SQL Editor in this order:
 14. `supabase/migration_venue_ownership_images.sql` — Venue ownership and images
 15. `supabase/migration_venue_rig_counts.sql` — Venue rig count aggregates
 16. `supabase/migration_role_security.sql` — Hardens role assignment (signups always `customer`; `role` column locked to the service-role key)
+17. `supabase/migration_payments.sql` — Payments (Razorpay Route): owner payout account, `payment_orders` table, booking ↔ payment links
 
 > `supabase/setup_demo_admin.sql` is **legacy** and no longer used — admin access is now invite-only. It is kept for reference only; do not run it.
 
@@ -222,6 +223,23 @@ docs/
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key |
 | `NEXT_PUBLIC_STADIA_API_KEY` | Stadia Maps API key (free on localhost, required in production) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key (server-only, bypasses RLS — never expose to client) |
+| `RAZORPAY_KEY_ID` | Razorpay key id — sent to the browser for Checkout (use a `rzp_test_…` key first) |
+| `RAZORPAY_KEY_SECRET` | Razorpay key secret (server-only — order creation, signature verification, refunds) |
+| `RAZORPAY_WEBHOOK_SECRET` | Secret configured on the Razorpay webhook; verifies incoming `payment.captured` events |
+
+## Payments (Razorpay Route)
+
+Online card + UPI bookings, split-paid to each venue owner. v1 takes **no platform commission** (the owner receives 100% — change `ownerShare()` in `src/lib/razorpay.ts` to add a cut later).
+
+**One-time setup:**
+1. Create a Razorpay account and enable **Route** (Settlements → Route).
+2. Put your **test-mode** `key_id` / `key_secret` in `.env.local`.
+3. For each venue owner, create a **linked account** in the Razorpay dashboard and paste its id (`acc_…`) into the **Connect your payout account** card on the admin dashboard.
+4. Add a webhook pointing at `/api/webhooks/razorpay` for the `payment.captured` event, and set its secret as `RAZORPAY_WEBHOOK_SECRET`. For local testing, expose the route with a tunnel (e.g. `ngrok`).
+
+> **Route is optional.** If an owner has no linked account, the order is created without a transfer and the payment collects in the platform's own Razorpay account (plain Standard Checkout) — useful for testing or a single-owner setup. Add the linked account to switch that venue to split payouts; no code change needed.
+
+**Flow:** booking intent → `orders.create` (with owner transfer) → Razorpay Checkout → signature verified server-side → `payment.captured` webhook confirms the booking (idempotent backstop). A booking row exists only after a captured payment.
 
 ## License
 

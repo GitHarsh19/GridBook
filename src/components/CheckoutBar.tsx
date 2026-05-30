@@ -4,9 +4,60 @@ import { useState } from "react";
 import Link from "next/link";
 import { ShoppingCart, Check, Loader2, AlertCircle, CalendarCheck } from "lucide-react";
 import type { Rig } from "@/lib/data";
-import { createAppBooking, getBookedRigIdsForSlots } from "@/lib/data";
+import { getBookedRigIdsForSlots } from "@/lib/data";
+import { createPaymentOrderAction, verifyPaymentAction } from "@/app/actions/payment";
 import { supabase } from "@/lib/supabase";
 import { formatBookingDate } from "@/lib/utils";
+
+/* ─── Razorpay Checkout (loaded on demand) ─────────────────────────── */
+
+interface RazorpayHandlerResponse {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+}
+
+interface RazorpayOptions {
+    key: string;
+    amount: number;
+    currency: string;
+    name: string;
+    description?: string;
+    order_id: string;
+    prefill?: { name?: string; email?: string };
+    theme?: { color?: string };
+    handler: (response: RazorpayHandlerResponse) => void;
+    modal?: { ondismiss?: () => void };
+}
+
+interface RazorpayFailureResponse {
+    error?: { code?: string; description?: string; reason?: string };
+}
+
+interface RazorpayInstance {
+    open: () => void;
+    on: (event: "payment.failed", handler: (response: RazorpayFailureResponse) => void) => void;
+}
+
+declare global {
+    interface Window {
+        Razorpay?: new (options: RazorpayOptions) => RazorpayInstance;
+    }
+}
+
+const RAZORPAY_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
+
+function loadRazorpay(): Promise<boolean> {
+    return new Promise((resolve) => {
+        if (typeof window === "undefined") return resolve(false);
+        if (window.Razorpay) return resolve(true);
+        const script = document.createElement("script");
+        script.src = RAZORPAY_SCRIPT;
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+    });
+}
 
 export function CheckoutBar({
     venueId,
@@ -41,6 +92,12 @@ export function CheckoutBar({
     const total = selectedRigs.length * price * slotCount;
     const hasSlots = selectedSlots.length > 0;
 
+    const failWith = (msg: string, ms = 4000) => {
+        setErrorMsg(msg);
+        setPayState("error");
+        setTimeout(() => setPayState("idle"), ms);
+    };
+
     const handlePay = async () => {
         if (payState !== "idle") return;
         setPayState("loading");
@@ -49,13 +106,11 @@ export function CheckoutBar({
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                setErrorMsg("Please sign in to book slots.");
-                setPayState("error");
-                setTimeout(() => setPayState("idle"), 3000);
+                failWith("Please sign in to book slots.", 3000);
                 return;
             }
 
-            // Re-validate availability right before booking to catch race conditions
+            // Re-validate availability right before paying to catch race conditions
             const freshBooked = await getBookedRigIdsForSlots(venueId, selectedSlots, bookingDate);
             const conflicted = selectedRigs.filter((id) => freshBooked.has(id));
             if (conflicted.length > 0) {
@@ -63,40 +118,71 @@ export function CheckoutBar({
                     .map((id) => rigs.find((r) => r.id === id)?.name)
                     .filter(Boolean)
                     .join(", ");
-                setErrorMsg(`${conflictedNames} just got booked. Please select a different rig.`);
-                setPayState("error");
                 onConflict();
-                setTimeout(() => setPayState("idle"), 4000);
+                failWith(`${conflictedNames} just got booked. Please select a different rig.`);
                 return;
             }
 
-            let customerName = "Online User";
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("full_name")
-                .eq("id", session.user.id)
-                .single();
-            if (profile?.full_name) customerName = profile.full_name;
-
-            const result = await createAppBooking(
-                venueId, selectedRigs, selectedSlots, bookingDate, customerName, session.user.id,
+            // 1. Create the Razorpay order (booking is written only after payment).
+            //    Pass the access token explicitly — the customer session lives in
+            //    localStorage, so a cookie-based server session won't see it.
+            const order = await createPaymentOrderAction(
+                session.access_token, venueId, selectedRigs, selectedSlots, bookingDate,
             );
-
-            if (!result.success) {
-                setErrorMsg(result.error ?? "Booking failed.");
-                setPayState("error");
+            if (!order.success) {
                 onConflict();
-                setTimeout(() => setPayState("idle"), 4000);
+                failWith(order.error);
                 return;
             }
 
-            setVerificationCode(result.verificationCode ?? "");
-            setPayState("done");
-            onBookingComplete(result.verificationCode ?? "");
-        } catch {
-            setErrorMsg("Something went wrong. Please try again.");
-            setPayState("error");
-            setTimeout(() => setPayState("idle"), 3000);
+            // 2. Open Razorpay Checkout
+            const ok = await loadRazorpay();
+            if (!ok || !window.Razorpay) {
+                failWith("Couldn't load the payment window. Check your connection and try again.");
+                return;
+            }
+
+            const rzp = new window.Razorpay({
+                key: order.keyId,
+                amount: order.amount,
+                currency: "INR",
+                name: "PitPass",
+                description: "Rig booking",
+                order_id: order.orderId,
+                prefill: { name: order.customerName, email: session.user.email ?? undefined },
+                theme: { color: "#e23838" },
+                handler: async (response) => {
+                    // 3. Verify the signature server-side, then confirm the booking
+                    setPayState("loading");
+                    const result = await verifyPaymentAction(
+                        response.razorpay_order_id,
+                        response.razorpay_payment_id,
+                        response.razorpay_signature,
+                    );
+                    if (result.success && result.code) {
+                        setVerificationCode(result.code);
+                        setPayState("done");
+                        onBookingComplete(result.code);
+                    } else {
+                        onConflict();
+                        failWith(result.error ?? "Payment verification failed.");
+                    }
+                },
+                modal: {
+                    // User closed the Razorpay modal without paying
+                    ondismiss: () => setPayState("idle"),
+                },
+            });
+            // Surface Razorpay's own failure reason (declined card, expired key, etc.)
+            rzp.on("payment.failed", (resp) => {
+                console.error("[checkout] payment.failed:", resp?.error);
+                onConflict();
+                failWith(resp?.error?.description ?? "Payment failed. Please try again.", 6000);
+            });
+            rzp.open();
+        } catch (err) {
+            console.error("[checkout] handlePay error:", err);
+            failWith(err instanceof Error ? err.message : "Something went wrong. Please try again.", 6000);
         }
     };
 
@@ -166,7 +252,7 @@ export function CheckoutBar({
                     ) : payState === "error" ? (
                         <><AlertCircle className="h-4 w-4" />Booking Failed</>
                     ) : (
-                        <><ShoppingCart className="h-4 w-4" />{hasSlots ? "Pay via UPI to Lock Slots" : "Select time slots first"}</>
+                        <><ShoppingCart className="h-4 w-4" />{hasSlots ? "Pay to Lock Slots" : "Select time slots first"}</>
                     )}
                 </button>
             </div>
